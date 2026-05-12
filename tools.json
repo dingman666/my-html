@@ -13,6 +13,12 @@
       "name": "充值折扣计算器",
       "path": "tools/chong-zhi-ji-suan/",
       "icon": "tools/chong-zhi-ji-suan/icon.png"
+    },
+    {
+      "id": "li-run-lv",
+      "name": "在线利润率计算器",
+      "path": "tools/li-run-lv/",
+      "icon": "tools/li-run-lv/icon.png"
     }
   ]
 }
