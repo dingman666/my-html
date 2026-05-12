@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>ChatGpt账号参数提取工具</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+body {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+}
+</style>
+</head>
+
+<body class="min-h-screen flex items-center justify-center p-4">
+
+<div class="w-full max-w-4xl bg-white rounded-2xl shadow-xl p-6 space-y-6">
+
+  <h1 class="text-2xl font-bold text-center text-gray-800">
+    🤖 ChatGpt账号参数提取工具
+  </h1>
+
+  <!-- 分隔符 -->
+  <div>
+    <label class="text-sm text-gray-600">分隔符</label>
+    <input
+      id="delimiter"
+      type="text"
+      value="----"
+      class="w-full mt-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+    >
+  </div>
+
+  <!-- 输入 -->
+  <div>
+    <label class="text-sm text-gray-600">原始账号数据（每行一条）</label>
+    <textarea
+      id="inputText"
+      rows="5"
+      placeholder="示例：
+abc@qq.com----123456----rt_xxxx----tok_yyyy"
+      class="w-full mt-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+    ></textarea>
+  </div>
+
+  <!-- 字段选择 -->
+  <div>
+    <label class="text-sm text-gray-600 mb-2 block">选择要提取的参数</label>
+    <div class="flex flex-wrap gap-2">
+      <button type="button" class="field-btn px-3 py-1 border rounded-full text-sm" data-index="0">邮箱</button>
+      <button type="button" class="field-btn px-3 py-1 border rounded-full text-sm" data-index="1">密码</button>
+      <button type="button" class="field-btn px-3 py-1 border rounded-full text-sm" data-index="2">RT</button>
+      <button type="button" class="field-btn px-3 py-1 border rounded-full text-sm" data-index="3">TOK</button>
+    </div>
+  </div>
+
+  <!-- 序号范围 -->
+  <div class="grid grid-cols-2 gap-4">
+    <div>
+      <label class="text-sm text-gray-600">起始序号</label>
+      <input
+        id="startIndex"
+        type="number"
+        min="1"
+        value="1"
+        class="w-full mt-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+      >
+    </div>
+    <div>
+      <label class="text-sm text-gray-600">结束序号</label>
+      <input
+        id="endIndex"
+        type="number"
+        min="1"
+        value="9999"
+        class="w-full mt-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+      >
+    </div>
+  </div>
+
+  <!-- 按钮 -->
+  <button
+    onclick="extract()"
+    class="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg font-medium transition"
+  >
+    提取
+  </button>
+
+  <!-- 统计 -->
+  <div class="bg-gray-50 rounded-lg p-4 text-sm text-gray-700 space-y-1">
+    <div>总行数：<span id="totalLines">0</span></div>
+    <div>范围内行数：<span id="rangeLines">0</span></div>
+    <div>提取字段数：<span id="fieldCount">0</span></div>
+    <div>提取参数总数：<span id="paramCount">0</span></div>
+  </div>
+
+  <!-- 输出 -->
+  <div>
+    <div class="flex justify-between items-center mb-2">
+      <label class="text-sm text-gray-600">提取结果（一行一个）</label>
+      <button
+        onclick="copyOutput()"
+        class="text-xs px-2 py-1 border rounded hover:bg-gray-100"
+      >
+        复制
+      </button>
+    </div>
+    <pre id="output" class="bg-gray-50 p-4 rounded-lg h-40 overflow-auto text-sm whitespace-pre-wrap"></pre>
+  </div>
+
+</div>
+
+<script>
+let selectedFields = new Set();
+
+document.querySelectorAll(".field-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const i = btn.dataset.index;
+    selectedFields.has(i)
+      ? selectedFields.delete(i)
+      : selectedFields.add(i);
+
+    btn.classList.toggle("bg-purple-600");
+    btn.classList.toggle("text-white");
+  });
+});
+
+function extract() {
+  const delimiter = document.getElementById("delimiter").value;
+  const input = document.getElementById("inputText").value.trim();
+  const output = document.getElementById("output");
+
+  const start = parseInt(document.getElementById("startIndex").value) || 1;
+  const end = parseInt(document.getElementById("endIndex").value) || 999999;
+
+  const lines = input ? input.split(/\n+/) : [];
+  const results = [];
+
+  let rangeLines = 0;
+
+  lines.forEach((line, index) => {
+    const lineNum = index + 1;
+    if (lineNum < start || lineNum > end) return;
+
+    const parts = line.split(delimiter);
+    if (parts.length >= Math.max(...Array.from(selectedFields).map(Number)) + 1) {
+      rangeLines++;
+      selectedFields.forEach(i => {
+        results.push(parts[i] || "");
+      });
+    }
+  });
+
+  output.textContent = results.join("\n") || "⚠️ 无结果";
+
+  document.getElementById("totalLines").textContent = lines.length;
+  document.getElementById("rangeLines").textContent = rangeLines;
+  document.getElementById("fieldCount").textContent = selectedFields.size;
+  document.getElementById("paramCount").textContent = results.length;
+}
+
+function copyOutput() {
+  const text = document.getElementById("output").textContent;
+  navigator.clipboard.writeText(text);
+  alert("已复制到剪贴板");
+}
+</script>
+
+</body>
+</html>
