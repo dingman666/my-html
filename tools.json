@@ -7,6 +7,12 @@
       "name": "ChatGpt账号参数提取工具",
       "path": "tools/chatgpt/",
       "icon": "tools/chatgpt/icon.png"
+    },
+    {
+      "id": "chong-zhi-ji-suan",
+      "name": "充值折扣计算器",
+      "path": "tools/chong-zhi-ji-suan/",
+      "icon": "tools/chong-zhi-ji-suan/icon.png"
     }
   ]
 }
