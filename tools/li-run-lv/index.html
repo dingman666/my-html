@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>在线利润率计算器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .calculator-container {
+            width: 100%;
+            max-width: 500px;
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 20px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .note {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #3498db;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .buttons {
+            display: flex;
+            gap: px;
+     12       margin-bottom: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+
+        .btn-secondary {
+            background-color: #ecf0f1;
+            color: #3498db;
+            border: 1px solid #bdc3c7;
+        }
+
+        .btn-secondary:hover {
+            background-color: #d5dbdb;
+        }
+
+        .result-box {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 2px solid #e74c3c;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        .result-label {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .result-value {
+            font-weight: bold;
+        }
+
+        .profit-value {
+            color: #27ae60;
+        }
+
+        .rate-display {
+            text-align: center;
+            padding: 20px;
+            background-color: #e8f5e9;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .rate-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #27ae60;
+        }
+
+        .formula-box {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .formula-box p {
+            margin-bottom: 8px;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 15px;
+            font-size: 12px;
+            color: #777;
+            border-top: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator-container">
+        <div class="header">
+            <h1>🧮 在线利润率计算器</h1>
+            输入卖出价和进价，自动计算扣除成本后的利润率
+        </div>
+
+        <div class="content">
+            <div class="input-group">
+                <label>💰 卖出价 (元)</label>
+                <input type="number" id="sellPrice" placeholder="请输入卖出价" step="any" value="0.000004">
+            </div>
+
+            <div class="input-group">
+                <label>🛒 进价/成本 (元)</label>
+                <input type="number" id="costPrice" placeholder="请输入进价" step="any" value="0.000001">
+            </div>
+
+            <div class="note">
+                <strong>计算说明：</strong> 利润率 = (卖出价 × 0.5 - 进价) ÷ 进价 × 100%  
+                即：卖出价会先乘以0.5，再减去进价得到利润，最后计算利润率。
+            </div>
+
+            <div class="buttons">
+                <button class="btn btn-primary" id="calculateBtn">🧮 计算利润率</button>
+                <button class="btn btn-secondary" id="resetBtn">🔄 重置</button>
+            </div>
+
+            <div class="result-box">
+                <h3>📊 计算结果</h3>
+                <div class="result-item">
+                    <span class="result-label">卖出价：</span>
+                    <span class="result-value" id="showSellPrice">0.00 元</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">卖出价 × 0.5：</span>
+                    <span class="result-value" id="showHalfSell">0.00 元</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">进价/成本：</span>
+                    <span class="result-value" id="showCostPrice">0.00 元</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">利润：</span>
+                    <span class="result-value profit-value" id="showProfit">0.00 元</span>
+                </div>
+            </div>
+
+            <div class="rate-display">
+                <div class="rate-value" id="showRate">100.00%</div>
+            </div>
+
+            <div class="formula-box">
+                <strong>计算公式：</strong> 利润率 = (卖出价 × 0.5 - 进价) ÷ 进价 × 100%  
+                <strong>例如：</strong> 卖出价 = 200元，进价 = 80元，则利润 = 200×0.5 - 80 = 20元，利润率 = 20 ÷ 80 × 100% = 25%
+            </div>
+        </div>
+
+        <div class="footer">
+            在线利润率计算器 © 2026 | 公式：利润率 = (卖出价 × 0.5 - 进价) ÷ 进价 × 100%
+        </div>
+    </div>
+
+    <script>
+        // 获取DOM元素
+        const sellPriceInput = document.getElementById('sellPrice');
+        const costPriceInput = document.getElementById('costPrice');
+        const calculateBtn = document.getElementById('calculateBtn');
+        const resetBtn = document.getElementById('resetBtn');
+
+        const showSellPrice = document.getElementById('showSellPrice');
+        const showHalfSell = document.getElementById('showHalfSell');
+        const showCostPrice = document.getElementById('showCostPrice');
+        const showProfit = document.getElementById('showProfit');
+        const showRate = document.getElementById('showRate');
+
+        // 格式化数字为两位小数
+        function formatNumber(num) {
+            if (isNaN(num) || !isFinite(num)) return '0.00000000';
+            return num.toFixed(8);
+        }
+
+        // 计算函数（无弹窗，静默处理）
+        function calculate() {
+            const sellPrice = parseFloat(sellPriceInput.value) || 0;
+            const costPrice = parseFloat(costPriceInput.value) || 0;
+
+            // 显示原始值（保留两位小数）
+            showSellPrice.textContent = formatNumber(sellPrice) + ' 元';
+            showCostPrice.textContent = formatNumber(costPrice) + ' 元';
+
+            // 计算中间值
+            const halfSell = sellPrice * 0.5;
+            showHalfSell.textContent = formatNumber(halfSell) + ' 元';
+
+            // 计算利润和利润率
+            let profit = 0;
+            let rate = 0;
+
+            if (costPrice === 0) {
+                // 进价为0时，静默处理
+                profit = 0;
+                rate = 0;
+                showProfit.textContent = '0.00 元';
+                showRate.textContent = '0.00%';
+                showProfit.style.color = '#999';
+                showRate.style.color = '#999';
+            } else {
+                profit = halfSell - costPrice;
+                rate = (profit / costPrice) * 100;
+                showProfit.textContent = formatNumber(profit) + ' 元';
+                showRate.textContent = formatNumber(rate) + '%';
+                showProfit.style.color = '#27ae60';
+                showRate.style.color = '#27ae60';
+            }
+        }
+
+        // 重置函数
+        function reset() {
+            sellPriceInput.value = '0.000004';
+            costPriceInput.value = '0.000001';
+            calculate(); // 重新计算显示
+        }
+
+        // 绑定事件
+        calculateBtn.addEventListener('click', calculate);
+        resetBtn.addEventListener('click', reset);
+
+        // 输入变化时自动计算（可选，增强体验）
+        sellPriceInput.addEventListener('input', calculate);
+        costPriceInput.addEventListener('input', calculate);
+
+        // 页面加载时初始化计算
+        window.addEventListener('load', calculate);
+    </script>
+</body>
+</html>
