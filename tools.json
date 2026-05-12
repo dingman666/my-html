@@ -1,0 +1,12 @@
+{
+  "name": "我的工具",
+  "baseUrl": "https://dingman666.github.io/my-html/",
+  "tools": [
+    {
+      "id": "chatgpt",
+      "name": "ChatGpt账号参数提取工具",
+      "path": "tools/chatgpt/",
+      "icon": "tools/chatgpt/icon.png"
+    }
+  ]
+}
