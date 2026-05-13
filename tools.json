@@ -19,6 +19,12 @@
       "name": "在线利润率计算器",
       "path": "tools/li-run-lv/",
       "icon": "tools/li-run-lv/icon.png"
+    },
+    {
+      "id": "aws-ji-suan",
+      "name": "Token 汇率计算工具",
+      "path": "tools/aws-ji-suan/",
+      "icon": "tools/aws-ji-suan/icon.png"
     }
   ]
 }
