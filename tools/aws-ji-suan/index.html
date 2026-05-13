@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>Token 汇率计算工具</title>
+
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+
+<style>
+    body {
+        font-family: "Inter", "Segoe UI", Arial;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        min-height: 100vh;
+        margin: 0;
+        padding: 30px;
+    }
+
+    .container {
+        max-width: 960px;
+        margin: auto;
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(0,0,0,.15);
+        padding: 28px;
+    }
+
+    h2 {
+        text-align: center;
+        margin-bottom: 24px;
+        font-weight: 600;
+    }
+
+    label {
+        font-weight: 500;
+        margin-top: 12px;
+        display: block;
+    }
+
+    textarea {
+        width: 100%;
+        height: 130px;
+        margin-top: 8px;
+        padding: 12px;
+        border-radius: 10px;
+        border: 1px solid #d1d5db;
+        font-size: 14px;
+        resize: vertical;
+        box-sizing: border-box;
+    }
+
+    .radio-group {
+        display: flex;
+        gap: 24px;
+        margin: 14px 0;
+    }
+
+    .radio-group input {
+        accent-color: #6366f1;
+        margin-right: 6px;
+    }
+
+    .input-row {
+        display: flex;
+        gap: 16px;
+        margin-top: 12px;
+    }
+
+    .input-row input,
+    .input-row select {
+        flex: 1;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+    }
+
+    button {
+        margin-top: 12px;
+        margin-right: 8px;
+        background: linear-gradient(135deg, #6366f1, #4f46e5);
+        color: white;
+        border: none;
+        padding: 10px 18px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+
+    button:hover:not(:disabled) {
+        background: linear-gradient(135deg, #4f46e5, #3730a3);
+    }
+
+    button:disabled {
+        background: #cbd5e1;
+        cursor: not-allowed;
+    }
+
+    button.secondary {
+        background: linear-gradient(135deg, #10b981, #059669);
+    }
+    button.secondary:hover:not(:disabled) {
+        background: linear-gradient(135deg, #059669, #047857);
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 12px;
+    }
+
+    th, td {
+        padding: 10px;
+        border-bottom: 1px solid #e5e7eb;
+        text-align: left;
+    }
+
+    th {
+        background: #f1f5f9;
+        font-weight: 600;
+    }
+
+    tr:hover {
+        background: #f9fafb;
+    }
+
+    .total {
+        margin-top: 12px;
+        font-size: 16px;
+        font-weight: bold;
+        text-align: right;
+    }
+
+    .final-price {
+        margin-top: 6px;
+        font-size: 16px;
+        font-weight: bold;
+        text-align: right;
+        color: #059669;
+    }
+
+    .export-area {
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px dashed #ddd;
+    }
+
+    .error {
+        color: #dc2626;
+        margin-top: 10px;
+        min-height: 18px;
+    }
+
+    .result-title {
+        text-align: center;
+        font-weight: 700;
+        font-size: 26px;
+        margin: 0 0 10px 0;
+    }
+
+    .result-meta {
+        font-size: 13px;
+        color: #555;
+        margin-bottom: 10px;
+        text-align: center;
+    }
+
+    .capture-area {
+        margin-top: 24px;
+        padding: 20px;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        background: #fff;
+    }
+
+    .pager {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 12px;
+        margin-top: 18px;
+    }
+    .pager button {
+        margin: 0;
+        padding: 6px 14px;
+        font-size: 14px;
+    }
+    .pager .indicator {
+        font-weight: 600;
+        color: #334155;
+        min-width: 80px;
+        text-align: center;
+    }
+    .pager .jump {
+        width: 60px;
+        padding: 6px 8px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        text-align: center;
+    }
+
+    .pending-box {
+        margin-top: 12px;
+        padding: 10px 14px;
+        background: #f8fafc;
+        border: 1px dashed #cbd5e1;
+        border-radius: 8px;
+        min-height: 20px;
+        font-size: 14px;
+    }
+
+    .pending-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 0;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    .pending-item:last-child { border-bottom: none; }
+
+    .pending-item button {
+        margin: 0;
+        padding: 4px 10px;
+        font-size: 12px;
+        background: #ef4444;
+        border-radius: 6px;
+    }
+    .pending-item button:hover { background: #dc2626; }
+
+    .pending-empty {
+        color: #94a3b8;
+        font-style: italic;
+    }
+
+    .pending-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 8px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    .pending-toolbar label {
+        margin: 0;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .pending-toolbar button {
+        margin: 0;
+        padding: 4px 12px;
+        font-size: 12px;
+        background: #ef4444;
+        border-radius: 6px;
+    }
+    .pending-toolbar button:hover:not(:disabled) { background: #dc2626; }
+
+    .cache-bar {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+        padding: 8px 12px;
+        background: #f1f5f9;
+        border-radius: 8px;
+        font-size: 13px;
+    }
+    .cache-bar label {
+        margin: 0;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .cache-bar button {
+        margin: 0;
+        padding: 4px 12px;
+        font-size: 12px;
+        background: #64748b;
+        border-radius: 6px;
+    }
+    .cache-bar button:hover:not(:disabled) { background: #475569; }
+    .cache-bar .cache-status {
+        margin-left: auto;
+        color: #64748b;
+        font-size: 12px;
+    }
+
+    .pending-check {
+        margin-right: 6px;
+    }
+
+    .section-divider {
+        margin-top: 24px;
+        padding-top: 16px;
+        border-top: 1px solid #e5e7eb;
+    }
+</style>
+  <link rel="icon" href="./icon.png">
+</head>
+
+<body>
+
+<div class="container">
+    <h2>💰 Token 汇率计算工具</h2>
+
+    <label>JSON 输入</label>
+    <textarea id="jsonInput" placeholder="粘贴 JSON 数据..."></textarea>
+
+    <div style="margin-top:10px;">
+        <button id="addBtn" onclick="addItem()">➕ 添加</button>
+        <button id="completeBtn" onclick="completeAdd()">✅ 添加完成</button>
+        <button id="resetAddBtn" onclick="resetAdds()" style="background:#64748b;">↩️ 重新添加</button>
+    </div>
+
+    <div class="cache-bar">
+        <label>
+            <input type="checkbox" id="cacheToggle" />
+            💾 保存到缓存（刷新页面后恢复）
+        </label>
+        <button onclick="clearCache()">🗑️ 清除缓存</button>
+        <span class="cache-status" id="cacheStatus"></span>
+    </div>
+
+    <label style="margin-top:14px;">已添加项目</label>
+    <div id="pendingBox" class="pending-box">
+        <div class="pending-empty">暂无项目</div>
+    </div>
+
+    <div class="section-divider">
+        <label>计算方式</label>
+        <div class="radio-group">
+            <label>
+                <input type="radio" name="mode" value="fixed" checked />
+                固定：1 $ = 500,000 tokens
+            </label>
+            <label>
+                <input type="radio" name="mode" value="custom" />
+                自定义汇率
+            </label>
+        </div>
+
+        <div id="customRateBox" style="display:none; margin-top:8px;">
+            <input type="number" id="customRate" placeholder="请输入每一美元对应的 token 数" step="1"
+                   style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; box-sizing:border-box;" />
+        </div>
+
+        <button id="calcBtn" onclick="calculate()" disabled>📊 计算</button>
+    </div>
+
+    <div id="error" class="error"></div>
+
+    <div id="resultsContainer"></div>
+
+    <div id="secondaryArea" class="section-divider" style="display:none;">
+        <label>二次计算（在合计基础上加减乘除一个值）</label>
+        <div class="input-row">
+            <select id="secondaryOp" style="max-width:120px;">
+                <option value="+">+ 加</option>
+                <option value="-">- 减</option>
+                <option value="*">× 乘</option>
+                <option value="/">÷ 除</option>
+            </select>
+            <input type="number" id="secondaryVal" placeholder="请输入数值" step="any" />
+        </div>
+        <button class="secondary" onclick="secondaryCalc()">🔁 二次计算</button>
+        <button onclick="clearSecondary()" style="background:#64748b;">清除二次计算</button>
+    </div>
+
+    <div class="export-area">
+        <label>导出信息（可选）</label>
+        <div class="input-row">
+            <input id="username" placeholder="用户名" />
+            <input id="datetime" placeholder="日期时间（如 2026-05-13 19:00）" />
+        </div>
+        <button onclick="exportImages()">📸 逐个导出图片</button>
+        <button onclick="exportImagesZip()" style="background:linear-gradient(135deg,#0ea5e9,#0284c7);">🗜️ 打包下载图片 (ZIP)</button>
+        <button onclick="exportExcel()" style="background:linear-gradient(135deg,#16a34a,#15803d);">📒 导出 Excel</button>
+    </div>
+</div>
+
+<script>
+// ---------- state ----------
+let pendingItems = [];      // {json, nameKey, title}
+let addCompleted = false;
+let calculatedResults = []; // {nameKey, title, rows, total, finalPrice, secondary:{op,val}}
+let currentPage = 0;
+
+// ---------- cache ----------
+const CACHE_KEY = "tokenCalc_pendingItems_v1";
+const CACHE_TOGGLE_KEY = "tokenCalc_cacheEnabled_v1";
+
+function isCacheEnabled() {
+    const el = document.getElementById("cacheToggle");
+    return el && el.checked;
+}
+
+function setCacheStatus(msg) {
+    const el = document.getElementById("cacheStatus");
+    if (el) el.innerText = msg || "";
+}
+
+function syncCache() {
+    if (!isCacheEnabled()) return;
+    try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify(pendingItems));
+        setCacheStatus(`已缓存 ${pendingItems.length} 项`);
+    } catch (e) {
+        setCacheStatus("⚠️ 缓存写入失败");
+    }
+}
+
+function loadCache() {
+    try {
+        const raw = localStorage.getItem(CACHE_KEY);
+        if (!raw) return;
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr) && arr.length > 0) {
+            pendingItems = arr;
+            renderPendingList();
+            setCacheStatus(`已从缓存恢复 ${arr.length} 项`);
+        }
+    } catch {
+        /* ignore */
+    }
+}
+
+function clearCache() {
+    localStorage.removeItem(CACHE_KEY);
+    setCacheStatus("缓存已清除");
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+    const toggle = document.getElementById("cacheToggle");
+    const enabled = localStorage.getItem(CACHE_TOGGLE_KEY) === "1";
+    toggle.checked = enabled;
+    if (enabled) loadCache();
+
+    toggle.addEventListener("change", () => {
+        localStorage.setItem(CACHE_TOGGLE_KEY, toggle.checked ? "1" : "0");
+        if (toggle.checked) {
+            syncCache();
+        } else {
+            setCacheStatus("缓存已关闭（已有缓存仍保留，可手动清除）");
+        }
+    });
+});
+
+// ---------- helpers ----------
+function extractNameKey(name) {
+    if (!name) return "";
+    const parts = name.split("-");
+    return parts.length > 4 ? parts.slice(4).join("-") : name;
+}
+
+function setError(msg) {
+    document.getElementById("error").innerText = msg || "";
+}
+
+// ---------- mode toggle ----------
+document.querySelectorAll('input[name="mode"]').forEach(r =>
+    r.addEventListener("change", () => {
+        document.getElementById("customRateBox").style.display =
+            r.value === "custom" ? "block" : "none";
+    })
+);
+
+// ---------- add / complete ----------
+function addItem() {
+    setError("");
+    if (addCompleted) {
+        setError("❌ 已点击\"添加完成\"，请先\"重新添加\"再继续。");
+        return;
+    }
+    const raw = document.getElementById("jsonInput").value.trim();
+    if (!raw) {
+        setError("❌ JSON 不能为空");
+        return;
+    }
+    let json;
+    try {
+        json = JSON.parse(raw);
+    } catch {
+        setError("❌ JSON 解析失败");
+        return;
+    }
+    const items = json?.data?.items;
+    if (!Array.isArray(items) || items.length === 0) {
+        setError("❌ JSON 中未找到 data.items");
+        return;
+    }
+    const nameKey = extractNameKey(items[0]?.name);
+    const title = nameKey || `Token 消耗统计 ${pendingItems.length + 1}`;
+    pendingItems.push({ json, nameKey, title });
+    document.getElementById("jsonInput").value = "";
+    renderPendingList();
+    syncCache();
+}
+
+function completeAdd() {
+    setError("");
+    if (pendingItems.length === 0) {
+        setError("❌ 请先添加至少一项");
+        return;
+    }
+    addCompleted = true;
+    document.getElementById("addBtn").disabled = true;
+    document.getElementById("completeBtn").disabled = true;
+    document.getElementById("calcBtn").disabled = false;
+    document.getElementById("jsonInput").disabled = true;
+}
+
+function resetAdds() {
+    pendingItems = [];
+    addCompleted = false;
+    calculatedResults = [];
+    currentPage = 0;
+    document.getElementById("addBtn").disabled = false;
+    document.getElementById("completeBtn").disabled = false;
+    document.getElementById("calcBtn").disabled = true;
+    document.getElementById("jsonInput").disabled = false;
+    document.getElementById("jsonInput").value = "";
+    document.getElementById("resultsContainer").innerHTML = "";
+    document.getElementById("secondaryArea").style.display = "none";
+    renderPendingList();
+    syncCache();
+    setError("");
+}
+
+function renderPendingList() {
+    const box = document.getElementById("pendingBox");
+    if (pendingItems.length === 0) {
+        box.innerHTML = '<div class="pending-empty">暂无项目</div>';
+        return;
+    }
+    box.innerHTML = "";
+
+    if (!addCompleted) {
+        const bar = document.createElement("div");
+        bar.className = "pending-toolbar";
+        bar.innerHTML = `
+            <label>
+                <input type="checkbox" id="selectAllChk" onchange="toggleSelectAll(this.checked)" />
+                全选
+            </label>
+            <button onclick="batchDelete()">🗑️ 批量删除</button>
+        `;
+        box.appendChild(bar);
+    }
+
+    pendingItems.forEach((p, i) => {
+        const div = document.createElement("div");
+        div.className = "pending-item";
+        const checkbox = addCompleted
+            ? ""
+            : `<input type="checkbox" class="pending-check" data-idx="${i}" />`;
+        const removeBtn = addCompleted
+            ? ""
+            : `<button onclick="removeItem(${i})">删除</button>`;
+        div.innerHTML = `<span>${checkbox}${i + 1}. ${p.title}</span>${removeBtn}`;
+        box.appendChild(div);
+    });
+}
+
+function toggleSelectAll(checked) {
+    document.querySelectorAll(".pending-check").forEach(c => { c.checked = checked; });
+}
+
+function batchDelete() {
+    if (addCompleted) return;
+    const toRemove = new Set();
+    document.querySelectorAll(".pending-check:checked").forEach(c => {
+        toRemove.add(Number(c.dataset.idx));
+    });
+    if (toRemove.size === 0) {
+        setError("❌ 请先勾选要删除的项目");
+        return;
+    }
+    pendingItems = pendingItems.filter((_, i) => !toRemove.has(i));
+    renderPendingList();
+    syncCache();
+    setError("");
+}
+
+function removeItem(i) {
+    pendingItems.splice(i, 1);
+    renderPendingList();
+    syncCache();
+}
+
+// ---------- calculate ----------
+function calculate() {
+    setError("");
+    if (!addCompleted) {
+        setError("❌ 请先点击\"添加完成\"");
+        return;
+    }
+    const mode = document.querySelector('input[name="mode"]:checked').value;
+    let tokensPerDollar;
+    if (mode === "fixed") {
+        tokensPerDollar = 500000;
+    } else {
+        tokensPerDollar = Number(document.getElementById("customRate").value);
+        if (!tokensPerDollar || tokensPerDollar <= 0) {
+            setError("❌ 请输入有效的自定义汇率");
+            return;
+        }
+    }
+
+    calculatedResults = pendingItems.map(p => {
+        const items = p.json.data.items;
+        let total = 0;
+        const rows = items.map((item, idx) => {
+            const quota = Number(item.used_quota) || 0;
+            const usd = quota / tokensPerDollar;
+            total += usd;
+            return { idx: idx + 1, name: item.name || "-", quota, usd };
+        });
+        return {
+            nameKey: p.nameKey,
+            title: p.title,
+            rows,
+            total,
+            finalPrice: null,
+            secondary: null
+        };
+    });
+
+    currentPage = 0;
+    renderResults();
+    document.getElementById("secondaryArea").style.display = "block";
+}
+
+function buildCaptureHTML(r) {
+    const user = document.getElementById("username").value.trim();
+    const dt = document.getElementById("datetime").value.trim();
+    const metaText = `${user ? "用户：" + user : ""}${user && dt ? " ｜ " : ""}${dt ? dt : ""}`;
+    let html = `<h3 class="result-title">${r.title} 统计结果</h3>`;
+    if (metaText) html += `<div class="result-meta">${metaText}</div>`;
+    html += `<table><thead><tr><th>#</th><th>Name</th><th>tokens</th><th>USD ($)</th></tr></thead><tbody>`;
+    r.rows.forEach(row => {
+        html += `<tr><td>${row.idx}</td><td>${row.name}</td><td>${row.quota.toLocaleString()}</td><td>$${row.usd.toFixed(2)}</td></tr>`;
+    });
+    html += `</tbody></table>`;
+    html += `<div class="total">合计：${r.total.toFixed(2)} $</div>`;
+    if (r.finalPrice !== null && r.secondary) {
+        const opSym = {"+":"+", "-":"-", "*":"×", "/":"÷"}[r.secondary.op];
+        html += `<div class="final-price">最终实际价格（合计 ${opSym} ${r.secondary.val}）：${r.finalPrice.toFixed(2)} $</div>`;
+    }
+    return html;
+}
+
+function renderResults() {
+    const container = document.getElementById("resultsContainer");
+    container.innerHTML = "";
+    if (calculatedResults.length === 0) return;
+    if (currentPage >= calculatedResults.length) currentPage = calculatedResults.length - 1;
+    if (currentPage < 0) currentPage = 0;
+
+    const r = calculatedResults[currentPage];
+    const div = document.createElement("div");
+    div.className = "capture-area";
+    div.id = `capture-current`;
+    div.innerHTML = buildCaptureHTML(r);
+    container.appendChild(div);
+
+    if (calculatedResults.length > 1) {
+        const pager = document.createElement("div");
+        pager.className = "pager";
+        pager.innerHTML = `
+            <button onclick="goPage(-1)" ${currentPage === 0 ? "disabled" : ""}>← 上一个</button>
+            <span class="indicator">${currentPage + 1} / ${calculatedResults.length}</span>
+            <input type="number" class="jump" min="1" max="${calculatedResults.length}"
+                   value="${currentPage + 1}" onchange="jumpPage(this.value)" />
+            <button onclick="goPage(1)" ${currentPage === calculatedResults.length - 1 ? "disabled" : ""}>下一个 →</button>
+        `;
+        container.appendChild(pager);
+    }
+}
+
+function goPage(delta) {
+    currentPage += delta;
+    renderResults();
+}
+
+function jumpPage(val) {
+    const n = parseInt(val, 10);
+    if (!isNaN(n) && n >= 1 && n <= calculatedResults.length) {
+        currentPage = n - 1;
+        renderResults();
+    }
+}
+
+// ---------- secondary ----------
+function secondaryCalc() {
+    setError("");
+    if (calculatedResults.length === 0) {
+        setError("❌ 请先计算");
+        return;
+    }
+    const op = document.getElementById("secondaryOp").value;
+    const valStr = document.getElementById("secondaryVal").value;
+    if (valStr === "" || isNaN(Number(valStr))) {
+        setError("❌ 请输入有效数值");
+        return;
+    }
+    const val = Number(valStr);
+    if (op === "/" && val === 0) {
+        setError("❌ 除数不能为 0");
+        return;
+    }
+    calculatedResults.forEach(r => {
+        let fp;
+        switch (op) {
+            case "+": fp = r.total + val; break;
+            case "-": fp = r.total - val; break;
+            case "*": fp = r.total * val; break;
+            case "/": fp = r.total / val; break;
+        }
+        r.finalPrice = fp;
+        r.secondary = { op, val };
+    });
+    renderResults();
+}
+
+function clearSecondary() {
+    calculatedResults.forEach(r => {
+        r.finalPrice = null;
+        r.secondary = null;
+    });
+    document.getElementById("secondaryVal").value = "";
+    renderResults();
+}
+
+// ---------- export ----------
+function buildFilenameBase(nameKey) {
+    const user = document.getElementById("username").value.trim();
+    const dt = document.getElementById("datetime").value.trim();
+    let filename = nameKey || "token-report";
+    if (user) filename = `${user}-${filename}`;
+    if (dt) filename = `${filename}-${dt}`;
+    return filename.replace(/[\\\/\?\*\[\]:]/g, "_");
+}
+
+async function exportImages() {
+    if (calculatedResults.length === 0) {
+        setError("❌ 没有可导出的结果，请先计算");
+        return;
+    }
+    setError("");
+    // off-screen host so each result can be rendered in turn without disturbing the paged view
+    const host = document.createElement("div");
+    host.style.position = "fixed";
+    host.style.left = "-10000px";
+    host.style.top = "0";
+    host.style.width = "920px";
+    host.style.background = "#ffffff";
+    host.style.padding = "20px";
+    document.body.appendChild(host);
+
+    try {
+        for (let i = 0; i < calculatedResults.length; i++) {
+            const r = calculatedResults[i];
+            const node = document.createElement("div");
+            node.className = "capture-area";
+            node.innerHTML = buildCaptureHTML(r);
+            host.innerHTML = "";
+            host.appendChild(node);
+            const filename = buildFilenameBase(r.nameKey);
+            const canvas = await html2canvas(node, { scale: 2, backgroundColor: "#ffffff" });
+            const link = document.createElement("a");
+            link.download = `${filename}.png`;
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+            await new Promise(res => setTimeout(res, 350));
+        }
+    } finally {
+        document.body.removeChild(host);
+    }
+}
+
+function safeSheetName(name, used) {
+    let base = (name || "结果").replace(/[\\\/\?\*\[\]:]/g, "_").slice(0, 28);
+    if (!base) base = "结果";
+    let candidate = base.slice(0, 31);
+    let suffix = 1;
+    while (used.has(candidate)) {
+        const tag = `_${suffix++}`;
+        candidate = (base.slice(0, 31 - tag.length)) + tag;
+    }
+    used.add(candidate);
+    return candidate;
+}
+
+function exportExcel() {
+    if (calculatedResults.length === 0) {
+        setError("❌ 没有可导出的结果，请先计算");
+        return;
+    }
+    setError("");
+    const wb = XLSX.utils.book_new();
+    const used = new Set();
+    const user = document.getElementById("username").value.trim();
+    const dt = document.getElementById("datetime").value.trim();
+
+    const centerStyle = {
+        alignment: { horizontal: "center", vertical: "center", wrapText: true }
+    };
+    const titleStyle = {
+        alignment: { horizontal: "center", vertical: "center", wrapText: true },
+        font: { bold: true, sz: 14 }
+    };
+    const headerStyle = {
+        alignment: { horizontal: "center", vertical: "center" },
+        font: { bold: true },
+        fill: { patternType: "solid", fgColor: { rgb: "F1F5F9" } }
+    };
+    const totalStyle = {
+        alignment: { horizontal: "center", vertical: "center" },
+        font: { bold: true }
+    };
+
+    calculatedResults.forEach((r, idx) => {
+        const aoa = [];
+        const rowMeta = []; // role for each row: "title" | "meta" | "blank" | "header" | "data" | "total"
+
+        aoa.push([r.title + " 统计结果", "", "", ""]);
+        rowMeta.push("title");
+
+        if (user || dt) {
+            aoa.push([`${user ? "用户：" + user : ""}${user && dt ? " ｜ " : ""}${dt}`, "", "", ""]);
+            rowMeta.push("meta");
+        }
+
+        aoa.push(["", "", "", ""]);
+        rowMeta.push("blank");
+
+        aoa.push(["#", "Name", "tokens", "USD ($)"]);
+        rowMeta.push("header");
+
+        r.rows.forEach(row => {
+            aoa.push([row.idx, row.name, row.quota, Number(row.usd.toFixed(4))]);
+            rowMeta.push("data");
+        });
+
+        aoa.push(["", "", "", ""]);
+        rowMeta.push("blank");
+
+        aoa.push(["", "", "合计 ($)", Number(r.total.toFixed(4))]);
+        rowMeta.push("total");
+
+        if (r.finalPrice !== null && r.secondary) {
+            const opSym = {"+":"+", "-":"-", "*":"×", "/":"÷"}[r.secondary.op];
+            aoa.push(["", "", `最终实际价格（合计 ${opSym} ${r.secondary.val}）`, Number(r.finalPrice.toFixed(4))]);
+            rowMeta.push("total");
+        }
+
+        const ws = XLSX.utils.aoa_to_sheet(aoa);
+        ws['!cols'] = [{wch:6},{wch:42},{wch:16},{wch:14}];
+
+        // merge title row (and meta row if present) across all 4 columns
+        const merges = [];
+        rowMeta.forEach((role, r0) => {
+            if (role === "title" || role === "meta") {
+                merges.push({ s: {r: r0, c: 0}, e: {r: r0, c: 3} });
+            }
+        });
+        ws['!merges'] = merges;
+
+        // set row heights for title/meta
+        ws['!rows'] = rowMeta.map(role => {
+            if (role === "title") return { hpt: 28 };
+            if (role === "meta") return { hpt: 20 };
+            return { hpt: 18 };
+        });
+
+        // apply styles to every cell within range
+        const range = XLSX.utils.decode_range(ws['!ref']);
+        for (let R = range.s.r; R <= range.e.r; R++) {
+            const role = rowMeta[R];
+            for (let C = range.s.c; C <= range.e.c; C++) {
+                const addr = XLSX.utils.encode_cell({r: R, c: C});
+                if (!ws[addr]) ws[addr] = { t: "s", v: "" };
+                if (role === "title") ws[addr].s = titleStyle;
+                else if (role === "header") ws[addr].s = headerStyle;
+                else if (role === "total") ws[addr].s = totalStyle;
+                else ws[addr].s = centerStyle;
+            }
+        }
+
+        const sheetName = safeSheetName(r.nameKey || `结果${idx + 1}`, used);
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    });
+
+    const filename = buildFilenameBase("token-report");
+    XLSX.writeFile(wb, `${filename}.xlsx`);
+}
+
+async function exportImagesZip() {
+    if (calculatedResults.length === 0) {
+        setError("❌ 没有可导出的结果，请先计算");
+        return;
+    }
+    setError("");
+    const zip = new JSZip();
+    const host = document.createElement("div");
+    host.style.position = "fixed";
+    host.style.left = "-10000px";
+    host.style.top = "0";
+    host.style.width = "920px";
+    host.style.background = "#ffffff";
+    host.style.padding = "20px";
+    document.body.appendChild(host);
+
+    const usedNames = new Set();
+    try {
+        for (let i = 0; i < calculatedResults.length; i++) {
+            const r = calculatedResults[i];
+            const node = document.createElement("div");
+            node.className = "capture-area";
+            node.innerHTML = buildCaptureHTML(r);
+            host.innerHTML = "";
+            host.appendChild(node);
+            const canvas = await html2canvas(node, { scale: 2, backgroundColor: "#ffffff" });
+            const dataUrl = canvas.toDataURL("image/png");
+            const base64 = dataUrl.split(",")[1];
+
+            let base = buildFilenameBase(r.nameKey);
+            let fname = `${base}.png`;
+            let suffix = 1;
+            while (usedNames.has(fname)) fname = `${base}_${suffix++}.png`;
+            usedNames.add(fname);
+            zip.file(fname, base64, { base64: true });
+        }
+    } finally {
+        document.body.removeChild(host);
+    }
+
+    const blob = await zip.generateAsync({ type: "blob" });
+    const link = document.createElement("a");
+    link.download = `${buildFilenameBase("token-reports")}.zip`;
+    link.href = URL.createObjectURL(blob);
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+}
+</script>
+
+</body>
+</html>
