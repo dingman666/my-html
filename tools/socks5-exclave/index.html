@@ -4,7 +4,6 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>SOCKS5 转二维码 (Exclave 可扫码导入)</title>
-<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <style>
   * { box-sizing: border-box; }
   body {
@@ -192,7 +191,7 @@
   <h1>SOCKS5 → 二维码 (Exclave 扫码导入)</h1>
   <p class="sub">
     输入格式：<code>IP:端口:用户名:密码</code>，每行一个，可以一次粘多条。<br/>
-    多条节点会合并到 <b>一张</b> 二维码里（≤ 15 条单张；超过 15 条自动翻页拆成多张）。<br/>
+    多条节点会合并到 <b>一张</b> 二维码里（≤ 15 条单张；超过 15 条自动翻页成多张）。<br/>
     用 <b>Exclave</b> → 右上角「+」→「扫描二维码」逐张扫描即可。
   </p>
 
@@ -213,178 +212,7 @@
   <div class="results" id="results"></div>
 </div>
 
-<script>
-function parseLine(line) {
-  const s = line.trim();
-  if (!s) return null;
-  const parts = s.split(':');
-  if (parts.length === 2) {
-    return { host: parts[0], port: parts[1], user: '', pass: '' };
-  }
-  if (parts.length === 4) {
-    return { host: parts[0], port: parts[1], user: parts[2], pass: parts[3] };
-  }
-  return { error: '格式不正确：' + s };
-}
-
-function buildUri(node, tag) {
-  const auth = node.user
-    ? encodeURIComponent(node.user) + ':' + encodeURIComponent(node.pass) + '@'
-    : '';
-  const name = tag ? '#' + encodeURIComponent(tag) : '';
-  return 'socks5://' + auth + node.host + ':' + node.port + name;
-}
-
-const PAGE_SIZE = 15;
-
-function toUtf8(s) {
-  return unescape(encodeURIComponent(s));
-}
-
-function drawQR(container, text) {
-  container.innerHTML = '';
-  const data = toUtf8(text);
-  let qr = null;
-  for (const ecl of ['L', 'M']) {
-    try {
-      const candidate = qrcode(0, ecl);
-      candidate.addData(data, 'Byte');
-      candidate.make();
-      qr = candidate;
-      break;
-    } catch (e) { /* try next level */ }
-  }
-  if (!qr) {
-    container.innerHTML = '<div class="err">内容过长无法生成二维码，请减少节点数</div>';
-    return;
-  }
-  const len = text.length;
-  let cell = 6;
-  if (len > 300)  cell = 5;
-  if (len > 600)  cell = 4;
-  if (len > 1000) cell = 3;
-  container.innerHTML = qr.createSvgTag({ cellSize: cell, margin: 4, scalable: true });
-}
-
-function render() {
-  const results = document.getElementById('results');
-  results.innerHTML = '';
-  const lines = document.getElementById('input').value.split(/\r?\n/);
-  const prefix = document.getElementById('tagPrefix').value.trim();
-  const validLines = lines.filter(l => l.trim());
-
-  const uris = [];
-  validLines.forEach((line, i) => {
-    const node = parseLine(line);
-    if (node.error) {
-      const card = document.createElement('div');
-      card.className = 'card';
-      card.innerHTML = '<div class="err">' + node.error + '</div>';
-      results.appendChild(card);
-      return;
-    }
-    const tag = prefix
-      ? (validLines.length > 1 ? prefix + '-' + (i + 1) : prefix)
-      : (node.host + ':' + node.port);
-    uris.push(buildUri(node, tag));
-  });
-
-  if (!uris.length) {
-    if (!results.children.length) {
-      results.innerHTML = '<div class="card"><div class="err">请输入至少一条节点</div></div>';
-    }
-    return;
-  }
-
-  const pages = [];
-  for (let i = 0; i < uris.length; i += PAGE_SIZE) {
-    pages.push(uris.slice(i, i + PAGE_SIZE));
-  }
-  const total = pages.length;
-
-  if (uris.length > PAGE_SIZE) {
-    const warn = document.createElement('div');
-    warn.className = 'warn';
-    warn.innerHTML = '⚠️ 共 <b>' + uris.length + '</b> 条节点，超过单张二维码建议容量（每张 ' + PAGE_SIZE + ' 条），已自动分成 <b>' + total + '</b> 张。请用 Exclave 翻页逐张扫描导入。';
-    results.appendChild(warn);
-  }
-
-  const card = document.createElement('div');
-  card.className = 'card';
-
-  const head = document.createElement('div');
-  head.className = 'card-head';
-  const title = document.createElement('div');
-  title.className = 'card-title';
-  head.appendChild(title);
-  const copyBtn = document.createElement('button');
-  copyBtn.className = 'copy-btn';
-  head.appendChild(copyBtn);
-  card.appendChild(head);
-
-  const qrBox = document.createElement('div');
-  qrBox.className = 'qr';
-  const qrInner = document.createElement('div');
-  qrBox.appendChild(qrInner);
-  card.appendChild(qrBox);
-
-  const pager = document.createElement('div');
-  pager.className = 'pager';
-  const prevBtn = document.createElement('button');
-  prevBtn.className = 'page-btn';
-  prevBtn.textContent = '← 上一页';
-  const pageInfo = document.createElement('span');
-  pageInfo.className = 'page-info';
-  const nextBtn = document.createElement('button');
-  nextBtn.className = 'page-btn';
-  nextBtn.textContent = '下一页 →';
-  pager.appendChild(prevBtn);
-  pager.appendChild(pageInfo);
-  pager.appendChild(nextBtn);
-  if (total > 1) card.appendChild(pager);
-
-  const uriEl = document.createElement('div');
-  uriEl.className = 'uri';
-  card.appendChild(uriEl);
-
-  results.appendChild(card);
-
-  let current = 0;
-  function showPage(idx) {
-    current = idx;
-    const chunk = pages[idx];
-    const combined = chunk.join('\n');
-    title.innerHTML = '合并二维码 <span style="color:#9ca3af;font-weight:400">('
-      + chunk.length + ' 个节点'
-      + (total > 1 ? ' · 第 ' + (idx + 1) + ' / ' + total + ' 页' : '')
-      + ')</span>';
-    pageInfo.textContent = (idx + 1) + ' / ' + total;
-    prevBtn.disabled = idx === 0;
-    nextBtn.disabled = idx === total - 1;
-    drawQR(qrInner, combined);
-    uriEl.textContent = combined;
-    copyBtn.textContent = total > 1 ? '复制本页链接' : '复制全部链接';
-    copyBtn.onclick = () => {
-      navigator.clipboard.writeText(combined).then(() => {
-        const orig = copyBtn.textContent;
-        copyBtn.textContent = '已复制 ✓';
-        setTimeout(() => copyBtn.textContent = orig, 1200);
-      });
-    };
-  }
-  prevBtn.onclick = () => { if (current > 0) showPage(current - 1); };
-  nextBtn.onclick = () => { if (current < total - 1) showPage(current + 1); };
-  showPage(0);
-}
-
-document.getElementById('genBtn').onclick = render;
-document.getElementById('clearBtn').onclick = () => {
-  document.getElementById('input').value = '';
-  document.getElementById('results').innerHTML = '';
-};
-
-document.getElementById('input').value = '168.143.72.49:35553:kZUthFp2:i19Sxl6T5j';
-render();
-</script>
+<script src="./qrcode.min.js"></script>
+<script src="./app.js"></script>
 </body>
 </html>
