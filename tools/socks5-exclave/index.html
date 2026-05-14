@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SOCKS5 转二维码 (Exclave 可扫码导入)</title>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    margin: 0;
+    padding: 24px 12px;
+    color: #1f2937;
+  }
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  }
+  h1 {
+    margin: 0 0 6px;
+    font-size: 22px;
+    color: #111827;
+  }
+  .sub {
+    color: #6b7280;
+    font-size: 13px;
+    margin-bottom: 22px;
+    line-height: 1.6;
+  }
+  label {
+    display: block;
+    font-size: 13px;
+    color: #374151;
+    margin: 14px 0 6px;
+    font-weight: 600;
+  }
+  textarea, input[type=text] {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  textarea:focus, input[type=text]:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99,102,241,.15);
+  }
+  textarea { min-height: 84px; resize: vertical; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .row > * { flex: 1; min-width: 180px; }
+  button {
+    margin-top: 16px;
+    padding: 11px 18px;
+    background: #4f46e5;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  button:hover { background: #4338ca; }
+  button.ghost {
+    background: #f3f4f6;
+    color: #374151;
+  }
+  button.ghost:hover { background: #e5e7eb; }
+  .results {
+    margin-top: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .card {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 16px;
+    background: #fafafa;
+  }
+  .card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .card-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: #111827;
+  }
+  .qr {
+    display: flex;
+    justify-content: center;
+    padding: 12px;
+    background: #fff;
+    border-radius: 8px;
+  }
+  .uri {
+    word-break: break-all;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12.5px;
+    background: #fff;
+    padding: 10px 12px;
+    border-radius: 6px;
+    color: #374151;
+    border: 1px dashed #e5e7eb;
+    margin-top: 10px;
+  }
+  .copy-btn {
+    margin: 0;
+    padding: 6px 12px;
+    font-size: 12px;
+    background: #fff;
+    color: #4f46e5;
+    border: 1px solid #c7d2fe;
+  }
+  .copy-btn:hover { background: #eef2ff; }
+  .err {
+    color: #dc2626;
+    font-size: 12px;
+    margin-top: 6px;
+  }
+  .hint {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 4px;
+  }
+  code {
+    background: #f3f4f6;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 12.5px;
+  }
+</style>
+  <link rel="icon" href="./icon.png">
+</head>
+<body>
+<div class="wrap">
+  <h1>SOCKS5 → 二维码 (Exclave 扫码导入)</h1>
+  <p class="sub">
+    输入格式：<code>IP:端口:用户名:密码</code>，每行一个，可以一次粘多条。<br/>
+    多条节点会合并到 <b>一张</b> 二维码里。用 <b>Exclave</b> → 右上角「+」→「扫描二维码」一次性导入全部。
+  </p>
+
+  <label>SOCKS5 节点</label>
+  <textarea id="input" placeholder="168.143.72.49:35553:kZUthFp2:i19Sxl6T5j&#10;另一条:端口:用户:密码"></textarea>
+  <div class="hint">支持 <code>IP:PORT:USER:PASS</code>，也支持无认证的 <code>IP:PORT</code></div>
+
+  <div class="row">
+    <div>
+      <label>备注名前缀（可选）</label>
+      <input type="text" id="tagPrefix" placeholder="例如 MOMOA" />
+    </div>
+  </div>
+
+  <button id="genBtn">生成二维码</button>
+  <button class="ghost" id="clearBtn">清空</button>
+
+  <div class="results" id="results"></div>
+</div>
+
+<script>
+function parseLine(line) {
+  const s = line.trim();
+  if (!s) return null;
+  const parts = s.split(':');
+  if (parts.length === 2) {
+    return { host: parts[0], port: parts[1], user: '', pass: '' };
+  }
+  if (parts.length === 4) {
+    return { host: parts[0], port: parts[1], user: parts[2], pass: parts[3] };
+  }
+  return { error: '格式不正确：' + s };
+}
+
+function buildUri(node, tag) {
+  const auth = node.user
+    ? encodeURIComponent(node.user) + ':' + encodeURIComponent(node.pass) + '@'
+    : '';
+  const name = tag ? '#' + encodeURIComponent(tag) : '';
+  return 'socks5://' + auth + node.host + ':' + node.port + name;
+}
+
+function render() {
+  const results = document.getElementById('results');
+  results.innerHTML = '';
+  const lines = document.getElementById('input').value.split(/\r?\n/);
+  const prefix = document.getElementById('tagPrefix').value.trim();
+  const validLines = lines.filter(l => l.trim());
+
+  const uris = [];
+  validLines.forEach((line, i) => {
+    const node = parseLine(line);
+    if (node.error) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = '<div class="err">' + node.error + '</div>';
+      results.appendChild(card);
+      return;
+    }
+    const tag = prefix
+      ? (validLines.length > 1 ? prefix + '-' + (i + 1) : prefix)
+      : (node.host + ':' + node.port);
+    uris.push(buildUri(node, tag));
+  });
+
+  if (!uris.length) {
+    if (!results.children.length) {
+      results.innerHTML = '<div class="card"><div class="err">请输入至少一条节点</div></div>';
+    }
+    return;
+  }
+
+  const combined = uris.join('\n');
+
+  const card = document.createElement('div');
+  card.className = 'card';
+
+  const head = document.createElement('div');
+  head.className = 'card-head';
+  head.innerHTML = '<div class="card-title">合并二维码 <span style="color:#9ca3af;font-weight:400">(' + uris.length + ' 个节点)</span></div>';
+
+  const copyBtn = document.createElement('button');
+  copyBtn.className = 'copy-btn';
+  copyBtn.textContent = '复制全部链接';
+  copyBtn.onclick = () => {
+    navigator.clipboard.writeText(combined).then(() => {
+      copyBtn.textContent = '已复制 ✓';
+      setTimeout(() => copyBtn.textContent = '复制全部链接', 1200);
+    });
+  };
+  head.appendChild(copyBtn);
+  card.appendChild(head);
+
+  const qrBox = document.createElement('div');
+  qrBox.className = 'qr';
+  const qrInner = document.createElement('div');
+  qrBox.appendChild(qrInner);
+  card.appendChild(qrBox);
+
+  const uriEl = document.createElement('div');
+  uriEl.className = 'uri';
+  uriEl.textContent = combined;
+  card.appendChild(uriEl);
+
+  results.appendChild(card);
+
+  const len = combined.length;
+  let size = 280;
+  if (len > 200)  size = 340;
+  if (len > 400)  size = 420;
+  if (len > 700)  size = 520;
+  if (len > 1100) size = 620;
+
+  try {
+    new QRCode(qrInner, {
+      text: combined,
+      width: size,
+      height: size,
+      correctLevel: QRCode.CorrectLevel.L
+    });
+  } catch (e) {
+    qrInner.innerHTML = '<div class="err">节点太多，二维码容量不足，请分批生成（建议每张 ≤ 15 条）</div>';
+  }
+}
+
+document.getElementById('genBtn').onclick = render;
+document.getElementById('clearBtn').onclick = () => {
+  document.getElementById('input').value = '';
+  document.getElementById('results').innerHTML = '';
+};
+
+document.getElementById('input').value = '168.143.72.49:35553:kZUthFp2:i19Sxl6T5j';
+render();
+</script>
+</body>
+</html>
