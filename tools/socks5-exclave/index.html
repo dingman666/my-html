@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>SOCKS5 转二维码 (Exclave 可扫码导入)</title>
-<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <style>
   * { box-sizing: border-box; }
   body {
@@ -142,6 +142,48 @@
     border-radius: 4px;
     font-size: 12.5px;
   }
+  .warn {
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    color: #9a3412;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .pager {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 12px;
+  }
+  .page-btn {
+    margin: 0;
+    padding: 6px 14px;
+    font-size: 13px;
+    background: #eef2ff;
+    color: #4338ca;
+    border: 1px solid #c7d2fe;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .page-btn:hover:not(:disabled) { background: #e0e7ff; }
+  .page-btn:disabled {
+    background: #f3f4f6;
+    color: #9ca3af;
+    border-color: #e5e7eb;
+    cursor: not-allowed;
+  }
+  .page-info {
+    font-size: 13px;
+    color: #374151;
+    font-weight: 600;
+    min-width: 60px;
+    text-align: center;
+  }
+  .qr svg { display: block; }
 </style>
   <link rel="icon" href="./icon.png">
 </head>
@@ -150,7 +192,8 @@
   <h1>SOCKS5 → 二维码 (Exclave 扫码导入)</h1>
   <p class="sub">
     输入格式：<code>IP:端口:用户名:密码</code>，每行一个，可以一次粘多条。<br/>
-    多条节点会合并到 <b>一张</b> 二维码里。用 <b>Exclave</b> → 右上角「+」→「扫描二维码」一次性导入全部。
+    多条节点会合并到 <b>一张</b> 二维码里（≤ 15 条单张；超过 15 条自动翻页拆成多张）。<br/>
+    用 <b>Exclave</b> → 右上角「+」→「扫描二维码」逐张扫描即可。
   </p>
 
   <label>SOCKS5 节点</label>
@@ -192,6 +235,37 @@ function buildUri(node, tag) {
   return 'socks5://' + auth + node.host + ':' + node.port + name;
 }
 
+const PAGE_SIZE = 15;
+
+function toUtf8(s) {
+  return unescape(encodeURIComponent(s));
+}
+
+function drawQR(container, text) {
+  container.innerHTML = '';
+  const data = toUtf8(text);
+  let qr = null;
+  for (const ecl of ['L', 'M']) {
+    try {
+      const candidate = qrcode(0, ecl);
+      candidate.addData(data, 'Byte');
+      candidate.make();
+      qr = candidate;
+      break;
+    } catch (e) { /* try next level */ }
+  }
+  if (!qr) {
+    container.innerHTML = '<div class="err">内容过长无法生成二维码，请减少节点数</div>';
+    return;
+  }
+  const len = text.length;
+  let cell = 6;
+  if (len > 300)  cell = 5;
+  if (len > 600)  cell = 4;
+  if (len > 1000) cell = 3;
+  container.innerHTML = qr.createSvgTag({ cellSize: cell, margin: 4, scalable: true });
+}
+
 function render() {
   const results = document.getElementById('results');
   results.innerHTML = '';
@@ -222,24 +296,29 @@ function render() {
     return;
   }
 
-  const combined = uris.join('\n');
+  const pages = [];
+  for (let i = 0; i < uris.length; i += PAGE_SIZE) {
+    pages.push(uris.slice(i, i + PAGE_SIZE));
+  }
+  const total = pages.length;
+
+  if (uris.length > PAGE_SIZE) {
+    const warn = document.createElement('div');
+    warn.className = 'warn';
+    warn.innerHTML = '⚠️ 共 <b>' + uris.length + '</b> 条节点，超过单张二维码建议容量（每张 ' + PAGE_SIZE + ' 条），已自动分成 <b>' + total + '</b> 张。请用 Exclave 翻页逐张扫描导入。';
+    results.appendChild(warn);
+  }
 
   const card = document.createElement('div');
   card.className = 'card';
 
   const head = document.createElement('div');
   head.className = 'card-head';
-  head.innerHTML = '<div class="card-title">合并二维码 <span style="color:#9ca3af;font-weight:400">(' + uris.length + ' 个节点)</span></div>';
-
+  const title = document.createElement('div');
+  title.className = 'card-title';
+  head.appendChild(title);
   const copyBtn = document.createElement('button');
   copyBtn.className = 'copy-btn';
-  copyBtn.textContent = '复制全部链接';
-  copyBtn.onclick = () => {
-    navigator.clipboard.writeText(combined).then(() => {
-      copyBtn.textContent = '已复制 ✓';
-      setTimeout(() => copyBtn.textContent = '复制全部链接', 1200);
-    });
-  };
   head.appendChild(copyBtn);
   card.appendChild(head);
 
@@ -249,30 +328,53 @@ function render() {
   qrBox.appendChild(qrInner);
   card.appendChild(qrBox);
 
+  const pager = document.createElement('div');
+  pager.className = 'pager';
+  const prevBtn = document.createElement('button');
+  prevBtn.className = 'page-btn';
+  prevBtn.textContent = '← 上一页';
+  const pageInfo = document.createElement('span');
+  pageInfo.className = 'page-info';
+  const nextBtn = document.createElement('button');
+  nextBtn.className = 'page-btn';
+  nextBtn.textContent = '下一页 →';
+  pager.appendChild(prevBtn);
+  pager.appendChild(pageInfo);
+  pager.appendChild(nextBtn);
+  if (total > 1) card.appendChild(pager);
+
   const uriEl = document.createElement('div');
   uriEl.className = 'uri';
-  uriEl.textContent = combined;
   card.appendChild(uriEl);
 
   results.appendChild(card);
 
-  const len = combined.length;
-  let size = 280;
-  if (len > 200)  size = 340;
-  if (len > 400)  size = 420;
-  if (len > 700)  size = 520;
-  if (len > 1100) size = 620;
-
-  try {
-    new QRCode(qrInner, {
-      text: combined,
-      width: size,
-      height: size,
-      correctLevel: QRCode.CorrectLevel.L
-    });
-  } catch (e) {
-    qrInner.innerHTML = '<div class="err">节点太多，二维码容量不足，请分批生成（建议每张 ≤ 15 条）</div>';
+  let current = 0;
+  function showPage(idx) {
+    current = idx;
+    const chunk = pages[idx];
+    const combined = chunk.join('\n');
+    title.innerHTML = '合并二维码 <span style="color:#9ca3af;font-weight:400">('
+      + chunk.length + ' 个节点'
+      + (total > 1 ? ' · 第 ' + (idx + 1) + ' / ' + total + ' 页' : '')
+      + ')</span>';
+    pageInfo.textContent = (idx + 1) + ' / ' + total;
+    prevBtn.disabled = idx === 0;
+    nextBtn.disabled = idx === total - 1;
+    drawQR(qrInner, combined);
+    uriEl.textContent = combined;
+    copyBtn.textContent = total > 1 ? '复制本页链接' : '复制全部链接';
+    copyBtn.onclick = () => {
+      navigator.clipboard.writeText(combined).then(() => {
+        const orig = copyBtn.textContent;
+        copyBtn.textContent = '已复制 ✓';
+        setTimeout(() => copyBtn.textContent = orig, 1200);
+      });
+    };
   }
+  prevBtn.onclick = () => { if (current > 0) showPage(current - 1); };
+  nextBtn.onclick = () => { if (current < total - 1) showPage(current + 1); };
+  showPage(0);
 }
 
 document.getElementById('genBtn').onclick = render;
