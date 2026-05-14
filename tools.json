@@ -25,6 +25,12 @@
       "name": "AWS渠道利润计算工具",
       "path": "tools/aws-ji-suan/",
       "icon": "tools/aws-ji-suan/icon.png"
+    },
+    {
+      "id": "socks5-exclave",
+      "name": "SOCKS5 转二维码 (Exclave 可扫码导入)",
+      "path": "tools/socks5-exclave/",
+      "icon": "tools/socks5-exclave/icon.png"
     }
   ]
 }
