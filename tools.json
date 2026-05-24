@@ -31,6 +31,12 @@
       "name": "SOCKS5 转二维码 (Exclave 可扫码导入)",
       "path": "tools/socks5-exclave/",
       "icon": "tools/socks5-exclave/icon.png"
+    },
+    {
+      "id": "aws-ip",
+      "name": "AWS小助理IP格式修改器",
+      "path": "tools/aws-ip/",
+      "icon": "tools/aws-ip/icon.png"
     }
   ]
 }
