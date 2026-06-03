@@ -37,6 +37,12 @@
       "name": "AWS小助理IP格式修改器",
       "path": "tools/aws-ip/",
       "icon": "tools/aws-ip/icon.png"
+    },
+    {
+      "id": "tool",
+      "name": "金额计算工具",
+      "path": "tools/tool/",
+      "icon": "tools/tool/icon.png"
     }
   ]
 }
