@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>金额计算工具</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    color: #fff;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 480px;
+  }
+
+  /* ===== 标题 ===== */
+  .title {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .title h1 {
+    font-size: 28px;
+    font-weight: 700;
+    background: linear-gradient(90deg, #f7971e, #ffd200);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 2px;
+  }
+  .title p {
+    font-size: 13px;
+    color: rgba(255,255,255,.45);
+    margin-top: 6px;
+  }
+
+  /* ===== 主卡片 ===== */
+  .card {
+    background: rgba(255,255,255,.06);
+    backdrop-filter: blur(18px);
+    border-radius: 20px;
+    padding: 32px 28px 28px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.35);
+    border: 1px solid rgba(255,255,255,.08);
+  }
+
+  /* ===== 输入区 ===== */
+  .input-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+
+  .input-group label {
+    font-size: 14px;
+    color: rgba(255,255,255,.6);
+    white-space: nowrap;
+  }
+
+  .input-group input[type="number"] {
+    flex: 1;
+    min-width: 120px;
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 20px;
+    color: #fff;
+    outline: none;
+    transition: border .2s, box-shadow .2s;
+    -moz-appearance: textfield;
+  }
+  .input-group input[type="number"]:focus {
+    border-color: #ffd200;
+    box-shadow: 0 0 12px rgba(255,210,0,.25);
+  }
+  .input-group input[type="number"]::-webkit-inner-spin-button,
+  .input-group input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .input-group select {
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-size: 18px;
+    color: #ffd200;
+    font-weight: 700;
+    outline: none;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .input-group .operator-select {
+    min-width: 56px;
+    text-align: center;
+  }
+
+  .input-group .num-input {
+    width: 80px;
+    flex: unset;
+    text-align: center;
+    font-size: 18px;
+    padding: 10px 8px;
+  }
+
+  /* ===== 结果区 ===== */
+  .result-area {
+    background: rgba(0,0,0,.25);
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 20px;
+    min-height: 90px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .result-area .expression {
+    font-size: 15px;
+    color: rgba(255,255,255,.5);
+    word-break: break-all;
+    margin-bottom: 8px;
+    min-height: 22px;
+  }
+
+  .result-area .result {
+    font-size: 36px;
+    font-weight: 800;
+    color: #ffd200;
+    word-break: break-all;
+    letter-spacing: 1px;
+  }
+
+  .result-area .placeholder {
+    font-size: 16px;
+    color: rgba(255,255,255,.25);
+  }
+
+  /* ===== 按钮 ===== */
+  .btn-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .btn {
+    flex: 1;
+    padding: 14px 0;
+    border: none;
+    border-radius: 14px;
+    font-size: 17px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform .15s, box-shadow .2s, opacity .2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    user-select: none;
+  }
+  .btn:active { transform: scale(.96); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #f7971e, #ffd200);
+    color: #302b63;
+    box-shadow: 0 4px 15px rgba(255,210,0,.3);
+  }
+  .btn-primary:hover:not(:disabled) { box-shadow: 0 6px 22px rgba(255,210,0,.45); }
+
+  .btn-outline {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,.2);
+    color: #fff;
+  }
+  .btn-outline:hover:not(:disabled) { border-color: rgba(255,255,255,.45); background: rgba(255,255,255,.05); }
+
+  .btn-danger {
+    background: rgba(255,60,60,.15);
+    border: 1px solid rgba(255,60,60,.3);
+    color: #ff6b6b;
+  }
+  .btn-danger:hover:not(:disabled) { background: rgba(255,60,60,.25); }
+
+  .btn-copy {
+    background: linear-gradient(135deg, #11998e, #38ef7d);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(56,239,125,.25);
+  }
+  .btn-copy:hover:not(:disabled) { box-shadow: 0 6px 22px rgba(56,239,125,.4); }
+
+  .btn-copy.copied {
+    background: linear-gradient(135deg, #56ab2f, #a8e063);
+    pointer-events: none;
+  }
+
+  .btn-icon { font-size: 20px; line-height: 1; }
+  .btn-text { font-size: 15px; }
+
+  /* ===== Toast ===== */
+  .toast {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(.85);
+    background: rgba(0,0,0,.8);
+    backdrop-filter: blur(10px);
+    padding: 14px 32px;
+    border-radius: 12px;
+    font-size: 15px;
+    color: #fff;
+    opacity: 0;
+    transition: opacity .25s, transform .25s;
+    z-index: 999;
+    pointer-events: none;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  /* ===== 历史记录 ===== */
+  .history-section {
+    margin-top: 24px;
+  }
+  .history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .history-header h3 {
+    font-size: 15px;
+    color: rgba(255,255,255,.5);
+    font-weight: 500;
+  }
+  .history-header .clear-btn {
+    font-size: 12px;
+    color: rgba(255,255,255,.35);
+    cursor: pointer;
+    background: none;
+    border: none;
+    color: inherit;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: background .2s;
+  }
+  .history-header .clear-btn:hover { background: rgba(255,255,255,.08); }
+
+  .history-list {
+    list-style: none;
+    max-height: 220px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,.15) transparent;
+  }
+  .history-list::-webkit-scrollbar { width: 4px; }
+  .history-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); border-radius: 4px; }
+
+  .history-list li {
+    padding: 10px 14px;
+    border-radius: 10px;
+    margin-bottom: 6px;
+    background: rgba(255,255,255,.03);
+    border: 1px solid rgba(255,255,255,.05);
+    cursor: pointer;
+    transition: background .2s, border .2s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .history-list li:hover {
+    background: rgba(255,255,255,.08);
+    border-color: rgba(255,255,255,.15);
+  }
+  .history-list li .expr {
+    font-size: 14px;
+    color: rgba(255,255,255,.7);
+    word-break: break-all;
+  }
+  .history-list li .val {
+    font-size: 16px;
+    font-weight: 700;
+    color: #ffd200;
+    white-space: nowrap;
+    margin-left: 12px;
+  }
+  .empty-tip {
+    text-align: center;
+    padding: 16px;
+    color: rgba(255,255,255,.2);
+    font-size: 13px;
+  }
+
+  /* ===== 高级模式 ===== */
+  .advanced-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .advanced-toggle .switch {
+    width: 40px; height: 22px;
+    background: rgba(255,255,255,.15);
+    border-radius: 11px;
+    position: relative;
+    transition: background .25s;
+  }
+  .advanced-toggle .switch::after {
+    content: '';
+    position: absolute;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    top: 3px; left: 3px;
+    transition: transform .25s;
+  }
+  .advanced-toggle.active .switch { background: #ffd200; }
+  .advanced-toggle.active .switch::after { transform: translateX(18px); }
+  .advanced-toggle span { font-size: 13px; color: rgba(255,255,255,.5); }
+
+  .advanced-panel { display: none; margin-bottom: 16px; }
+  .advanced-panel.show { display: block; animation: fadeIn .25s; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .divider {
+    width: 100%;
+    height: 1px;
+    background: rgba(255,255,255,.08);
+    margin: 18px 0;
+  }
+</style>
+  <link rel="icon" href="./icon.png">
+</head>
+<body>
+
+<div class="container">
+  <!-- 标题 -->
+  <div class="title">
+    <h1>💰 金额计算工具</h1>
+    <p>输入金额，自动计算 · 一键复制完整过程</p>
+  </div>
+
+  <!-- 主卡片 -->
+  <div class="card">
+    <!-- 第一行：金额输入 -->
+    <div class="input-group">
+      <label>金额</label>
+      <input type="number" id="amount" placeholder="请输入金额" autofocus>
+    </div>
+
+    <!-- 第二行：运算符 & 数值 -->
+    <div class="input-group">
+      <label>运算</label>
+      <select class="operator-select" id="operator">
+        <option value="*">×</option>
+        <option value="+">+</option>
+        <option value="-">−</option>
+        <option value="/">÷</option>
+      </select>
+      <input type="number" class="num-input" id="operand" value="0.5" step="any">
+    </div>
+
+    <!-- 高级模式开关 -->
+    <div class="advanced-toggle" id="advToggle">
+      <div class="switch"></div>
+      <span>高级模式（二次计算）</span>
+    </div>
+
+    <!-- 高级面板 -->
+    <div class="advanced-panel" id="advPanel">
+      <div class="input-group">
+        <label>再运算</label>
+        <select class="operator-select" id="operator2">
+          <option value="*">×</option>
+          <option value="+">+</option>
+          <option value="-">−</option>
+          <option value="/">÷</option>
+        </select>
+        <input type="number" class="num-input" id="operand2" value="" step="any" placeholder="数值">
+      </div>
+    </div>
+
+    <!-- 结果区 -->
+    <div class="result-area">
+      <div class="expression" id="expression"></div>
+      <div class="result" id="result">
+        <span class="placeholder">结果将在此显示</span>
+      </div>
+    </div>
+
+    <!-- 按钮 -->
+    <div class="btn-row">
+      <button class="btn btn-primary" id="calcBtn" disabled>
+        <span class="btn-icon">⚡</span>
+        <span class="btn-text">计算</span>
+      </button>
+      <button class="btn btn-copy" id="copyBtn" disabled>
+        <span class="btn-icon">📋</span>
+        <span class="btn-text">复制</span>
+      </button>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-danger" id="resetBtn">
+        <span class="btn-icon">🔄</span>
+        <span class="btn-text">重置</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 历史记录 -->
+  <div class="history-section">
+    <div class="history-header">
+      <h3>📜 计算历史</h3>
+      <button class="clear-btn" id="clearHistory">清空</button>
+    </div>
+    <ul class="history-list" id="historyList">
+      <li class="empty-tip">暂无记录</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  const amountInput  = $('amount');
+  const operatorSel  = $('operator');
+  const operandInput = $('operand');
+  const advToggle    = $('advToggle');
+  const advPanel     = $('advPanel');
+  const operator2Sel = $('operator2');
+  const operand2Input= $('operand2');
+  const calcBtn      = $('calcBtn');
+  const copyBtn      = $('copyBtn');
+  const resetBtn     = $('resetBtn');
+  const resultEl     = $('result');
+  const exprEl       = $('expression');
+  const historyList  = $('historyList');
+  const toastEl      = $('toast');
+
+  let history = JSON.parse(localStorage.getItem('calcHistory') || '[]');
+  let lastResult = null;
+  let lastExpression = '';
+
+  // ===== 高级模式切换 =====
+  advToggle.addEventListener('click', () => {
+    advToggle.classList.toggle('active');
+    advPanel.classList.toggle('show');
+  });
+
+  // ===== 输入监听 =====
+  function checkInputs() {
+    const hasAmount = amountInput.value !== '' && !isNaN(Number(amountInput.value));
+    const hasOp2 = !advPanel.classList.contains('show') ||
+                   (operand2Input.value !== '' && !isNaN(Number(operand2Input.value)));
+    calcBtn.disabled = !hasAmount || !hasOp2;
+  }
+
+  amountInput.addEventListener('input', checkInputs);
+  operandInput.addEventListener('input', checkInputs);
+  operand2Input.addEventListener('input', checkInputs);
+
+  // 回车计算
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !calcBtn.disabled) calc();
+  });
+
+  // ===== 计算 =====
+  function calc() {
+    const a = Number(amountInput.value);
+    const op = operatorSel.value;
+    const b = Number(operandInput.value);
+
+    let r = 0;
+    let expr = '';
+
+    // 符号显示
+    const opMap = { '*': '×', '+': '+', '-': '−', '/': '÷' };
+    const opChar = opMap[op] || op;
+
+    // 第一次运算
+    switch (op) {
+      case '*': r = a * b; break;
+      case '+': r = a + b; break;
+      case '-': r = a - b; break;
+      case '/': r = b === 0 ? NaN : a / b; break;
+    }
+    expr = `${a} ${opChar} ${b}`;
+
+    // 第二次运算
+    if (advPanel.classList.contains('show')) {
+      const op2 = operator2Sel.value;
+      const c = Number(operand2Input.value);
+      const op2Char = opMap[op2] || op2;
+      let r2 = 0;
+      switch (op2) {
+        case '*': r2 = r * c; break;
+        case '+': r2 = r + c; break;
+        case '-': r2 = r - c; break;
+        case '/': r2 = c === 0 ? NaN : r / c; break;
+      }
+      expr += ` ${op2Char} ${c}`;
+      r = r2;
+    }
+
+    if (isNaN(r)) {
+      resultEl.innerHTML = '<span style="color:#ff6b6b;font-size:20px">⚠️ 计算错误（除数不能为0）</span>';
+      exprEl.textContent = '';
+      copyBtn.disabled = true;
+      return;
+    }
+
+    // 格式化数字
+    const format = n => {
+      if (Number.isInteger(n)) return n.toLocaleString();
+      const s = n.toString();
+      const parts = s.split('.');
+      parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      return parts.join('.');
+    };
+
+    const formatted = format(r);
+    resultEl.textContent = formatted;
+    exprEl.textContent = `${expr} =`;
+    lastResult = r;
+    lastExpression = expr;
+
+    copyBtn.disabled = false;
+
+    // 保存到历史
+    history.unshift({ expr, result: r, formatted });
+    if (history.length > 20) history.pop();
+    localStorage.setItem('calcHistory', JSON.stringify(history));
+    renderHistory();
+  }
+
+  calcBtn.addEventListener('click', calc);
+
+  // ===== 复制 =====
+  copyBtn.addEventListener('click', () => {
+    if (lastResult === null) return;
+    const text = `${lastExpression} = ${lastResult}`;
+    navigator.clipboard.writeText(text).then(() => {
+      copyBtn.classList.add('copied');
+      copyBtn.innerHTML = '<span class="btn-icon">✅</span><span class="btn-text">已复制</span>';
+      showToast('已复制到剪贴板');
+      setTimeout(() => {
+        copyBtn.classList.remove('copied');
+        copyBtn.innerHTML = '<span class="btn-icon">📋</span><span class="btn-text">复制</span>';
+      }, 1500);
+    });
+  });
+
+  // ===== 重置 =====
+  resetBtn.addEventListener('click', () => {
+    amountInput.value = '';
+    operandInput.value = '0.5';
+    operand2Input.value = '';
+    operatorSel.value = '*';
+    operator2Sel.value = '*';
+    resultEl.innerHTML = '<span class="placeholder">结果将在此显示</span>';
+    exprEl.textContent = '';
+    copyBtn.disabled = true;
+    calcBtn.disabled = true;
+    lastResult = null;
+    lastExpression = '';
+    advToggle.classList.remove('active');
+    advPanel.classList.remove('show');
+    amountInput.focus();
+  });
+
+  // ===== Toast =====
+  function showToast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    setTimeout(() => toastEl.classList.remove('show'), 1500);
+  }
+
+  // ===== 历史记录 =====
+  function renderHistory() {
+    if (history.length === 0) {
+      historyList.innerHTML = '<li class="empty-tip">暂无记录</li>';
+      return;
+    }
+    historyList.innerHTML = history.map((h, i) =>
+      `<li data-index="${i}">
+         <span class="expr">${h.expr} =</span>
+         <span class="val">${h.formatted}</span>
+       </li>`
+    ).join('');
+    // 点击回填
+    historyList.querySelectorAll('li').forEach(li => {
+      li.addEventListener('click', () => {
+        const h = history[li.dataset.index];
+        // 简单回填：解析表达式
+        const parts = h.expr.split(' ');
+        amountInput.value = parts[0];
+        // 不回填运算符和数值，避免复杂解析
+        showToast('已回填金额');
+        amountInput.focus();
+      });
+    });
+  }
+
+  $('clearHistory').addEventListener('click', () => {
+    history = [];
+    localStorage.removeItem('calcHistory');
+    renderHistory();
+  });
+
+  // ===== 初始化 =====
+  operandInput.value = '0.5';
+  operatorSel.value = '*';
+  renderHistory();
+</script>
+</body>
+</html>
