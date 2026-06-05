@@ -51,6 +51,24 @@
         display: flex;
         gap: 10px;
         flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .format-select {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+    }
+
+    select {
+        padding: 10px 14px;
+        font-size: 14px;
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+        background: #fff;
+        color: var(--text);
+        cursor: pointer;
     }
 
     button {
@@ -120,6 +138,16 @@
 165.254.37.117:36377:QYlwfOYd:4B5xPczPy9"></textarea>
 
     <div class="buttons">
+        <label class="format-select">
+            协议格式：
+            <select id="protocol" onchange="convert()">
+                <option value="http">http</option>
+                <option value="https">https</option>
+                <option value="socks5">socks5</option>
+                <option value="socks5h">socks5h</option>
+                <option value="socks4">socks4</option>
+            </select>
+        </label>
         <button onclick="convert()">🚀 开始转换</button>
         <button onclick="copyAll()">📋 一键复制全部</button>
     </div>
@@ -136,6 +164,7 @@ function convert() {
     const input = document.getElementById("input").value.trim();
     const lines = input.split(/\r?\n/);
     const output = document.getElementById("output");
+    const protocol = document.getElementById("protocol").value;
     output.innerHTML = "";
 
     let index = 1;
@@ -150,7 +179,7 @@ function convert() {
         }
 
         const [ip, port, user, pass] = parts;
-        const result = `http://${user}:${pass}@${ip}:${port}`;
+        const result = `${protocol}://${user}:${pass}@${ip}:${port}`;
 
         const div = document.createElement("div");
         div.className = "line";
