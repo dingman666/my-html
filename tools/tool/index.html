@@ -13,8 +13,8 @@
     min-height: 100vh;
     display: flex;
     justify-content: center;
-    align-items: center;
-    padding: 20px;
+    align-items: flex-start;
+    padding: 24px 20px 60px;
     color: #fff;
   }
 
@@ -26,13 +26,14 @@
   /* ===== 标题 ===== */
   .title {
     text-align: center;
-    margin-bottom: 32px;
+    margin-bottom: 28px;
   }
   .title h1 {
     font-size: 28px;
     font-weight: 700;
     background: linear-gradient(90deg, #f7971e, #ffd200);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     letter-spacing: 2px;
   }
@@ -47,7 +48,7 @@
     background: rgba(255,255,255,.06);
     backdrop-filter: blur(18px);
     border-radius: 20px;
-    padding: 32px 28px 28px;
+    padding: 28px 24px 24px;
     box-shadow: 0 8px 32px rgba(0,0,0,.35);
     border: 1px solid rgba(255,255,255,.08);
   }
@@ -57,7 +58,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-bottom: 18px;
+    margin-bottom: 14px;
     flex-wrap: wrap;
   }
 
@@ -65,11 +66,12 @@
     font-size: 14px;
     color: rgba(255,255,255,.6);
     white-space: nowrap;
+    min-width: 40px;
   }
 
   .input-group input[type="number"] {
     flex: 1;
-    min-width: 120px;
+    min-width: 110px;
     background: rgba(255,255,255,.08);
     border: 1px solid rgba(255,255,255,.15);
     border-radius: 12px;
@@ -79,6 +81,7 @@
     outline: none;
     transition: border .2s, box-shadow .2s;
     -moz-appearance: textfield;
+    appearance: textfield;
   }
   .input-group input[type="number"]:focus {
     border-color: #ffd200;
@@ -103,26 +106,121 @@
     -webkit-appearance: none;
     appearance: none;
   }
+  .input-group select option { background: #24243e; color: #ffd200; }
 
-  .input-group .operator-select {
+  .operator-select {
     min-width: 56px;
     text-align: center;
   }
 
-  .input-group .num-input {
-    width: 80px;
-    flex: unset;
+  .num-input {
+    flex: 1;
+    min-width: 90px;
     text-align: center;
-    font-size: 18px;
-    padding: 10px 8px;
+    font-size: 18px !important;
+    padding: 10px 8px !important;
   }
+
+  /* ===== 计算步骤行 ===== */
+  .step-row {
+    position: relative;
+    animation: fadeIn .25s;
+  }
+  .step-row .remove-step {
+    background: rgba(255,60,60,.12);
+    border: 1px solid rgba(255,60,60,.28);
+    color: #ff6b6b;
+    width: 38px;
+    height: 42px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    flex: none;
+    transition: background .2s;
+  }
+  .step-row .remove-step:hover { background: rgba(255,60,60,.25); }
+
+  .step-row .pct-toggle {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    flex: none;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 700;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.15);
+    color: rgba(255,255,255,.5);
+    transition: all .2s;
+  }
+  .step-row .pct-toggle:hover { border-color: rgba(255,210,0,.4); color: #ffd200; }
+  .step-row .pct-toggle.active {
+    background: linear-gradient(135deg, #f7971e, #ffd200);
+    border-color: transparent;
+    color: #302b63;
+  }
+
+  .add-step-btn {
+    width: 100%;
+    padding: 11px 0;
+    background: rgba(255,255,255,.05);
+    border: 1px dashed rgba(255,255,255,.2);
+    border-radius: 12px;
+    color: rgba(255,255,255,.6);
+    font-size: 14px;
+    cursor: pointer;
+    margin-bottom: 16px;
+    transition: background .2s, border-color .2s, color .2s;
+  }
+  .add-step-btn:hover:not(:disabled) {
+    background: rgba(255,255,255,.09);
+    border-color: rgba(255,210,0,.4);
+    color: #ffd200;
+  }
+  .add-step-btn:disabled { opacity: .35; cursor: not-allowed; }
+
+  /* ===== 选项栏 ===== */
+  .options-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .opt-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .opt-toggle .switch {
+    width: 38px; height: 21px;
+    background: rgba(255,255,255,.15);
+    border-radius: 11px;
+    position: relative;
+    transition: background .25s;
+    flex: none;
+  }
+  .opt-toggle .switch::after {
+    content: '';
+    position: absolute;
+    width: 15px; height: 15px;
+    border-radius: 50%;
+    background: #fff;
+    top: 3px; left: 3px;
+    transition: transform .25s;
+  }
+  .opt-toggle.active .switch { background: #ffd200; }
+  .opt-toggle.active .switch::after { transform: translateX(17px); }
+  .opt-toggle span { font-size: 13px; color: rgba(255,255,255,.55); }
 
   /* ===== 结果区 ===== */
   .result-area {
     background: rgba(0,0,0,.25);
     border-radius: 14px;
     padding: 20px;
-    margin-bottom: 20px;
+    margin-bottom: 18px;
     min-height: 90px;
     display: flex;
     flex-direction: column;
@@ -137,6 +235,7 @@
     word-break: break-all;
     margin-bottom: 8px;
     min-height: 22px;
+    line-height: 1.5;
   }
 
   .result-area .result {
@@ -147,9 +246,19 @@
     letter-spacing: 1px;
   }
 
+  .result-area .result.error { font-size: 20px; color: #ff6b6b; }
+
   .result-area .placeholder {
     font-size: 16px;
     color: rgba(255,255,255,.25);
+    font-weight: 400;
+  }
+
+  .result-area .upper {
+    font-size: 13px;
+    color: rgba(255,255,255,.4);
+    margin-top: 10px;
+    word-break: break-all;
   }
 
   /* ===== 按钮 ===== */
@@ -184,13 +293,6 @@
   }
   .btn-primary:hover:not(:disabled) { box-shadow: 0 6px 22px rgba(255,210,0,.45); }
 
-  .btn-outline {
-    background: transparent;
-    border: 1px solid rgba(255,255,255,.2);
-    color: #fff;
-  }
-  .btn-outline:hover:not(:disabled) { border-color: rgba(255,255,255,.45); background: rgba(255,255,255,.05); }
-
   .btn-danger {
     background: rgba(255,60,60,.15);
     border: 1px solid rgba(255,60,60,.3);
@@ -204,11 +306,7 @@
     box-shadow: 0 4px 15px rgba(56,239,125,.25);
   }
   .btn-copy:hover:not(:disabled) { box-shadow: 0 6px 22px rgba(56,239,125,.4); }
-
-  .btn-copy.copied {
-    background: linear-gradient(135deg, #56ab2f, #a8e063);
-    pointer-events: none;
-  }
+  .btn-copy.copied { background: linear-gradient(135deg, #56ab2f, #a8e063); pointer-events: none; }
 
   .btn-icon { font-size: 20px; line-height: 1; }
   .btn-text { font-size: 15px; }
@@ -230,15 +328,10 @@
     z-index: 999;
     pointer-events: none;
   }
-  .toast.show {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
+  .toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 
   /* ===== 历史记录 ===== */
-  .history-section {
-    margin-top: 24px;
-  }
+  .history-section { margin-top: 24px; }
   .history-header {
     display: flex;
     justify-content: space-between;
@@ -252,11 +345,10 @@
   }
   .history-header .clear-btn {
     font-size: 12px;
-    color: rgba(255,255,255,.35);
     cursor: pointer;
     background: none;
     border: none;
-    color: inherit;
+    color: rgba(255,255,255,.35);
     padding: 4px 8px;
     border-radius: 6px;
     transition: background .2s;
@@ -265,7 +357,7 @@
 
   .history-list {
     list-style: none;
-    max-height: 220px;
+    max-height: 240px;
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: rgba(255,255,255,.15) transparent;
@@ -284,13 +376,14 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 10px;
   }
   .history-list li:hover {
     background: rgba(255,255,255,.08);
     border-color: rgba(255,255,255,.15);
   }
   .history-list li .expr {
-    font-size: 14px;
+    font-size: 13px;
     color: rgba(255,255,255,.7);
     word-break: break-all;
   }
@@ -299,7 +392,6 @@
     font-weight: 700;
     color: #ffd200;
     white-space: nowrap;
-    margin-left: 12px;
   }
   .empty-tip {
     text-align: center;
@@ -308,48 +400,17 @@
     font-size: 13px;
   }
 
-  /* ===== 高级模式 ===== */
-  .advanced-toggle {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 16px;
-    cursor: pointer;
-    user-select: none;
-  }
-  .advanced-toggle .switch {
-    width: 40px; height: 22px;
-    background: rgba(255,255,255,.15);
-    border-radius: 11px;
-    position: relative;
-    transition: background .25s;
-  }
-  .advanced-toggle .switch::after {
-    content: '';
-    position: absolute;
-    width: 16px; height: 16px;
-    border-radius: 50%;
-    background: #fff;
-    top: 3px; left: 3px;
-    transition: transform .25s;
-  }
-  .advanced-toggle.active .switch { background: #ffd200; }
-  .advanced-toggle.active .switch::after { transform: translateX(18px); }
-  .advanced-toggle span { font-size: 13px; color: rgba(255,255,255,.5); }
-
-  .advanced-panel { display: none; margin-bottom: 16px; }
-  .advanced-panel.show { display: block; animation: fadeIn .25s; }
-
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(-6px); }
     to   { opacity: 1; transform: translateY(0); }
   }
 
-  .divider {
-    width: 100%;
-    height: 1px;
-    background: rgba(255,255,255,.08);
-    margin: 18px 0;
+  .hint {
+    font-size: 12px;
+    color: rgba(255,255,255,.3);
+    text-align: center;
+    margin-top: 14px;
+    line-height: 1.6;
   }
 </style>
   <link rel="icon" href="./icon.png">
@@ -360,46 +421,32 @@
   <!-- 标题 -->
   <div class="title">
     <h1>💰 金额计算工具</h1>
-    <p>输入金额，自动计算 · 一键复制完整过程</p>
+    <p>支持多步连续计算 · 一键复制完整过程</p>
   </div>
 
   <!-- 主卡片 -->
   <div class="card">
-    <!-- 第一行：金额输入 -->
+    <!-- 金额输入 -->
     <div class="input-group">
       <label>金额</label>
-      <input type="number" id="amount" placeholder="请输入金额" autofocus>
+      <input type="number" id="amount" placeholder="请输入金额" step="any" autofocus>
     </div>
 
-    <!-- 第二行：运算符 & 数值 -->
-    <div class="input-group">
-      <label>运算</label>
-      <select class="operator-select" id="operator">
-        <option value="*">×</option>
-        <option value="+">+</option>
-        <option value="-">−</option>
-        <option value="/">÷</option>
-      </select>
-      <input type="number" class="num-input" id="operand" value="0.5" step="any">
-    </div>
+    <!-- 运算步骤容器（动态生成） -->
+    <div id="stepsContainer"></div>
 
-    <!-- 高级模式开关 -->
-    <div class="advanced-toggle" id="advToggle">
-      <div class="switch"></div>
-      <span>高级模式（二次计算）</span>
-    </div>
+    <!-- 添加步骤 -->
+    <button class="add-step-btn" id="addStepBtn">＋ 添加一步运算（最多 4 步）</button>
 
-    <!-- 高级面板 -->
-    <div class="advanced-panel" id="advPanel">
-      <div class="input-group">
-        <label>再运算</label>
-        <select class="operator-select" id="operator2">
-          <option value="*">×</option>
-          <option value="+">+</option>
-          <option value="-">−</option>
-          <option value="/">÷</option>
-        </select>
-        <input type="number" class="num-input" id="operand2" value="" step="any" placeholder="数值">
+    <!-- 选项 -->
+    <div class="options-bar">
+      <div class="opt-toggle active" id="roundToggle" title="结果保留两位小数（金额常用）">
+        <div class="switch"></div>
+        <span>保留两位小数</span>
+      </div>
+      <div class="opt-toggle" id="liveToggle" title="输入时自动计算">
+        <div class="switch"></div>
+        <span>实时计算</span>
       </div>
     </div>
 
@@ -409,6 +456,7 @@
       <div class="result" id="result">
         <span class="placeholder">结果将在此显示</span>
       </div>
+      <div class="upper" id="upperResult"></div>
     </div>
 
     <!-- 按钮 -->
@@ -428,6 +476,8 @@
         <span class="btn-text">重置</span>
       </button>
     </div>
+
+    <div class="hint">按 <b>Enter</b> 计算 · 多步运算从左到右依次进行<br>点亮 <b>%</b> 可按百分比算：×85%=打八五折，+10%=加一成</div>
   </div>
 
   <!-- 历史记录 -->
@@ -448,149 +498,244 @@
 <script>
   const $ = id => document.getElementById(id);
 
-  const amountInput  = $('amount');
-  const operatorSel  = $('operator');
-  const operandInput = $('operand');
-  const advToggle    = $('advToggle');
-  const advPanel     = $('advPanel');
-  const operator2Sel = $('operator2');
-  const operand2Input= $('operand2');
-  const calcBtn      = $('calcBtn');
-  const copyBtn      = $('copyBtn');
-  const resetBtn     = $('resetBtn');
-  const resultEl     = $('result');
-  const exprEl       = $('expression');
-  const historyList  = $('historyList');
-  const toastEl      = $('toast');
+  const amountInput   = $('amount');
+  const stepsContainer= $('stepsContainer');
+  const addStepBtn    = $('addStepBtn');
+  const roundToggle   = $('roundToggle');
+  const liveToggle    = $('liveToggle');
+  const calcBtn       = $('calcBtn');
+  const copyBtn       = $('copyBtn');
+  const resetBtn      = $('resetBtn');
+  const resultEl      = $('result');
+  const exprEl        = $('expression');
+  const upperEl       = $('upperResult');
+  const historyList   = $('historyList');
+  const toastEl       = $('toast');
+
+  const MAX_STEPS = 4;
+  const opMap = { '*': '×', '+': '+', '-': '−', '/': '÷' };
 
   let history = JSON.parse(localStorage.getItem('calcHistory') || '[]');
   let lastResult = null;
-  let lastExpression = '';
+  let lastText = '';
+  let roundMode = localStorage.getItem('calcRound') !== '0';   // 默认开
+  let liveMode  = localStorage.getItem('calcLive') === '1';
 
-  // ===== 高级模式切换 =====
-  advToggle.addEventListener('click', () => {
-    advToggle.classList.toggle('active');
-    advPanel.classList.toggle('show');
-  });
+  if (roundMode) roundToggle.classList.add('active'); else roundToggle.classList.remove('active');
+  if (liveMode)  liveToggle.classList.add('active');
 
-  // ===== 输入监听 =====
-  function checkInputs() {
-    const hasAmount = amountInput.value !== '' && !isNaN(Number(amountInput.value));
-    const hasOp2 = !advPanel.classList.contains('show') ||
-                   (operand2Input.value !== '' && !isNaN(Number(operand2Input.value)));
-    calcBtn.disabled = !hasAmount || !hasOp2;
+  // ===== 生成一行运算步骤 =====
+  function makeStepRow(op = '*', val = '', pct = false) {
+    const row = document.createElement('div');
+    row.className = 'input-group step-row';
+    row.innerHTML = `
+      <label>运算</label>
+      <select class="operator-select op-select">
+        <option value="*">×</option>
+        <option value="+">+</option>
+        <option value="-">−</option>
+        <option value="/">÷</option>
+      </select>
+      <input type="number" class="num-input val-input" step="any" placeholder="数值">
+      <button class="pct-toggle" title="按百分比计算（如 ×85% / +10%）">%</button>
+      <button class="remove-step" title="删除此步">✕</button>
+    `;
+    row.querySelector('.op-select').value = op;
+    row.querySelector('.val-input').value = val;
+    const pctBtn = row.querySelector('.pct-toggle');
+    pctBtn.classList.toggle('active', pct);
+    row.querySelector('.op-select').addEventListener('change', onInput);
+    row.querySelector('.val-input').addEventListener('input', onInput);
+    pctBtn.addEventListener('click', () => {
+      pctBtn.classList.toggle('active');
+      onInput();
+    });
+    row.querySelector('.remove-step').addEventListener('click', () => {
+      row.remove();
+      updateAddBtn();
+      onInput();
+    });
+    return row;
   }
 
-  amountInput.addEventListener('input', checkInputs);
-  operandInput.addEventListener('input', checkInputs);
-  operand2Input.addEventListener('input', checkInputs);
+  function addStep(op, val, pct) {
+    if (stepsContainer.children.length >= MAX_STEPS) return;
+    const row = makeStepRow(op, val, pct);
+    stepsContainer.appendChild(row);
+    updateAddBtn();
+    row.querySelector('.val-input').focus();
+    onInput();
+  }
+
+  function updateAddBtn() {
+    addStepBtn.disabled = stepsContainer.children.length >= MAX_STEPS;
+    addStepBtn.textContent = addStepBtn.disabled
+      ? '已达最多 4 步运算'
+      : `＋ 添加一步运算（最多 ${MAX_STEPS} 步）`;
+  }
+
+  addStepBtn.addEventListener('click', () => addStep('*', ''));
+
+  // ===== 读取所有步骤 =====
+  function getSteps() {
+    return [...stepsContainer.children].map(row => ({
+      op:  row.querySelector('.op-select').value,
+      val: row.querySelector('.val-input').value,
+      pct: row.querySelector('.pct-toggle').classList.contains('active')
+    }));
+  }
+
+  // ===== 校验输入并控制按钮 =====
+  function validate() {
+    const amountOk = amountInput.value !== '' && !isNaN(Number(amountInput.value));
+    const steps = getSteps();
+    const stepsOk = steps.every(s => s.val !== '' && !isNaN(Number(s.val)));
+    const ok = amountOk && stepsOk;
+    calcBtn.disabled = !ok;
+    return ok;
+  }
+
+  function onInput() {
+    const ok = validate();
+    if (liveMode && ok) calc(true);
+    else if (liveMode && !ok) clearResult();
+  }
+
+  amountInput.addEventListener('input', onInput);
 
   // 回车计算
   document.addEventListener('keydown', e => {
     if (e.key === 'Enter' && !calcBtn.disabled) calc();
   });
 
+  // ===== 数字格式化（千分位） =====
+  function format(n) {
+    if (!isFinite(n)) return String(n);
+    const s = roundMode ? n.toFixed(2) : trimFloat(n);
+    const parts = s.split('.');
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return parts.join('.');
+  }
+  // 去掉浮点误差尾巴
+  function trimFloat(n) {
+    return parseFloat(n.toPrecision(12)).toString();
+  }
+
   // ===== 计算 =====
-  function calc() {
+  function calc(silent = false) {
+    if (!validate()) return;
+
     const a = Number(amountInput.value);
-    const op = operatorSel.value;
-    const b = Number(operandInput.value);
+    const steps = getSteps();
 
-    let r = 0;
-    let expr = '';
+    let r = a;
+    let exprParts = [trimFloat(a)];
+    let divByZero = false;
 
-    // 符号显示
-    const opMap = { '*': '×', '+': '+', '-': '−', '/': '÷' };
-    const opChar = opMap[op] || op;
-
-    // 第一次运算
-    switch (op) {
-      case '*': r = a * b; break;
-      case '+': r = a + b; break;
-      case '-': r = a - b; break;
-      case '/': r = b === 0 ? NaN : a / b; break;
-    }
-    expr = `${a} ${opChar} ${b}`;
-
-    // 第二次运算
-    if (advPanel.classList.contains('show')) {
-      const op2 = operator2Sel.value;
-      const c = Number(operand2Input.value);
-      const op2Char = opMap[op2] || op2;
-      let r2 = 0;
-      switch (op2) {
-        case '*': r2 = r * c; break;
-        case '+': r2 = r + c; break;
-        case '-': r2 = r - c; break;
-        case '/': r2 = c === 0 ? NaN : r / c; break;
+    for (const s of steps) {
+      const b = Number(s.val);
+      if (s.pct) {
+        // 百分比语义：+/− 为在当前结果上增减百分比，×/÷ 为乘/除以该比例
+        switch (s.op) {
+          case '*': r = r * (b / 100); break;
+          case '+': r = r * (1 + b / 100); break;
+          case '-': r = r * (1 - b / 100); break;
+          case '/':
+            if (b === 0) { divByZero = true; }
+            else r = r / (b / 100);
+            break;
+        }
+        exprParts.push(opMap[s.op], trimFloat(b) + '%');
+      } else {
+        switch (s.op) {
+          case '*': r = r * b; break;
+          case '+': r = r + b; break;
+          case '-': r = r - b; break;
+          case '/':
+            if (b === 0) { divByZero = true; }
+            else r = r / b;
+            break;
+        }
+        exprParts.push(opMap[s.op], trimFloat(b));
       }
-      expr += ` ${op2Char} ${c}`;
-      r = r2;
+      if (divByZero) break;
     }
 
-    if (isNaN(r)) {
-      resultEl.innerHTML = '<span style="color:#ff6b6b;font-size:20px">⚠️ 计算错误（除数不能为0）</span>';
+    if (divByZero || !isFinite(r)) {
+      resultEl.className = 'result error';
+      resultEl.textContent = '⚠️ 计算错误（除数不能为 0）';
       exprEl.textContent = '';
+      upperEl.textContent = '';
       copyBtn.disabled = true;
+      lastResult = null;
       return;
     }
 
-    // 格式化数字
-    const format = n => {
-      if (Number.isInteger(n)) return n.toLocaleString();
-      const s = n.toString();
-      const parts = s.split('.');
-      parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-      return parts.join('.');
-    };
-
+    const expr = exprParts.join(' ');
     const formatted = format(r);
+
+    resultEl.className = 'result';
     resultEl.textContent = formatted;
     exprEl.textContent = `${expr} =`;
-    lastResult = r;
-    lastExpression = expr;
 
+    // 金额大写（仅整数/两位小数且金额合理时显示）
+    const upper = toChineseMoney(roundMode ? Number(r.toFixed(2)) : r);
+    upperEl.textContent = upper ? `大写：${upper}` : '';
+
+    lastResult = roundMode ? Number(r.toFixed(2)) : r;
+    lastText = `${expr} = ${lastResult}`;
     copyBtn.disabled = false;
 
-    // 保存到历史
-    history.unshift({ expr, result: r, formatted });
-    if (history.length > 20) history.pop();
-    localStorage.setItem('calcHistory', JSON.stringify(history));
-    renderHistory();
+    if (!silent) saveHistory(expr, lastResult, formatted);
   }
 
-  calcBtn.addEventListener('click', calc);
+  function clearResult() {
+    resultEl.className = 'result';
+    resultEl.innerHTML = '<span class="placeholder">结果将在此显示</span>';
+    exprEl.textContent = '';
+    upperEl.textContent = '';
+    copyBtn.disabled = true;
+    lastResult = null;
+  }
+
+  calcBtn.addEventListener('click', () => calc());
+
+  // ===== 选项开关 =====
+  roundToggle.addEventListener('click', () => {
+    roundMode = !roundMode;
+    roundToggle.classList.toggle('active', roundMode);
+    localStorage.setItem('calcRound', roundMode ? '1' : '0');
+    if (lastResult !== null || validate()) calc(true);
+  });
+  liveToggle.addEventListener('click', () => {
+    liveMode = !liveMode;
+    liveToggle.classList.toggle('active', liveMode);
+    localStorage.setItem('calcLive', liveMode ? '1' : '0');
+    if (liveMode) onInput();
+  });
 
   // ===== 复制 =====
   copyBtn.addEventListener('click', () => {
     if (lastResult === null) return;
-    const text = `${lastExpression} = ${lastResult}`;
-    navigator.clipboard.writeText(text).then(() => {
+    navigator.clipboard.writeText(lastText).then(() => {
       copyBtn.classList.add('copied');
       copyBtn.innerHTML = '<span class="btn-icon">✅</span><span class="btn-text">已复制</span>';
-      showToast('已复制到剪贴板');
+      showToast('已复制：' + lastText);
       setTimeout(() => {
         copyBtn.classList.remove('copied');
         copyBtn.innerHTML = '<span class="btn-icon">📋</span><span class="btn-text">复制</span>';
       }, 1500);
-    });
+    }).catch(() => showToast('复制失败，请手动复制'));
   });
 
   // ===== 重置 =====
   resetBtn.addEventListener('click', () => {
     amountInput.value = '';
-    operandInput.value = '0.5';
-    operand2Input.value = '';
-    operatorSel.value = '*';
-    operator2Sel.value = '*';
-    resultEl.innerHTML = '<span class="placeholder">结果将在此显示</span>';
-    exprEl.textContent = '';
-    copyBtn.disabled = true;
+    stepsContainer.innerHTML = '';
+    addStep('*', '0.5');         // 默认一步
+    clearResult();
     calcBtn.disabled = true;
-    lastResult = null;
-    lastExpression = '';
-    advToggle.classList.remove('active');
-    advPanel.classList.remove('show');
+    lastText = '';
     amountInput.focus();
   });
 
@@ -598,45 +743,105 @@
   function showToast(msg) {
     toastEl.textContent = msg;
     toastEl.classList.add('show');
-    setTimeout(() => toastEl.classList.remove('show'), 1500);
+    setTimeout(() => toastEl.classList.remove('show'), 1600);
   }
 
   // ===== 历史记录 =====
+  function saveHistory(expr, result, formatted) {
+    history.unshift({ expr, result, formatted });
+    if (history.length > 200) history.pop();
+    localStorage.setItem('calcHistory', JSON.stringify(history));
+    renderHistory();
+  }
+
   function renderHistory() {
     if (history.length === 0) {
       historyList.innerHTML = '<li class="empty-tip">暂无记录</li>';
       return;
     }
     historyList.innerHTML = history.map((h, i) =>
-      `<li data-index="${i}">
+      `<li data-index="${i}" title="点击复制">
          <span class="expr">${h.expr} =</span>
          <span class="val">${h.formatted}</span>
        </li>`
     ).join('');
-    // 点击回填
     historyList.querySelectorAll('li').forEach(li => {
       li.addEventListener('click', () => {
         const h = history[li.dataset.index];
-        // 简单回填：解析表达式
-        const parts = h.expr.split(' ');
-        amountInput.value = parts[0];
-        // 不回填运算符和数值，避免复杂解析
-        showToast('已回填金额');
-        amountInput.focus();
+        navigator.clipboard.writeText(`${h.expr} = ${h.result}`)
+          .then(() => showToast('已复制该记录'))
+          .catch(() => showToast('复制失败'));
       });
     });
   }
 
   $('clearHistory').addEventListener('click', () => {
+    if (history.length === 0) return;
     history = [];
     localStorage.removeItem('calcHistory');
     renderHistory();
+    showToast('历史已清空');
   });
 
+  // ===== 金额转中文大写（按四位分节） =====
+  function toChineseMoney(num) {
+    if (!isFinite(num) || num < 0) return '';
+    if (Math.abs(num) >= 1e13) return '';   // 太大不转
+    const digits = ['零','壹','贰','叁','肆','伍','陆','柒','捌','玖'];
+    const smallUnit = ['','拾','佰','仟'];
+    const bigUnit = ['','万','亿','万亿'];
+
+    let n = Math.round(num * 100); // 转成分
+    if (n === 0) return '零元整';
+    let intPart = Math.floor(n / 100);
+    const decPart = n % 100;
+
+    // 把 0-9999 转成中文
+    function fourToCN(sec) {
+      let s = '', zero = false;
+      const str = String(sec);
+      for (let i = 0; i < str.length; i++) {
+        const d = +str[i];
+        const pos = str.length - 1 - i;
+        if (d === 0) { zero = true; }
+        else {
+          if (zero) { s += '零'; zero = false; }
+          s += digits[d] + smallUnit[pos];
+        }
+      }
+      return s;
+    }
+
+    let intStr = '';
+    if (intPart > 0) {
+      const sections = [];
+      while (intPart > 0) { sections.push(intPart % 10000); intPart = Math.floor(intPart / 10000); }
+      for (let i = sections.length - 1; i >= 0; i--) {
+        const sec = sections[i];
+        if (sec === 0) continue;
+        if (intStr && sec < 1000) intStr += '零';
+        intStr += fourToCN(sec) + bigUnit[i];
+      }
+      intStr += '元';
+    }
+
+    let str = intStr;
+    if (decPart === 0) {
+      str += '整';
+    } else {
+      const jiao = Math.floor(decPart / 10);
+      const fen = decPart % 10;
+      if (jiao > 0) str += digits[jiao] + '角';
+      else if (intStr) str += '零';
+      if (fen > 0) str += digits[fen] + '分';
+    }
+    return str;
+  }
+
   // ===== 初始化 =====
-  operandInput.value = '0.5';
-  operatorSel.value = '*';
+  addStep('*', '0.5');   // 默认带一步运算
   renderHistory();
+  validate();
 </script>
 </body>
 </html>
