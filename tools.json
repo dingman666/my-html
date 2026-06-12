@@ -43,6 +43,12 @@
       "name": "计算器",
       "path": "tools/tool/",
       "icon": "tools/tool/icon.png"
+    },
+    {
+      "id": "ai-api-key-base-url-2026",
+      "name": "AI 大模型 API Key 格式 & Base URL 速查表 2026",
+      "path": "tools/ai-api-key-base-url-2026/",
+      "icon": "tools/ai-api-key-base-url-2026/icon.png"
     }
   ]
 }
