@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>AK/SK 提取工具</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: #1e1e2e;
+    color: #cdd6f4;
+    margin: 0;
+    padding: 24px;
+    min-height: 100vh;
+  }
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  h1 {
+    color: #89b4fa;
+    margin-bottom: 8px;
+  }
+  .subtitle {
+    color: #a6adc8;
+    margin-bottom: 24px;
+    font-size: 14px;
+  }
+  .panel {
+    background: #313244;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+    border: 1px solid #45475a;
+  }
+  label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #f5c2e7;
+  }
+  textarea {
+    width: 100%;
+    min-height: 240px;
+    background: #181825;
+    color: #cdd6f4;
+    border: 1px solid #45475a;
+    border-radius: 6px;
+    padding: 12px;
+    font-family: "SF Mono", Monaco, Consolas, monospace;
+    font-size: 13px;
+    resize: vertical;
+  }
+  textarea:focus {
+    outline: none;
+    border-color: #89b4fa;
+  }
+  .buttons {
+    margin: 12px 0;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  button {
+    background: #89b4fa;
+    color: #1e1e2e;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s;
+  }
+  button:hover { background: #74c7ec; }
+  button.secondary { background: #585b70; color: #cdd6f4; }
+  button.secondary:hover { background: #6c7086; }
+  button.danger { background: #f38ba8; color: #1e1e2e; }
+  button.danger:hover { background: #eba0ac; }
+  .stats {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .stat-item {
+    background: #181825;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+  }
+  .stat-item .num {
+    color: #a6e3a1;
+    font-weight: 700;
+    font-size: 16px;
+    margin-left: 6px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: "SF Mono", Monaco, Consolas, monospace;
+    font-size: 12px;
+  }
+  th, td {
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid #45475a;
+    word-break: break-all;
+  }
+  th {
+    background: #181825;
+    color: #f9e2af;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+  }
+  tr:hover { background: #181825; }
+  .ak { color: #fab387; }
+  .sk { color: #a6e3a1; }
+  .idx { color: #a6adc8; width: 40px; }
+  .copy-btn {
+    background: #45475a;
+    color: #cdd6f4;
+    border: none;
+    padding: 2px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+    margin-left: 4px;
+  }
+  .copy-btn:hover { background: #585b70; }
+  .table-wrap {
+    max-height: 500px;
+    overflow-y: auto;
+    background: #1e1e2e;
+    border-radius: 6px;
+  }
+  .empty {
+    text-align: center;
+    color: #6c7086;
+    padding: 40px;
+    font-style: italic;
+  }
+  .format-select {
+    background: #181825;
+    color: #cdd6f4;
+    border: 1px solid #45475a;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+  .output-area {
+    width: 100%;
+    min-height: 200px;
+    background: #181825;
+    color: #cdd6f4;
+    border: 1px solid #45475a;
+    border-radius: 6px;
+    padding: 12px;
+    font-family: "SF Mono", Monaco, Consolas, monospace;
+    font-size: 12px;
+    white-space: pre;
+    overflow: auto;
+    max-height: 400px;
+  }
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: #a6e3a1;
+    color: #1e1e2e;
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+</style>
+  <link rel="icon" href="./icon.png">
+</head>
+<body>
+<div class="container">
+  <h1>AK / SK 提取工具</h1>
+  <div class="subtitle">从任意文本中自动提取 AccessKeyId (AKIA...) 和 SecretAccessKey 配对</div>
+
+  <div class="panel">
+    <label for="input">输入文本</label>
+    <textarea id="input" placeholder="粘贴包含 AK/SK 的任意文本..."></textarea>
+    <div class="buttons">
+      <button onclick="extract()">提取 AK/SK</button>
+      <button class="secondary" onclick="loadSample()">加载示例</button>
+      <button class="danger" onclick="clearAll()">清空</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="stats">
+      <div class="stat-item">共提取条数:<span class="num" id="count">0</span></div>
+      <div class="stat-item">输入行数:<span class="num" id="lines">0</span></div>
+    </div>
+
+    <label>提取结果</label>
+    <div class="table-wrap">
+      <table id="result">
+        <thead>
+          <tr>
+            <th class="idx">#</th>
+            <th>AccessKeyId</th>
+            <th>SecretAccessKey</th>
+            <th style="width:80px">操作</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="4" class="empty">暂无数据,请点击「提取 AK/SK」</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel">
+    <label for="format">导出格式</label>
+    <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap">
+      <select class="format-select" id="format" onchange="exportFormat()">
+        <option value="aksk">AK SK (空格分隔)</option>
+        <option value="csv">CSV (逗号分隔)</option>
+        <option value="tsv">TSV (制表符分隔)</option>
+        <option value="json">JSON</option>
+        <option value="aws-credentials">AWS credentials 文件格式</option>
+        <option value="env">环境变量 (export)</option>
+        <option value="kv">key = value</option>
+      </select>
+      <button onclick="copyOutput()">复制输出</button>
+      <button class="secondary" onclick="downloadOutput()">下载文件</button>
+    </div>
+    <div class="output-area" id="output">点击「提取 AK/SK」生成结果...</div>
+  </div>
+</div>
+
+<div class="toast" id="toast">已复制</div>
+
+<script>
+const AK_REGEX = /\b(AKIA[0-9A-Z]{16})\b/g;
+const SK_REGEX = /\b([A-Za-z0-9+/]{40})\b/g;
+
+let extracted = [];
+
+function extract() {
+  const text = document.getElementById('input').value;
+  if (!text.trim()) {
+    showToast('请先输入文本', '#f38ba8');
+    return;
+  }
+
+  extracted = [];
+  const lines = text.split(/\r?\n/);
+  document.getElementById('lines').textContent = lines.length;
+
+  for (const line of lines) {
+    if (!line.trim()) continue;
+    const aks = [...line.matchAll(AK_REGEX)].map(m => m[1]);
+    if (aks.length === 0) continue;
+
+    for (const ak of aks) {
+      const akIdx = line.indexOf(ak);
+      const after = line.slice(akIdx + ak.length);
+      const skMatch = after.match(/[A-Za-z0-9+/]{40}/);
+      if (skMatch) {
+        extracted.push({ ak, sk: skMatch[0] });
+      } else {
+        extracted.push({ ak, sk: '' });
+      }
+    }
+  }
+
+  if (extracted.length === 0) {
+    const allAks = [...text.matchAll(AK_REGEX)].map(m => m[1]);
+    const allSks = [...text.matchAll(SK_REGEX)].map(m => m[1]).filter(s => !s.startsWith('AKIA'));
+    const len = Math.min(allAks.length, allSks.length);
+    for (let i = 0; i < len; i++) {
+      extracted.push({ ak: allAks[i], sk: allSks[i] });
+    }
+  }
+
+  renderTable();
+  exportFormat();
+  document.getElementById('count').textContent = extracted.length;
+}
+
+function renderTable() {
+  const tbody = document.getElementById('tbody');
+  if (extracted.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" class="empty">未提取到任何 AK/SK</td></tr>';
+    return;
+  }
+  tbody.innerHTML = extracted.map((item, i) => `
+    <tr>
+      <td class="idx">${i + 1}</td>
+      <td class="ak">${item.ak}</td>
+      <td class="sk">${item.sk || '<未匹配>'}</td>
+      <td>
+        <button class="copy-btn" onclick="copyRow(${i})">复制</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function copyRow(i) {
+  const item = extracted[i];
+  navigator.clipboard.writeText(`${item.ak}\t${item.sk}`);
+  showToast('已复制此行');
+}
+
+function exportFormat() {
+  const fmt = document.getElementById('format').value;
+  const output = document.getElementById('output');
+  if (extracted.length === 0) {
+    output.textContent = '暂无数据';
+    return;
+  }
+  let result = '';
+  switch (fmt) {
+    case 'aksk':
+      result = extracted.map(i => `${i.ak} ${i.sk}`).join('\n');
+      break;
+    case 'csv':
+      result = 'AccessKeyId,SecretAccessKey\n' + extracted.map(i => `${i.ak},${i.sk}`).join('\n');
+      break;
+    case 'tsv':
+      result = 'AccessKeyId\tSecretAccessKey\n' + extracted.map(i => `${i.ak}\t${i.sk}`).join('\n');
+      break;
+    case 'json':
+      result = JSON.stringify(extracted.map(i => ({
+        AccessKeyId: i.ak,
+        SecretAccessKey: i.sk
+      })), null, 2);
+      break;
+    case 'aws-credentials':
+      result = extracted.map((i, idx) =>
+        `[profile_${idx + 1}]\naws_access_key_id = ${i.ak}\naws_secret_access_key = ${i.sk}`
+      ).join('\n\n');
+      break;
+    case 'env':
+      result = extracted.map((i, idx) =>
+        `# profile ${idx + 1}\nexport AWS_ACCESS_KEY_ID="${i.ak}"\nexport AWS_SECRET_ACCESS_KEY="${i.sk}"`
+      ).join('\n\n');
+      break;
+    case 'kv':
+      result = extracted.map(i =>
+        `AccessKeyId = ${i.ak}\nSecretAccessKey = ${i.sk}`
+      ).join('\n\n');
+      break;
+  }
+  output.textContent = result;
+}
+
+function copyOutput() {
+  const text = document.getElementById('output').textContent;
+  navigator.clipboard.writeText(text);
+  showToast('已复制所有结果');
+}
+
+function downloadOutput() {
+  const fmt = document.getElementById('format').value;
+  const text = document.getElementById('output').textContent;
+  const extMap = { csv: 'csv', tsv: 'tsv', json: 'json', 'aws-credentials': 'ini', env: 'sh' };
+  const ext = extMap[fmt] || 'txt';
+  const blob = new Blob([text], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `ak_sk_${Date.now()}.${ext}`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function loadSample() {
+  document.getElementById('input').value =
+`anthony52673105727@gmail.com  2Tf^HUNmm  3PHXEOPF5MKBINIDPDOA2PYBRXKDLHYP3XAQLY5EPQ2NLHLL3FC4BSIVYX3YIJDM  AKIA${''}T2EHJPEMHHAGLXWY  VTO3yW85wPjE73JyYRWK${''}mB510ZRYnOt1/tRD66Pe
+fmann3819051445@gmail.com  op+QX!aH1  HW24SW7XU3IJ2TCTRJKLN6ZC73ZAA4EP5SQGA6JG7UAWOA2MY6CXM4RV3PNRIJE3  AKIA${''}UIUDA4URZRFU2YGY  1YoTWIVaoPJmwntqwRre${''}0ARcEn9flKyMr4D1HBwf
+dennis4353073474@gmail.com  @Yd1+Hi6E  ZRNSQ7TEFVEIZDHKMASITZ2OT6QFUXHCRQUTX365B2FSMI3GMPFMHV36S6LP5KPJ  AKIA${''}T5XVAGUKLNCEDUAE  oWwajbCOT8CClrQXDghq${''}kZLtBk3f4QuvEuSvyWEd
+sara734124125@gmail.com  #jb2zV^Bz  JZF5C4QPXGPVIU6TZC3EJGI2CZ23QVNXGW62VJRLFWSZJ7E2P6ZSENRNTKIZPJ3H  AKIA${''}YM4VMFPZ3QHX5PWE  MvpHWZ0uiRTcqVz5T7Bx${''}l1ATFE7rJhKtAHuAzIhG
+kelsey93952900@gmail.com  3t+zyfRh8  I3ZDGOTVRAXFVUCDBSVTQNOD5ZXWRHHTZGHDPQV27PWN53QQVUKHYOWZL4S5QGZE  AKIA${''}2FQPTNPQ2O55JY5S  iUPyzEIs5jBB2lRVAUaK${''}/3KMnK9YI7fv21y8+nto`;
+}
+
+function clearAll() {
+  document.getElementById('input').value = '';
+  document.getElementById('output').textContent = '点击「提取 AK/SK」生成结果...';
+  document.getElementById('tbody').innerHTML = '<tr><td colspan="4" class="empty">暂无数据,请点击「提取 AK/SK」</td></tr>';
+  document.getElementById('count').textContent = '0';
+  document.getElementById('lines').textContent = '0';
+  extracted = [];
+}
+
+function showToast(msg, color) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  if (color) toast.style.background = color;
+  else toast.style.background = '#a6e3a1';
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 1500);
+}
+</script>
+</body>
+</html>
