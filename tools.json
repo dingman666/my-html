@@ -49,6 +49,12 @@
       "name": "AI 大模型 API Key 格式 & Base URL 速查表 2026",
       "path": "tools/ai-api-key-base-url-2026/",
       "icon": "tools/ai-api-key-base-url-2026/icon.png"
+    },
+    {
+      "id": "aksk",
+      "name": "AK/SK 提取工具",
+      "path": "tools/aksk/",
+      "icon": "tools/aksk/icon.png"
     }
   ]
 }
