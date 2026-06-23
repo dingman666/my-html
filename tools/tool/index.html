@@ -711,6 +711,27 @@
     return parseFloat(n.toPrecision(12)).toString();
   }
 
+  // ===== 生成带括号的算式 =====
+  // 计算器是严格从左到右算的；为了让算式按标准运算顺序（先 ×÷ 后 +−）
+  // 重新阅读 / 粘贴重算时结果不变，当 +/− 之后又接 ×/÷ 时，给前面那段加括号。
+  // 其它情况（如全程 +−、或先 ×÷）不加多余括号。
+  function buildExpr(first, parts) {
+    // first: 起始金额字符串；parts: [{ op:'*'|'/'|'+'|'-', tok:'20' }, ...]
+    let expr = first;
+    let additive = false;   // 当前表达式顶层运算是否为 +/−
+    for (const p of parts) {
+      const sym = opMap[p.op];
+      if (p.op === '+' || p.op === '-') {
+        expr = `${expr} ${sym} ${p.tok}`;
+        additive = true;
+      } else {
+        expr = additive ? `(${expr}) ${sym} ${p.tok}` : `${expr} ${sym} ${p.tok}`;
+        additive = false;
+      }
+    }
+    return expr;
+  }
+
   // ===== 计算 =====
   function calc(silent = false) {
     if (!validate()) return;
@@ -719,7 +740,7 @@
     const steps = getSteps();
 
     let r = a;
-    let exprParts = [trimFloat(a)];
+    let exprSteps = [];
     let divByZero = false;
 
     for (const s of steps) {
@@ -735,7 +756,7 @@
             else r = r / (b / 100);
             break;
         }
-        exprParts.push(opMap[s.op], trimFloat(b) + '%');
+        exprSteps.push({ op: s.op, tok: trimFloat(b) + '%' });
       } else {
         switch (s.op) {
           case '*': r = r * b; break;
@@ -746,7 +767,7 @@
             else r = r / b;
             break;
         }
-        exprParts.push(opMap[s.op], trimFloat(b));
+        exprSteps.push({ op: s.op, tok: trimFloat(b) });
       }
       if (divByZero) break;
     }
@@ -761,7 +782,7 @@
       return;
     }
 
-    const expr = exprParts.join(' ');
+    const expr = buildExpr(trimFloat(a), exprSteps);
     const formatted = format(r);
 
     resultEl.className = 'result';
