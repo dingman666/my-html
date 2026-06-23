@@ -412,6 +412,72 @@
     margin-top: 14px;
     line-height: 1.6;
   }
+
+  /* ===== 粘贴检查 ===== */
+  .check-card { margin-top: 22px; }
+  .check-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .check-title .ct-main { font-size: 17px; font-weight: 700; color: #fff; }
+  .check-title .ct-sub  { font-size: 12px; color: rgba(255,255,255,.4); }
+
+  .paste-input {
+    width: 100%;
+    min-height: 120px;
+    resize: vertical;
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 15px;
+    color: #fff;
+    outline: none;
+    line-height: 1.7;
+    font-family: 'SF Mono', 'Consolas', 'Menlo', monospace;
+    margin-bottom: 14px;
+    transition: border .2s, box-shadow .2s;
+  }
+  .paste-input:focus { border-color: #ffd200; box-shadow: 0 0 12px rgba(255,210,0,.25); }
+  .paste-input::placeholder { color: rgba(255,255,255,.28); }
+
+  .check-result { margin-top: 6px; }
+  .check-summary {
+    font-size: 14px;
+    margin-bottom: 12px;
+    color: rgba(255,255,255,.75);
+    font-weight: 600;
+  }
+  .check-summary .ok-c  { color: #56eb9a; }
+  .check-summary .bad-c { color: #ff6b6b; }
+  .check-line {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    background: rgba(255,255,255,.03);
+    border: 1px solid rgba(255,255,255,.06);
+    font-size: 14px;
+    line-height: 1.5;
+    animation: fadeIn .2s;
+  }
+  .check-line .ico { font-size: 16px; flex: none; line-height: 1.45; }
+  .check-line .body { flex: 1; word-break: break-all; }
+  .check-line .expr-txt { color: rgba(255,255,255,.9); }
+  .check-line .note { display: block; margin-top: 4px; font-size: 13px; color: rgba(255,255,255,.6); }
+  .check-line.ok   { border-color: rgba(56,239,125,.30); background: rgba(56,239,125,.06); }
+  .check-line.ok .note   { color: #8ef0b0; }
+  .check-line.bad  { border-color: rgba(255,107,107,.35); background: rgba(255,107,107,.07); }
+  .check-line.bad .note  { color: #ff9b9b; }
+  .check-line.warn { border-color: rgba(255,210,0,.30); background: rgba(255,210,0,.06); }
+  .check-line.warn .note { color: #ffe08a; }
+  .check-line .right { color: #ffd200; font-weight: 700; }
 </style>
   <link rel="icon" href="./icon.png">
 </head>
@@ -436,7 +502,7 @@
     <div id="stepsContainer"></div>
 
     <!-- 添加步骤 -->
-    <button class="add-step-btn" id="addStepBtn">＋ 添加一步运算（最多 4 步）</button>
+    <button class="add-step-btn" id="addStepBtn">＋ 添加一步运算</button>
 
     <!-- 选项 -->
     <div class="options-bar">
@@ -480,6 +546,27 @@
     <div class="hint">按 <b>Enter</b> 计算 · 多步运算从左到右依次进行<br>点亮 <b>%</b> 可按百分比算：×85%=打八五折，+10%=加一成</div>
   </div>
 
+  <!-- 粘贴检查 -->
+  <div class="card check-card">
+    <div class="check-title">
+      <span class="ct-main">🔍 粘贴检查</span>
+      <span class="ct-sub">把算式粘进来，自动判断对错</span>
+    </div>
+    <textarea id="pasteInput" class="paste-input" placeholder="粘贴算式，每行一条，例如：&#10;100 × 0.5 + 20 = 70&#10;1200 ÷ 3 = 400&#10;800 × 85% = 680&#10;(100 + 20) × 3 = 360"></textarea>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="checkBtn">
+        <span class="btn-icon">🔍</span>
+        <span class="btn-text">检查</span>
+      </button>
+      <button class="btn btn-danger" id="clearPasteBtn">
+        <span class="btn-icon">🧹</span>
+        <span class="btn-text">清空</span>
+      </button>
+    </div>
+    <div class="check-result" id="checkResult"></div>
+    <div class="hint">按标准运算顺序判断（先 × ÷，后 + −）· 支持括号、% 和千分位逗号<br>每行一条，可写 <b>算式 = 答案</b> 判断对错，或只写 <b>算式</b> 直接算出结果 · <b>Ctrl/⌘ + Enter</b> 检查</div>
+  </div>
+
   <!-- 历史记录 -->
   <div class="history-section">
     <div class="history-header">
@@ -511,8 +598,11 @@
   const upperEl       = $('upperResult');
   const historyList   = $('historyList');
   const toastEl       = $('toast');
+  const pasteInput    = $('pasteInput');
+  const checkBtn      = $('checkBtn');
+  const clearPasteBtn = $('clearPasteBtn');
+  const checkResult   = $('checkResult');
 
-  const MAX_STEPS = 4;
   const opMap = { '*': '×', '+': '+', '-': '−', '/': '÷' };
 
   let history = JSON.parse(localStorage.getItem('calcHistory') || '[]');
@@ -559,7 +649,6 @@
   }
 
   function addStep(op, val, pct) {
-    if (stepsContainer.children.length >= MAX_STEPS) return;
     const row = makeStepRow(op, val, pct);
     stepsContainer.appendChild(row);
     updateAddBtn();
@@ -568,10 +657,10 @@
   }
 
   function updateAddBtn() {
-    addStepBtn.disabled = stepsContainer.children.length >= MAX_STEPS;
-    addStepBtn.textContent = addStepBtn.disabled
-      ? '已达最多 4 步运算'
-      : `＋ 添加一步运算（最多 ${MAX_STEPS} 步）`;
+    const n = stepsContainer.children.length;
+    addStepBtn.textContent = n > 0
+      ? `＋ 添加一步运算（已 ${n} 步）`
+      : '＋ 添加一步运算';
   }
 
   addStepBtn.addEventListener('click', () => addStep('*', ''));
@@ -603,8 +692,9 @@
 
   amountInput.addEventListener('input', onInput);
 
-  // 回车计算
+  // 回车计算（粘贴框内回车用于换行，不触发主计算）
   document.addEventListener('keydown', e => {
+    if (e.target && e.target.tagName === 'TEXTAREA') return;
     if (e.key === 'Enter' && !calcBtn.disabled) calc();
   });
 
@@ -837,6 +927,223 @@
     }
     return str;
   }
+
+  // ===== 粘贴检查 =====
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, c =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  }
+
+  // 过滤复制带来的隐藏字符：控制字符、零宽空格、方向控制、BOM 等
+  function stripInvisible(s) {
+    let out = '';
+    for (const ch of String(s)) {
+      const c = ch.codePointAt(0);
+      if (c < 0x20 || c === 0x7f) continue;            // 控制字符 / DEL
+      if (c === 0xa0 || c === 0xad) continue;          // 不间断空格 / 软连字符
+      if (c === 0x061c) continue;                      // 阿拉伯字母标记
+      if (c >= 0x200b && c <= 0x200f) continue;        // 零宽空格 / LRM / RLM
+      if (c >= 0x202a && c <= 0x202e) continue;        // 方向控制
+      if (c >= 0x2060 && c <= 0x2064) continue;        // word joiner 等
+      if (c >= 0x2066 && c <= 0x2069) continue;        // 方向隔离
+      if (c === 0x2028 || c === 0x2029) continue;      // 行 / 段分隔符
+      if (c === 0xfeff || c === 0xfffc) continue;      // BOM / 对象替换符
+      out += ch;
+    }
+    return out;
+  }
+
+  // 规范化：清不可见字符、全角→半角、各类运算符号统一、去千分位分隔符
+  function normalizeExpr(s) {
+    return stripInvisible(s)
+      .replace(/[０-９]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0)) // 全角数字
+      .replace(/[．｡。]/g, '.')                                  // 各种点 → 小数点
+      .replace(/[×✕⨯⋅·∗＊]/g, '*')                              // 乘
+      .replace(/[÷∕⁄／]/g, '/')                                 // 除（含各种斜杠）
+      .replace(/[−–—－﹣]/g, '-')                                // 各种减号 / 连字符
+      .replace(/[＋﹢]/g, '+')                                   // 全角加
+      .replace(/[（]/g, '(')
+      .replace(/[）]/g, ')')
+      .replace(/[％]/g, '%')
+      .replace(/[,，、'’＇]/g, '')                               // 千分位分隔符（逗号/中文逗号/撇号等）
+      .replace(/\s+/g, '');                                     // 去掉所有空白（普通/全角/窄空格也算千分位）
+  }
+
+  // 词法分析
+  function tokenize(s) {
+    const tokens = [];
+    let i = 0;
+    while (i < s.length) {
+      const c = s[i];
+      if ((c >= '0' && c <= '9') || c === '.') {
+        let num = '';
+        let dot = 0;
+        while (i < s.length && ((s[i] >= '0' && s[i] <= '9') || s[i] === '.')) {
+          if (s[i] === '.' && ++dot > 1) throw new Error('数字格式有误');
+          num += s[i++];
+        }
+        tokens.push({ t: 'num', v: parseFloat(num) });
+        continue;
+      }
+      if ('+-*/%()'.includes(c)) { tokens.push({ t: c }); i++; continue; }
+      throw new Error('无法识别的字符“' + c + '”');
+    }
+    return tokens;
+  }
+
+  // 递归下降求值（标准优先级：先 * /，后 + -；支持括号、一元正负、后缀 %）
+  function evalExpr(raw) {
+    const tokens = tokenize(normalizeExpr(raw));
+    if (tokens.length === 0) throw new Error('表达式为空');
+    let pos = 0;
+    const peek = () => tokens[pos];
+    const eat  = () => tokens[pos++];
+
+    function parseExpr() {
+      let v = parseTerm();
+      while (peek() && (peek().t === '+' || peek().t === '-')) {
+        const op = eat().t;
+        const rhs = parseTerm();
+        v = op === '+' ? v + rhs : v - rhs;
+      }
+      return v;
+    }
+    function parseTerm() {
+      let v = parseFactor();
+      while (peek() && (peek().t === '*' || peek().t === '/')) {
+        const op = eat().t;
+        const rhs = parseFactor();
+        if (op === '*') v = v * rhs;
+        else {
+          if (rhs === 0) throw new Error('除数不能为 0');
+          v = v / rhs;
+        }
+      }
+      return v;
+    }
+    function parseFactor() {
+      const t = peek();
+      if (!t) throw new Error('表达式不完整');
+      if (t.t === '+') { eat(); return parseFactor(); }
+      if (t.t === '-') { eat(); return -parseFactor(); }
+      let v;
+      if (t.t === '(') {
+        eat();
+        v = parseExpr();
+        if (!peek() || peek().t !== ')') throw new Error('括号不匹配');
+        eat();
+      } else if (t.t === 'num') {
+        eat();
+        v = t.v;
+      } else {
+        throw new Error('意外的符号“' + t.t + '”');
+      }
+      while (peek() && peek().t === '%') { eat(); v = v / 100; }   // 后缀百分号
+      return v;
+    }
+
+    const result = parseExpr();
+    if (pos < tokens.length) throw new Error('表达式有多余的符号');
+    if (!isFinite(result)) throw new Error('结果无效');
+    return result;
+  }
+
+  // 两数是否相等（容忍金额四舍五入到两位 & 浮点误差）
+  function approxEqual(a, b) {
+    if (a === b) return true;
+    if (Math.round(a * 100) === Math.round(b * 100)) return true;
+    return Math.abs(a - b) <= 1e-9 * Math.max(1, Math.abs(a), Math.abs(b));
+  }
+
+  // 检查单行
+  function checkLine(line) {
+    const segs = line.split(/[=＝]/).map(s => s.trim()).filter(s => s !== '');
+    if (segs.length === 0) return null;
+    try {
+      const values = segs.map(evalExpr);
+      if (segs.length === 1) {
+        return { line, status: 'calc', computed: values[0] };
+      }
+      const base = values[0];
+      const ok = values.every(v => approxEqual(v, base));
+      return {
+        line, status: ok ? 'correct' : 'wrong',
+        computed: base, claimed: values[values.length - 1]
+      };
+    } catch (e) {
+      return { line, status: 'error', message: e.message };
+    }
+  }
+
+  function checkPasted() {
+    const raw = pasteInput.value;
+    const lines = raw.split('\n').map(l => l.trim()).filter(l => l !== '');
+    if (lines.length === 0) {
+      checkResult.innerHTML = '<div class="check-summary">请输入要检查的算式</div>';
+      return;
+    }
+    const results = lines.map(checkLine).filter(Boolean);
+    renderCheckResults(results);
+  }
+
+  function renderCheckResults(results) {
+    let okN = 0, badN = 0, errN = 0;
+    const rows = results.map(r => {
+      if (r.status === 'correct') {
+        okN++;
+        return `<div class="check-line ok">
+          <span class="ico">✅</span>
+          <span class="body"><span class="expr-txt">${esc(r.line)}</span>
+            <span class="note">正确 · 结果 = <span class="right">${format(r.computed)}</span></span></span>
+        </div>`;
+      }
+      if (r.status === 'wrong') {
+        badN++;
+        const diff = Math.abs(r.computed - r.claimed);
+        return `<div class="check-line bad">
+          <span class="ico">❌</span>
+          <span class="body"><span class="expr-txt">${esc(r.line)}</span>
+            <span class="note">错误 · 你写的是 ${format(r.claimed)}，正确答案应为 <span class="right">${format(r.computed)}</span>（相差 ${format(diff)}）</span></span>
+        </div>`;
+      }
+      if (r.status === 'calc') {
+        return `<div class="check-line warn">
+          <span class="ico">🧮</span>
+          <span class="body"><span class="expr-txt">${esc(r.line)}</span>
+            <span class="note">没有写答案 · 算出来 = <span class="right">${format(r.computed)}</span></span></span>
+        </div>`;
+      }
+      errN++;
+      return `<div class="check-line warn">
+        <span class="ico">⚠️</span>
+        <span class="body"><span class="expr-txt">${esc(r.line)}</span>
+          <span class="note">无法解析：${esc(r.message)}</span></span>
+      </div>`;
+    }).join('');
+
+    const parts = [`共 ${results.length} 条`];
+    if (okN)  parts.push(`<span class="ok-c">✅ ${okN} 正确</span>`);
+    if (badN) parts.push(`<span class="bad-c">❌ ${badN} 错误</span>`);
+    if (errN) parts.push(`⚠️ ${errN} 无法解析`);
+    checkResult.innerHTML =
+      `<div class="check-summary">${parts.join('　')}</div>` + rows;
+
+    if (badN > 0) showToast(`发现 ${badN} 处错误`);
+    else if (okN > 0 && errN === 0) showToast('全部正确 🎉');
+  }
+
+  checkBtn.addEventListener('click', checkPasted);
+  clearPasteBtn.addEventListener('click', () => {
+    pasteInput.value = '';
+    checkResult.innerHTML = '';
+    pasteInput.focus();
+  });
+  pasteInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      checkPasted();
+    }
+  });
 
   // ===== 初始化 =====
   addStep('*', '0.5');   // 默认带一步运算
