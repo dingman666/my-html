@@ -1005,8 +1005,9 @@
         <span>⚠️</span>
         <div class="bn-body">
             你正在通过 <b>HTTPS 网站</b>访问本工具。浏览器安全策略禁止 HTTPS 页面发起 HTTP 请求，因此
-            <b>连通性检测</b>与<b>国内视角</b>无法使用，归属地检测也会降级为英文数据源。
-            想要完整功能，请点右上「···」或 Ctrl+S 把页面<b>下载到本地，双击打开</b>（file:// 模式）即可全部恢复。
+            <b>连通性检测</b>与<b>国内视角</b>默认无法使用，归属地检测也会降级为英文数据源。<br>
+            两种恢复方式：① 把页面<b>下载到本地双击打开</b>（file:// 模式）全部功能恢复；
+            ② 部署一个<b>连通性后端</b>（免费 Cloudflare Worker，见下方 FAQ「如何让在线版测连通性」），在线版即可实测连通。
         </div>
         <button onclick="this.parentNode.style.display='none'">知道了</button>
     </div>
@@ -1111,6 +1112,12 @@ socks5://QYlwfOYd:4B5xPczPy9@165.254.37.117:36377"></textarea>
             <div class="spacer"></div>
             <button class="btn btn-secondary" onclick="copyAll()">复制全部结果</button>
             <button class="btn btn-plain" onclick="clearAll()">清空</button>
+        </div>
+
+        <div class="key-row" style="margin-top:12px">
+            🛰️ 连通性检测后端（可选）：
+            <input id="relayUrl" type="text" placeholder="填入你部署的后端地址，如 https://xxx.workers.dev —— 让在线(HTTPS)版也能测连通" oninput="onRelayInput()">
+            <a href="#faqRelay" onclick="openFaqRelay();return false;">如何部署 →</a>
         </div>
     </div>
 
@@ -1286,6 +1293,22 @@ socks5://QYlwfOYd:4B5xPczPy9@165.254.37.117:36377"></textarea>
             </div>
         </details>
 
+        <details class="faq-item" id="faqRelay">
+            <summary><span class="faq-q-ico">🛰️</span>如何让在线版（HTTPS）也能测连通性？（部署免费后端）<span class="chev">›</span></summary>
+            <div class="faq-body">
+                HTTPS 页面无法直连端口，需要一个"中转"替浏览器去测。<b>网页照样放 GitHub，无需你自己的服务器。</b><br>
+                <b>Cloudflare Worker 不是服务器</b>，是免费的 serverless 云函数，不买机器、不运维，约 2 分钟搞定：
+                <ul>
+                    <li>注册 <b>cloudflare.com</b> → 左侧 Workers &amp; Pages → Create → Worker，起个名字部署。</li>
+                    <li>点 <b>Edit code</b>，把项目里 <b>cloudflare-worker.js</b> 的内容整段粘贴进去，Deploy。</li>
+                    <li>复制它给你的地址（形如 <b>https://xxx.workers.dev</b>），填到上方「🛰️ 连通性检测后端」输入框即可。</li>
+                </ul>
+                之后在线版的连通性就是<b>后端真·TCP 握手实测</b>（比浏览器探测更准），结果显示「连通 / 不可达」。<br>
+                也可用 <b>Node.js</b> 自建（项目里 <b>relay-node.js</b>，含零依赖 TCP 检测与可选的真·代理可用性测试，适合部署到你的 GCP）。<br>
+                <b>隐私说明</b>：TCP 连通检测只把 <b>IP:端口</b> 发给后端，不含账号密码；只有开启"真·代理测试"才会用到账号密码，且后端是你自己的服务器。
+            </div>
+        </details>
+
         <details class="faq-item">
             <summary><span class="faq-q-ico">🔒</span>隐私安全 & 常见问题<span class="chev">›</span></summary>
             <div class="faq-body">
@@ -1331,6 +1354,10 @@ const $ = id => document.getElementById(id);
 const FIELDS = "status,message,country,countryCode,regionName,city,isp,org,as,mobile,proxy,hosting,timezone,query";
 // HTTPS 页面（如 GitHub Pages）禁止发起 HTTP 请求（混合内容），需切换到 https+CORS 数据源，且端口连通性无法探测
 const HTTPS = location.protocol === "https:";
+
+// 【站长配置】部署好 Cloudflare Worker 后，把它的网址填到这里的引号内（例如 "https://awsip.xxx.workers.dev"）
+// 填好并推送到 GitHub 后，所有访问者无需任何设置即可使用连通性检测（共享你这一个后端）。留空则每人需自行填。
+const DEFAULT_RELAY = "https://aws-ip.yitai666-tools-2026.workers.dev";
 
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g,
     c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
@@ -1472,13 +1499,33 @@ async function probe(host, port) {
     }
 }
 
+/* 通过用户自建后端做真·TCP 连通性检测（解决 HTTPS 页面无法直连的问题） */
+async function probeViaRelay(relay, host, port) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), PROBE_TIMEOUT + 6000);
+    const start = performance.now();
+    try {
+        const r = await fetch(`${relay}/check?host=${encodeURIComponent(host)}&port=${encodeURIComponent(port)}`,
+            { cache: "no-store", signal: ctrl.signal });
+        const j = await r.json();
+        return { state: j.open ? "ok" : "timeout", ms: (j.ms != null ? j.ms : Math.round(performance.now() - start)) };
+    } catch (e) {
+        return { state: "relayerr", ms: Math.round(performance.now() - start) };
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
 async function runProbes(items, gen) {
-    // HTTPS 页面禁止 fetch http://IP:端口（混合内容），端口探测无法进行
-    if (HTTPS) {
+    // 优先用访问者自填的后端，否则用站长内置的 DEFAULT_RELAY
+    const relay = (loadSettings().relayUrl || DEFAULT_RELAY || "").trim().replace(/\/+$/, "");
+
+    // 没配后端 + HTTPS 页面：浏览器禁止直连 http 端口，无法探测
+    if (!relay && HTTPS) {
         items.forEach(it => {
-            if (it.el) it.el.innerHTML = `<span class="badge b-gray" title="当前是 HTTPS 网站，浏览器禁止直连 http 端口。请把本页面下载到本地，双击打开即可正常检测连通性">HTTPS 不可测</span>`;
+            if (it.el) it.el.innerHTML = `<span class="badge b-gray" title="HTTPS 页面禁止直连 http 端口。下载到本地打开，或在上方填入自建后端地址即可检测">HTTPS 不可测</span>`;
         });
-        $("convertStats").textContent = convertStatsBase + " ｜ ⚠️ 连通性检测需本地打开（HTTPS 页面禁止直连端口）";
+        $("convertStats").textContent = convertStatsBase + " ｜ ⚠️ 需本地打开，或配置连通性后端（见上方设置）";
         return;
     }
 
@@ -1488,28 +1535,33 @@ async function runProbes(items, gen) {
         const k = it.host + ":" + it.port;
         (groups[k] = groups[k] || []).push(it);
     });
-    let ok = 0, resp = 0, to = 0;
+    let ok = 0, resp = 0, to = 0, err = 0;
 
     await pool(Object.keys(groups), async k => {
         if (gen !== probeGen) return;
         const { host, port } = groups[k][0];
-        const res = await probe(host, port);
+        const res = relay ? await probeViaRelay(relay, host, port) : await probe(host, port);
         if (gen !== probeGen) return;
 
         let html;
         if (res.state === "ok") {
             ok += groups[k].length;
-            html = `<span class="badge b-green" title="端口返回了 HTTP 响应，代理端口在线">连通 ${res.ms}ms</span>`;
+            html = `<span class="badge b-green" title="${relay ? "后端 TCP 握手成功，端口在线" : "端口返回了 HTTP 响应，代理端口在线"}">连通 ${res.ms}ms</span>`;
+        } else if (res.state === "relayerr") {
+            err += groups[k].length;
+            html = `<span class="badge b-gray" title="后端请求失败，请检查后端地址是否正确、是否已部署并开启 CORS">后端错误</span>`;
         } else if (res.state === "timeout") {
             to += groups[k].length;
-            html = `<span class="badge b-red" title="${PROBE_TIMEOUT / 1000} 秒内无响应，端口不可达或被防火墙拦截">超时</span>`;
+            html = `<span class="badge b-red" title="${PROBE_TIMEOUT / 1000} 秒内无响应，端口不可达或被防火墙拦截">${relay ? "不可达" : "超时"}</span>`;
         } else {
             resp += groups[k].length;
             html = `<span class="badge b-orange" title="端口有反应但未返回 HTTP 响应（socks 代理属正常现象），或连接被拒绝">有响应 ${res.ms}ms</span>`;
         }
         groups[k].forEach(it => { if (it.el) it.el.innerHTML = html; });
-        $("convertStats").textContent = convertStatsBase +
-            ` ｜ 🟢 连通 ${ok} · 🟠 有响应 ${resp} · 🔴 超时 ${to}`;
+        const stat = relay
+            ? ` ｜ 🟢 连通 ${ok} · 🔴 不可达 ${to}` + (err ? ` · ⚫ 后端错误 ${err}` : "") + "（后端实测）"
+            : ` ｜ 🟢 连通 ${ok} · 🟠 有响应 ${resp} · 🔴 超时 ${to}`;
+        $("convertStats").textContent = convertStatsBase + stat;
     }, 8);
 }
 
@@ -2716,6 +2768,11 @@ const LS_KEY = "awsIpTool";
 function loadSettings() { try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch (e) { return {}; } }
 function saveSettings(patch) { try { localStorage.setItem(LS_KEY, JSON.stringify(Object.assign(loadSettings(), patch))); } catch (e) {} }
 function onKeyInput() { saveSettings({ pcKey: $("pcKey").value.trim() }); }
+function onRelayInput() { saveSettings({ relayUrl: $("relayUrl").value.trim() }); }
+function openFaqRelay() {
+    const d = $("faqRelay");
+    if (d) { d.open = true; d.scrollIntoView({ behavior: "smooth", block: "center" }); }
+}
 
 function copyVantage(id) {
     const ip = ($(id + "-ip").textContent || "").trim();
@@ -2730,6 +2787,7 @@ function copyVantage(id) {
     if (s.protocol) $("protocol").value = s.protocol;
     if (typeof s.probe === "boolean") $("probeToggle").checked = s.probe;
     if (s.pcKey) $("pcKey").value = s.pcKey;
+    $("relayUrl").value = s.relayUrl || DEFAULT_RELAY || "";   // 展示站长内置后端（如有）
 })();
 if (HTTPS) $("httpsBanner").style.display = "flex";
 $("protocol").addEventListener("change", () => saveSettings({ protocol: $("protocol").value }));
