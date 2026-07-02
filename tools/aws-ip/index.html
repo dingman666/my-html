@@ -79,6 +79,36 @@
         margin: 0;
     }
 
+    /* ---------- HTTPS 限制提示 ---------- */
+    .https-banner {
+        background: rgba(255,149,0,0.13);
+        border: 1px solid rgba(255,149,0,0.32);
+        color: #9a5b00;
+        border-radius: 14px;
+        padding: 13px 16px;
+        margin-bottom: 18px;
+        font-size: 13px;
+        line-height: 1.75;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    .https-banner b { color: inherit; font-weight: 700; }
+    .https-banner .bn-body { flex: 1; }
+    .https-banner button {
+        flex-shrink: 0;
+        border: none;
+        background: rgba(255,149,0,0.22);
+        color: inherit;
+        font-size: 12px;
+        padding: 5px 12px;
+        border-radius: 999px;
+        cursor: pointer;
+    }
+    @media (prefers-color-scheme: dark) {
+        .https-banner { color: #ffb84d; background: rgba(255,149,0,0.1); }
+    }
+
     /* ---------- 卡片 ---------- */
     .card {
         background: var(--card);
@@ -971,6 +1001,16 @@
         <p class="subtitle">IP 格式转换 · 归属地检测 · 一站式代理小工具</p>
     </header>
 
+    <div class="https-banner" id="httpsBanner" style="display:none">
+        <span>⚠️</span>
+        <div class="bn-body">
+            你正在通过 <b>HTTPS 网站</b>访问本工具。浏览器安全策略禁止 HTTPS 页面发起 HTTP 请求，因此
+            <b>连通性检测</b>与<b>国内视角</b>无法使用，归属地检测也会降级为英文数据源。
+            想要完整功能，请点右上「···」或 Ctrl+S 把页面<b>下载到本地，双击打开</b>（file:// 模式）即可全部恢复。
+        </div>
+        <button onclick="this.parentNode.style.display='none'">知道了</button>
+    </div>
+
     <!-- 环境与指纹检测（识别浏览器/系统 + 代理安全 + 浏览器指纹，思路参考 iprisk.top / adspower） -->
     <div class="card env-card">
         <div class="env-head">
@@ -1241,7 +1281,8 @@ socks5://QYlwfOYd:4B5xPczPy9@165.254.37.117:36377"></textarea>
                     <li><span class="mini b-orange">有响应</span>端口有反应但未返回 HTTP，socks 代理属正常现象，大概率可用；也可能是连接被拒绝。</li>
                     <li><span class="mini b-red">超时</span>6 秒内无任何响应，端口大概率不通。</li>
                 </ul>
-                <b>注意</b>：这是浏览器直连端口的活性探测，<b>不等于"通过代理能上网"</b>，实际可用性请以真实使用为准。
+                <b>注意</b>：这是浏览器直连端口的活性探测，<b>不等于"通过代理能上网"</b>，实际可用性请以真实使用为准。<br>
+                <b>⚠️ 仅本地可用</b>：若你从 HTTPS 网站（如 GitHub Pages）打开本页，浏览器会禁止直连 http 端口，连通性会显示「HTTPS 不可测」——把页面下载到本地双击打开即可正常检测。
             </div>
         </details>
 
@@ -1288,6 +1329,8 @@ socks5://QYlwfOYd:4B5xPczPy9@165.254.37.117:36377"></textarea>
 
 const $ = id => document.getElementById(id);
 const FIELDS = "status,message,country,countryCode,regionName,city,isp,org,as,mobile,proxy,hosting,timezone,query";
+// HTTPS 页面（如 GitHub Pages）禁止发起 HTTP 请求（混合内容），需切换到 https+CORS 数据源，且端口连通性无法探测
+const HTTPS = location.protocol === "https:";
 
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g,
     c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
@@ -1430,6 +1473,15 @@ async function probe(host, port) {
 }
 
 async function runProbes(items, gen) {
+    // HTTPS 页面禁止 fetch http://IP:端口（混合内容），端口探测无法进行
+    if (HTTPS) {
+        items.forEach(it => {
+            if (it.el) it.el.innerHTML = `<span class="badge b-gray" title="当前是 HTTPS 网站，浏览器禁止直连 http 端口。请把本页面下载到本地，双击打开即可正常检测连通性">HTTPS 不可测</span>`;
+        });
+        $("convertStats").textContent = convertStatsBase + " ｜ ⚠️ 连通性检测需本地打开（HTTPS 页面禁止直连端口）";
+        return;
+    }
+
     // 相同 host:port 只探测一次
     const groups = {};
     items.forEach(it => {
@@ -1508,6 +1560,8 @@ async function querySingle(host) {
     return res.json();
 }
 
+/* ---- https + CORS 归属地数据源（HTTPS 页面可用；空 host 表示查本机出口 IP） ---- */
+
 async function queryWho(host) {
     const res = await fetch(`https://ipwho.is/${encodeURIComponent(host)}`);
     const d = await res.json();
@@ -1518,8 +1572,35 @@ async function queryWho(host) {
         country: d.country, countryCode: d.country_code,
         regionName: d.region, city: d.city,
         isp: c.isp, org: c.org, as: c.asn ? "AS" + c.asn : "",
-        timezone: d.timezone && d.timezone.id
+        timezone: d.timezone && d.timezone.id, _src: "ipwho.is"
         // ipwho.is 免费版不含 proxy/hosting 标记，保持 undefined
+    };
+}
+
+async function queryIpapiCo(host) {
+    const url = host ? `https://ipapi.co/${encodeURIComponent(host)}/json/` : "https://ipapi.co/json/";
+    const d = await (await fetch(url)).json();
+    if (!d || d.error || !d.country_name) return { status: "fail", message: (d && d.reason) || "查询失败", query: host };
+    return {
+        status: "success", query: d.ip || host,
+        country: d.country_name, countryCode: d.country_code,
+        regionName: d.region, city: d.city,
+        isp: d.org, org: d.org, as: d.asn,
+        timezone: d.timezone, _src: "ipapi.co"
+    };
+}
+
+async function queryFreeIpApi(host) {
+    const url = host ? `https://freeipapi.com/api/json/${encodeURIComponent(host)}` : "https://freeipapi.com/api/json/";
+    const d = await (await fetch(url)).json();
+    if (!d || !d.countryName) return { status: "fail", message: "查询失败", query: host };
+    return {
+        status: "success", query: d.ipAddress || host,
+        country: d.countryName, countryCode: d.countryCode,
+        regionName: d.regionName, city: d.cityName,
+        isp: "", org: "", as: "",
+        timezone: d.timeZone,
+        proxy: d.isProxy === true, _src: "freeipapi.com"
     };
 }
 
@@ -1531,31 +1612,36 @@ async function pool(items, worker, size) {
     await Promise.all(runners);
 }
 
-/* 查询全部主机：优先 ip-api 批量（中文），失败逐个回退 ipwho.is */
+/* 查询单个主机：非 HTTPS 优先 ip-api（中文+机房/住宅标记），HTTPS 环境走 https 源 */
+async function lookupOne(h) {
+    if (!HTTPS) {
+        try { const r = await querySingle(h); if (r && r.status === "success") return r; } catch (e) {}
+    }
+    for (const fn of [queryWho, queryIpapiCo, queryFreeIpApi]) {
+        try { const r = await fn(h); if (r && r.status === "success") return r; } catch (e) {}
+    }
+    return { status: "fail", message: HTTPS ? "HTTPS 环境数据源受限，建议本地打开" : "查询失败", query: h };
+}
+
+/* 查询全部主机：非 HTTPS 用 ip-api 批量（快、含中文），HTTPS 逐个走 https 源 */
 async function lookupAll(hosts, onResult) {
     const pending = new Set(hosts);
-    const ips = hosts.filter(h => isIPv4(h) || (isIPv6(h) && !isIPv4(h)));
 
-    try {
-        for (let i = 0; i < ips.length; i += 90) {
-            const chunk = ips.slice(i, i + 90);
-            const arr = await queryBatch(chunk);
-            chunk.forEach((h, j) => {
-                onResult(h, arr[j] || { status: "fail", message: "无返回", query: h });
-                pending.delete(h);
-            });
-        }
-    } catch (e) { /* 批量失败（如 https 页面禁 http），走回退 */ }
+    if (!HTTPS) {
+        const ips = hosts.filter(h => isIPv4(h) || (isIPv6(h) && !isIPv4(h)));
+        try {
+            for (let i = 0; i < ips.length; i += 90) {
+                const chunk = ips.slice(i, i + 90);
+                const arr = await queryBatch(chunk);
+                chunk.forEach((h, j) => {
+                    onResult(h, arr[j] || { status: "fail", message: "无返回", query: h });
+                    pending.delete(h);
+                });
+            }
+        } catch (e) { /* 批量失败则逐个回退 */ }
+    }
 
-    const rest = [...pending];
-    await pool(rest, async h => {
-        const isIP = isIPv4(h) || isIPv6(h);
-        let r = null;
-        try { r = isIP ? await queryWho(h) : await querySingle(h); } catch (e) {}
-        if (!r) { try { r = isIP ? await querySingle(h) : await queryWho(h); } catch (e) {} }
-        if (!r) r = { status: "fail", message: "网络错误", query: h };
-        onResult(h, r);
-    }, 5);
+    await pool([...pending], async h => onResult(h, await lookupOne(h)), HTTPS ? 4 : 5);
 }
 
 /* ---------- IP 检测 ---------- */
@@ -1871,17 +1957,23 @@ function renderDetail(res, r, cross, pc) {
 
 async function crossSources(host) {
     const out = [];
-    try {
-        const j = await querySingle(host);
-        if (j.status === "success") out.push({ name: "ip-api.com", country: [j.country, j.city].filter(Boolean).join(" · "), isp: j.isp });
-    } catch (e) {}
+    if (!HTTPS) {
+        try {
+            const j = await querySingle(host);
+            if (j.status === "success") out.push({ name: "ip-api.com", country: [j.country, j.city].filter(Boolean).join(" · "), isp: j.isp });
+        } catch (e) {}
+    }
     try {
         const j = await queryWho(host);
         if (j.status === "success") out.push({ name: "ipwho.is", country: [j.country, j.city].filter(Boolean).join(" · "), isp: j.isp });
     } catch (e) {}
     try {
-        const j = await (await fetch(`https://ipapi.co/${encodeURIComponent(host)}/json/`)).json();
-        if (j && !j.error && j.country_name) out.push({ name: "ipapi.co", country: [j.country_name, j.city].filter(Boolean).join(" · "), isp: j.org });
+        const j = await queryIpapiCo(host);
+        if (j.status === "success") out.push({ name: "ipapi.co", country: [j.country, j.city].filter(Boolean).join(" · "), isp: j.isp });
+    } catch (e) {}
+    try {
+        const j = await queryFreeIpApi(host);
+        if (j.status === "success") out.push({ name: "freeipapi.com", country: [j.country, j.city].filter(Boolean).join(" · "), isp: j.isp || "—" });
     } catch (e) {}
     return out;
 }
@@ -2198,11 +2290,10 @@ function vFail(id, msg) {
     $(id + "-src").textContent = "";
 }
 
-/* 统一归属地查询（中文优先），供各卡片显示格式一致 */
+/* 统一归属地查询（中文优先/https 兼容），供各卡片显示格式一致 */
 async function geoLookup(ip) {
-    try { const r = await querySingle(ip); if (r && r.status === "success") return r; } catch (e) {}
-    try { const r = await queryWho(ip);   if (r && r.status === "success") return r; } catch (e) {}
-    return null;
+    const r = await lookupOne(ip);
+    return (r && r.status === "success") ? r : null;
 }
 function geoLine(g) {
     return g ? [g.country, g.regionName, g.city, g.isp || g.org].filter(Boolean).join(" · ") : "";
@@ -2233,28 +2324,31 @@ async function resolveCNIP() {
 async function loadCN() {
     vLoading("vcn");
     const r = await resolveCNIP();
-    if (!r) { vFail("vcn"); vantage.vcn = null; updateConsistency(); return; }
+    if (!r) {
+        vFail("vcn", HTTPS ? "HTTPS 环境下国内数据源受限（多为 http/无 CORS），建议将页面下载到本地打开" : "请检查网络后点 ↻ 重试");
+        vantage.vcn = null; updateConsistency(); return;
+    }
     const g = await geoLookup(r.ip);
     vantage.vcn = { ip: r.ip, geo: g, src: r.src };
     vSet("vcn", r.ip, geoLine(g), r.src);
     updateConsistency();
 }
 
-/* 国际视角：多个海外服务商接口交叉获取出口 IP */
+/* 国际视角：多个海外服务商接口交叉获取出口 IP（HTTPS 环境跳过 http 的 ip-api） */
 async function resolveIntlIP() {
-    try {
-        const j = await (await fetch(`http://ip-api.com/json/?fields=${FIELDS}&lang=zh-CN`)).json();
-        if (j.status === "success") return { ip: j.query, geo: j, src: "ip-api.com" };
-    } catch (e) {}
+    if (!HTTPS) {
+        try {
+            const j = await (await fetch(`http://ip-api.com/json/?fields=${FIELDS}&lang=zh-CN`)).json();
+            if (j.status === "success") return { ip: j.query, geo: j, src: "ip-api.com" };
+        } catch (e) {}
+    }
     try {
         const d = await queryWho("");
         if (d.status === "success") return { ip: d.query, geo: d, src: "ipwho.is" };
     } catch (e) {}
     try {
-        const j = await (await fetch("https://ipapi.co/json/")).json();
-        if (j.ip) return { ip: j.ip, geo: {
-            country: j.country_name, countryCode: j.country_code, regionName: j.region,
-            city: j.city, isp: j.org, as: j.asn }, src: "ipapi.co" };
+        const d = await queryIpapiCo("");
+        if (d.status === "success") return { ip: d.query, geo: d, src: "ipapi.co" };
     } catch (e) {}
     try {
         const j = await (await fetch("https://api.ipify.org?format=json")).json();
@@ -2637,6 +2731,7 @@ function copyVantage(id) {
     if (typeof s.probe === "boolean") $("probeToggle").checked = s.probe;
     if (s.pcKey) $("pcKey").value = s.pcKey;
 })();
+if (HTTPS) $("httpsBanner").style.display = "flex";
 $("protocol").addEventListener("change", () => saveSettings({ protocol: $("protocol").value }));
 $("probeToggle").addEventListener("change", () => saveSettings({ probe: $("probeToggle").checked }));
 
