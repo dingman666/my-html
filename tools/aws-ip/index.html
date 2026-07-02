@@ -1004,9 +1004,8 @@
     <div class="https-banner" id="httpsBanner" style="display:none">
         <span>⚠️</span>
         <div class="bn-body">
-            你正在通过 <b>HTTPS 网站</b>访问本工具。连通性检测与归属地已由后端(Cloudflare Worker)提供，正常可用；
-            仅 <b>国内视角 IP</b> 无法在线获取（需要一台中国大陆服务器当观察点，参考 ip111.cn）。
-            想看国内视角，把页面<b>下载到本地双击打开</b>即可。
+            你正在通过 <b>HTTPS 网站</b>访问本工具。连通性检测、归属地、国内视角均已通过后端 / JSONP 方式支持，
+            功能与本地版基本一致。若个别数据源临时抽风，点对应卡片的 ↻ 重试，或下载到本地双击打开。
         </div>
         <button onclick="this.parentNode.style.display='none'">知道了</button>
     </div>
@@ -2381,6 +2380,15 @@ function geoLine(g) {
 
 /* 国内视角：多个国内服务商接口交叉获取出口 IP，再统一查归属地 */
 async function resolveCNIP() {
+    // 腾讯新闻接口：HTTPS + JSONP，中国服务器回显调用者 IP —— JSONP 不受 CORS 限制，在线版也能用！
+    try {
+        const j = await jsonp("https://r.inews.qq.com/api/ip2city?otype=jsonp", "callback");
+        if (j && j.ip) return {
+            ip: j.ip, src: "腾讯新闻",
+            geo: { country: j.country || "中国", countryCode: (j.country === "中国" || !j.country) ? "CN" : "",
+                   regionName: j.province, city: j.city }
+        };
+    } catch (e) {}
     try {
         const j = await (await fetch("https://qifu-api.baidubce.com/ip/local/geo/v1/district")).json();
         const ip = j.ip || (j.data && j.data.ip);
@@ -2420,9 +2428,9 @@ async function loadCN() {
         updateConsistency();
         return;
     }
-    const g = await geoLookup(r.ip);
+    const g = await geoLookup(r.ip) || r.geo || null;
     vantage.vcn = { ip: r.ip, geo: g, src: r.src };
-    vSet("vcn", r.ip, geoLine(g), r.src);
+    vSet("vcn", r.ip, geoLine(g) || (r.geo ? geoLine(r.geo) : ""), r.src);
     updateConsistency();
 }
 
