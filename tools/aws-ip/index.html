@@ -1004,10 +1004,9 @@
     <div class="https-banner" id="httpsBanner" style="display:none">
         <span>⚠️</span>
         <div class="bn-body">
-            你正在通过 <b>HTTPS 网站</b>访问本工具。浏览器安全策略禁止 HTTPS 页面发起 HTTP 请求，因此
-            <b>连通性检测</b>与<b>国内视角</b>默认无法使用，归属地检测也会降级为英文数据源。<br>
-            两种恢复方式：① 把页面<b>下载到本地双击打开</b>（file:// 模式）全部功能恢复；
-            ② 部署一个<b>连通性后端</b>（免费 Cloudflare Worker，见下方 FAQ「如何让在线版测连通性」），在线版即可实测连通。
+            你正在通过 <b>HTTPS 网站</b>访问本工具。连通性检测与归属地已由后端(Cloudflare Worker)提供，正常可用；
+            仅 <b>国内视角 IP</b> 无法在线获取（需要一台中国大陆服务器当观察点，参考 ip111.cn）。
+            想看国内视角，把页面<b>下载到本地双击打开</b>即可。
         </div>
         <button onclick="this.parentNode.style.display='none'">知道了</button>
     </div>
@@ -1196,11 +1195,6 @@ socks5://QYlwfOYd:4B5xPczPy9@165.254.37.117:36377"></textarea>
             </div>
             <div class="note">
                 说明：检测基于公共 IP 数据库（ip-api.com / ipwho.is），返回归属地、运营商、机房/住宅类型及公共代理库标记，可用于判断 IP 质量；代理的实际连通性与延迟请以本地使用为准。账号密码仅在本地处理，不会上传。
-            </div>
-            <div class="key-row">
-                🔑 真实风控库（proxycheck.io）Key：
-                <input id="pcKey" type="text" placeholder="选填：粘贴免费 API Key，解锁真实风险分（点击 IP 详情时查询）" oninput="onKeyInput()">
-                <a href="https://proxycheck.io/pricing/" target="_blank" rel="noopener">免费申请 →</a>
             </div>
         </div>
     </div>
@@ -1664,10 +1658,47 @@ async function pool(items, worker, size) {
     await Promise.all(runners);
 }
 
-/* 查询单个主机：非 HTTPS 优先 ip-api（中文+机房/住宅标记），HTTPS 环境走 https 源 */
+/* 当前生效的后端地址（访问者自填优先，否则用站长内置的 DEFAULT_RELAY） */
+function effRelay() { return (loadSettings().relayUrl || DEFAULT_RELAY || "").trim().replace(/\/+$/, ""); }
+
+/* 经后端 Worker 代查 ip-api（服务端不受 HTTPS/CORS 限制，含 机房/住宅/移动/代理 标记 + 中文） */
+async function geoViaRelay(ip) {
+    const relay = effRelay();
+    if (!relay) return null;
+    try {
+        const j = await (await fetch(`${relay}/geo?ip=${encodeURIComponent(ip)}`, { cache: "no-store" })).json();
+        if (j && j.status === "success") return j;
+    } catch (e) {}
+    return null;
+}
+async function batchViaRelay(ips) {
+    const relay = effRelay();
+    if (!relay) return null;
+    try {
+        const arr = await (await fetch(`${relay}/batch`, { method: "POST", body: JSON.stringify(ips) })).json();
+        if (Array.isArray(arr)) return arr;
+    } catch (e) {}
+    return null;
+}
+
+/* 经后端并行代调多个风险库并聚合（后端无 CORS 限制，Key 内置在 Worker） */
+async function riskViaRelay(ip) {
+    const relay = effRelay();
+    if (!relay) return null;
+    try {
+        const j = await (await fetch(`${relay}/risk?ip=${encodeURIComponent(ip)}`, { cache: "no-store" })).json();
+        if (j && j.ok) return { aggRisk: j.aggRisk, proxy: j.proxy, type: j.type, sources: j.sources || [] };
+    } catch (e) {}
+    return null;
+}
+
+/* 查询单个主机：优先拿含"机房/住宅"标记的 ip-api 富数据（本地直连 / 在线经后端），再退 https 源 */
 async function lookupOne(h) {
     if (!HTTPS) {
         try { const r = await querySingle(h); if (r && r.status === "success") return r; } catch (e) {}
+    } else {
+        const r = await geoViaRelay(h);   // 在线：经后端代查 ip-api，纯净度/类型与本地一致
+        if (r) return r;
     }
     for (const fn of [queryWho, queryIpapiCo, queryFreeIpApi]) {
         try { const r = await fn(h); if (r && r.status === "success") return r; } catch (e) {}
@@ -1675,16 +1706,18 @@ async function lookupOne(h) {
     return { status: "fail", message: HTTPS ? "HTTPS 环境数据源受限，建议本地打开" : "查询失败", query: h };
 }
 
-/* 查询全部主机：非 HTTPS 用 ip-api 批量（快、含中文），HTTPS 逐个走 https 源 */
+/* 查询全部主机：批量走 ip-api（本地直连 / 在线经后端），失败逐个回退 */
 async function lookupAll(hosts, onResult) {
     const pending = new Set(hosts);
+    const batchFn = !HTTPS ? queryBatch : (effRelay() ? batchViaRelay : null);
 
-    if (!HTTPS) {
+    if (batchFn) {
         const ips = hosts.filter(h => isIPv4(h) || (isIPv6(h) && !isIPv4(h)));
         try {
             for (let i = 0; i < ips.length; i += 90) {
                 const chunk = ips.slice(i, i + 90);
-                const arr = await queryBatch(chunk);
+                const arr = await batchFn(chunk);
+                if (!arr) break;   // 批量失败 → 交给逐个查询
                 chunk.forEach((h, j) => {
                     onResult(h, arr[j] || { status: "fail", message: "无返回", query: h });
                     pending.delete(h);
@@ -1693,7 +1726,7 @@ async function lookupAll(hosts, onResult) {
         } catch (e) { /* 批量失败则逐个回退 */ }
     }
 
-    await pool([...pending], async h => onResult(h, await lookupOne(h)), HTTPS ? 4 : 5);
+    await pool([...pending], async h => onResult(h, await lookupOne(h)), 5);
 }
 
 /* ---------- IP 检测 ---------- */
@@ -1962,23 +1995,32 @@ function renderCross(cross) {
 
 function riskBarColor(v) { return v < 34 ? "#34c759" : v < 67 ? "#ff9500" : "#ff3b30"; }
 
-/* proxycheck.io 真实风控展示 */
+/* 多风险库聚合展示（经后端并行查询，无需访问者填 Key） */
 function renderPC(pc) {
-    const title = `<div class="section-title">真实风控 · proxycheck.io</div>`;
     if (pc === undefined)
-        return `<div class="pc-box">${title}<div class="sub">查询中… <span class="spinner sm"></span></div></div>`;
-    if (pc === null)
-        return `<div class="pc-box">${title}<div class="sub">暂无数据 —— 免费额度用尽或未填写 API Key。</div>` +
-            `<div class="pc-hint">在下方填入免费 Key 即可解锁 0–100 真实风险分（额度更高）。</div></div>`;
+        return `<div class="pc-box"><div class="section-title">真实风控 · 多库核验</div><div class="sub">查询中… <span class="spinner sm"></span></div></div>`;
+    if (pc === null || !pc.sources || !pc.sources.length) return "";   // 无后端 / 无数据时不显示
+
+    const n = pc.sources.length;
+    const title = `<div class="section-title">真实风控 · 已核验 ${n} 个风险库</div>`;
+    const bar = (typeof pc.aggRisk === "number")
+        ? `<div class="pc-risk"><div class="pc-bar"><div class="pc-fill" style="width:${pc.aggRisk}%;background:${riskBarColor(pc.aggRisk)}"></div></div>` +
+          `<b style="color:${riskBarColor(pc.aggRisk)}">综合风险 ${pc.aggRisk}/100</b></div>`
+        : "";
     const tags = [];
     tags.push(pc.proxy ? badge("检测为代理 / VPN", "orange") : badge("非代理", "green"));
     if (pc.type) tags.push(badge(pc.type, "blue"));
-    if (pc.provider) tags.push(badge(pc.provider, "gray"));
-    const bar = (typeof pc.risk === "number")
-        ? `<div class="pc-risk"><div class="pc-bar"><div class="pc-fill" style="width:${pc.risk}%;background:${riskBarColor(pc.risk)}"></div></div>` +
-          `<b style="color:${riskBarColor(pc.risk)}">风险 ${pc.risk}/100</b></div>`
-        : `<div class="pc-hint">此结果未含风险分（注册免费 Key 后返回 0–100 risk）。</div>`;
-    return `<div class="pc-box">${title}${bar}<div class="pc-tags">${tags.join("")}</div></div>`;
+
+    const rows = pc.sources.map(s => {
+        const rk = (typeof s.risk === "number")
+            ? `<b style="color:${riskBarColor(s.risk)}">${s.risk}</b>`
+            : `<span class="sub">—</span>`;
+        const flag = s.proxy ? badge("代理/VPN", "orange") : badge("干净", "green");
+        return `<tr><td class="src-name">${esc(s.name)}</td><td>${rk}</td><td>${flag}${s.note ? ` <span class="sub">${esc(s.note)}</span>` : ""}</td></tr>`;
+    }).join("");
+
+    return `<div class="pc-box">${title}${bar}<div class="pc-tags" style="margin-bottom:8px">${tags.join("")}</div>` +
+        `<table class="src-table"><thead><tr><th>风险库</th><th>风险分</th><th>判定</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 function renderDetail(res, r, cross, pc) {
@@ -2030,24 +2072,6 @@ async function crossSources(host) {
     return out;
 }
 
-/* proxycheck.io：真实风险分 + 代理/VPN 判定（免费 key 解锁 risk） */
-async function proxyCheck(host) {
-    try {
-        const key = (loadSettings().pcKey || "").trim();
-        const url = `https://proxycheck.io/v2/${encodeURIComponent(host)}?vpn=1&asn=1&risk=1` + (key ? "&key=" + encodeURIComponent(key) : "");
-        const j = await (await fetch(url)).json();
-        if (!j || (j.status !== "ok" && j.status !== "warning")) return null;
-        const d = j[host];
-        if (!d) return null;
-        return {
-            risk: (d.risk != null && !isNaN(+d.risk)) ? +d.risk : undefined,
-            proxy: d.proxy === "yes",
-            type: d.type || "",
-            provider: d.provider || d.organisation || ""
-        };
-    } catch (e) { return null; }
-}
-
 function rerenderDetail() {
     if (detailCur) $("modalBody").innerHTML = renderDetail(detailCur.res, detailCur.r, detailCur.cross, detailCur.pc);
 }
@@ -2069,7 +2093,11 @@ function showDetail(r, res) {
     if (!ok) return;
 
     crossSources(r.host).then(c => { if (detailCur && detailCur.token === token) { detailCur.cross = c; rerenderDetail(); } });
-    proxyCheck(r.host).then(p => { if (detailCur && detailCur.token === token) { detailCur.pc = p; rerenderDetail(); } });
+    if (effRelay()) {
+        riskViaRelay(r.host).then(p => { if (detailCur && detailCur.token === token) { detailCur.pc = p; rerenderDetail(); } });
+    } else {
+        detailCur.pc = null;
+    }
 }
 
 function openDetail(i) {
@@ -2377,8 +2405,20 @@ async function loadCN() {
     vLoading("vcn");
     const r = await resolveCNIP();
     if (!r) {
-        vFail("vcn", HTTPS ? "HTTPS 环境下国内数据源受限（多为 http/无 CORS），建议将页面下载到本地打开" : "请检查网络后点 ↻ 重试");
-        vantage.vcn = null; updateConsistency(); return;
+        vantage.vcn = null;
+        if (HTTPS) {
+            const ipEl = $("vcn-ip");
+            ipEl.textContent = "仅本地版可用";
+            ipEl.classList.remove("v-click");
+            ipEl.onclick = null;
+            ipEl.title = "";
+            $("vcn-sub").textContent = "在线版受浏览器安全限制无法获取国内视角；把页面下载到本地双击打开即可显示";
+            $("vcn-src").textContent = "";
+        } else {
+            vFail("vcn", "请检查网络后点 ↻ 重试");
+        }
+        updateConsistency();
+        return;
     }
     const g = await geoLookup(r.ip);
     vantage.vcn = { ip: r.ip, geo: g, src: r.src };
@@ -2767,7 +2807,6 @@ function toast(msg) {
 const LS_KEY = "awsIpTool";
 function loadSettings() { try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch (e) { return {}; } }
 function saveSettings(patch) { try { localStorage.setItem(LS_KEY, JSON.stringify(Object.assign(loadSettings(), patch))); } catch (e) {} }
-function onKeyInput() { saveSettings({ pcKey: $("pcKey").value.trim() }); }
 function onRelayInput() { saveSettings({ relayUrl: $("relayUrl").value.trim() }); }
 function openFaqRelay() {
     const d = $("faqRelay");
@@ -2786,7 +2825,6 @@ function copyVantage(id) {
     const s = loadSettings();
     if (s.protocol) $("protocol").value = s.protocol;
     if (typeof s.probe === "boolean") $("probeToggle").checked = s.probe;
-    if (s.pcKey) $("pcKey").value = s.pcKey;
     $("relayUrl").value = s.relayUrl || DEFAULT_RELAY || "";   // 展示站长内置后端（如有）
 })();
 if (HTTPS) $("httpsBanner").style.display = "flex";
