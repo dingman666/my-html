@@ -61,6 +61,12 @@
       "name": "文字转二维码",
       "path": "tools/wenzi-erweima/",
       "icon": "tools/wenzi-erweima/icon.png"
+    },
+    {
+      "id": "gcp-gemini",
+      "name": "GCP / Gemini 用量等级与配额查询指南",
+      "path": "tools/gcp-gemini/",
+      "icon": "tools/gcp-gemini/icon.png"
     }
   ]
 }
