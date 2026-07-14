@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GCP / Gemini 用量等级与配额查询指南</title>
+<style>
+  :root {
+    --bg: #f5f5f7;
+    --card: #ffffff;
+    --fg: #1d1d1f;
+    --muted: #6e6e73;
+    --hairline: #d2d2d7;
+    --accent: #0071e3;
+    --seg-bg: rgba(120, 120, 128, 0.12);
+    --seg-active: #ffffff;
+    --code-bg: #f5f5f7;
+    --callout-bg: rgba(0, 113, 227, 0.06);
+    --shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+    --seg-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #000000;
+      --card: #1d1d1f;
+      --fg: #f5f5f7;
+      --muted: #86868b;
+      --hairline: #3a3a3c;
+      --accent: #2997ff;
+      --seg-bg: rgba(120, 120, 128, 0.24);
+      --seg-active: #48484a;
+      --code-bg: #2c2c2e;
+      --callout-bg: rgba(41, 151, 255, 0.10);
+      --shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+      --seg-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+                 "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 3rem 1.25rem 4rem;
+  }
+
+  /* ---------- 头部 ---------- */
+  header { text-align: center; margin-bottom: 2rem; }
+  header h1 {
+    font-size: clamp(1.7rem, 4vw, 2.4rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+  header p.sub {
+    margin-top: .7rem;
+    color: var(--muted);
+    font-size: .95rem;
+  }
+
+  /* ---------- 分段控件(标签栏) ---------- */
+  nav.tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--seg-bg);
+    border-radius: 999px;
+    padding: 4px;
+    margin: 0 auto 2.2rem;
+    max-width: 640px;
+    position: sticky;
+    top: 12px;
+    z-index: 10;
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+  }
+  nav.tabs button {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--fg);
+    font: inherit;
+    font-size: .92rem;
+    font-weight: 500;
+    padding: .55rem .4rem;
+    border-radius: 999px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .25s ease, color .25s ease, box-shadow .25s ease;
+  }
+  nav.tabs button:hover:not(.active) { color: var(--accent); }
+  nav.tabs button.active {
+    background: var(--seg-active);
+    box-shadow: var(--seg-shadow);
+    font-weight: 600;
+  }
+
+  /* ---------- 标签页面板 ---------- */
+  .panel { display: none; animation: fadeUp .35s ease; }
+  .panel.active { display: block; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ---------- 卡片 ---------- */
+  .card {
+    background: var(--card);
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+    padding: 1.6rem 1.8rem;
+    margin-bottom: 1.4rem;
+  }
+  .card h2 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 1rem;
+  }
+  .card h3 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin: 1.4rem 0 .6rem;
+  }
+  .card h3:first-of-type { margin-top: 0; }
+  .card p { margin: .6rem 0; }
+  .card ul { padding-left: 1.3rem; margin: .6rem 0; }
+  .card li { margin: .4rem 0; }
+
+  a { color: var(--accent); text-decoration: none; word-break: break-all; }
+  a:hover { text-decoration: underline; }
+  strong { font-weight: 600; }
+
+  /* ---------- 表格 ---------- */
+  .table-wrap { overflow-x: auto; margin: .8rem 0; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .93rem;
+  }
+  th, td {
+    text-align: left;
+    padding: .7rem .9rem;
+    border-bottom: 1px solid var(--hairline);
+    vertical-align: top;
+  }
+  thead th {
+    font-weight: 600;
+    color: var(--muted);
+    font-size: .85rem;
+    text-transform: none;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+
+  /* ---------- 代码 ---------- */
+  code {
+    background: var(--code-bg);
+    border-radius: 6px;
+    padding: .12rem .4rem;
+    font-family: "SF Mono", ui-monospace, Consolas, monospace;
+    font-size: .85em;
+  }
+  pre {
+    background: var(--code-bg);
+    border-radius: 12px;
+    padding: 1rem 1.2rem;
+    overflow-x: auto;
+    margin: .8rem 0;
+  }
+  pre code { background: none; padding: 0; }
+
+  /* ---------- 提示框 ---------- */
+  .callout {
+    background: var(--callout-bg);
+    border-radius: 12px;
+    padding: .9rem 1.1rem;
+    margin: 1rem 0;
+    font-size: .95rem;
+  }
+  .callout ul { margin: .3rem 0 0; }
+
+  /* ---------- 徽标 ---------- */
+  .badge {
+    display: inline-block;
+    font-size: .78rem;
+    font-weight: 600;
+    padding: .15rem .6rem;
+    border-radius: 999px;
+    background: var(--callout-bg);
+    color: var(--accent);
+    margin-left: .4rem;
+    vertical-align: middle;
+  }
+
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: .85rem;
+    margin-top: 2.5rem;
+  }
+
+  @media (max-width: 540px) {
+    .card { padding: 1.2rem 1.1rem; }
+    nav.tabs button { font-size: .82rem; padding: .5rem .2rem; }
+  }
+</style>
+  <link rel="icon" href="./icon.png">
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>GCP / Gemini<br>用量等级与配额查询指南</h1>
+  <p class="sub">整理日期 2026-07-15 · 依据 Google 官方文档 · 政策更新较频繁,使用前建议核对官方链接</p>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button class="active" data-tab="overview" role="tab">概览</button>
+  <button data-tab="gemini" role="tab">Gemini API 等级</button>
+  <button data-tab="vertex" role="tab">Vertex AI 配额</button>
+  <button data-tab="links" role="tab">链接速查</button>
+</nav>
+
+<!-- ============ 概览 ============ -->
+<section class="panel active" id="overview">
+  <div class="card">
+    <h2>先分清两套体系</h2>
+    <p>Google 的 Gemini 模型有<strong>两套完全独立的用量体系</strong>。你说的 T1 / T2 / T3 属于左边这套(Gemini API);Vertex AI 没有等级概念。</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th></th><th>Gemini API(AI Studio 体系)</th><th>Vertex AI(GCP 企业体系)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>API 端点</strong></td><td><code>generativelanguage.googleapis.com</code></td><td><code>aiplatform.googleapis.com</code></td></tr>
+          <tr><td><strong>认证方式</strong></td><td>API Key(在 AI Studio 创建)</td><td>GCP 服务账号 / IAM</td></tr>
+          <tr><td><strong>用量等级</strong></td><td><strong>有</strong>:Free / Tier 1 / Tier 2 / Tier 3</td><td><strong>无等级</strong>,用动态共享配额(DSQ)</td></tr>
+          <tr><td><strong>查看位置</strong></td><td>AI Studio Projects 页面</td><td>GCP Console 配额页</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout">
+      不确定自己用的是哪套?看代码里请求的域名,或者看认证方式:用 <strong>API Key</strong> 的是 Gemini API,走 <strong>IAM / 服务账号</strong> 的是 Vertex AI。
+    </div>
+  </div>
+</section>
+
+<!-- ============ Gemini API ============ -->
+<section class="panel" id="gemini">
+  <div class="card">
+    <h2>等级定义与升级条件 <span class="badge">T1 / T2 / T3</span></h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>等级</th><th>升级条件</th><th>计费上限</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Free</strong></td><td>有活跃项目或免费试用即可</td><td>—</td></tr>
+          <tr><td><strong>Tier 1</strong></td><td>项目绑定一个有效的结算账号(Billing Account)</td><td>$250</td></tr>
+          <tr><td><strong>Tier 2</strong></td><td>累计支付满 <strong>$100</strong>,且距首次成功付款满 <strong>3 天</strong></td><td>$2,000</td></tr>
+          <tr><td><strong>Tier 3</strong></td><td>累计支付满 <strong>$1,000</strong>,且距首次成功付款满 <strong>30 天</strong></td><td>$20,000 – $100,000+</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>等级越高,各模型的 RPM(每分钟请求数)、TPM(每分钟 token 数)、RPD(每日请求数)限额越高。各模型的具体数值见官方 <a href="https://ai.google.dev/gemini-api/docs/rate-limits">Rate limits 文档</a>。</p>
+  </div>
+
+  <div class="card">
+    <h2>在哪里查看当前等级</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>用途</th><th>入口</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>查看等级标签(最直接)</strong></td>
+            <td><a href="https://aistudio.google.com/projects">aistudio.google.com/projects</a><br>每个项目旁显示 Free / Tier 1 / Tier 2 / Tier 3</td>
+          </tr>
+          <tr>
+            <td>查看 API Key(凭据)</td>
+            <td><a href="https://console.cloud.google.com/apis/credentials">console.cloud.google.com/apis/credentials</a></td>
+          </tr>
+          <tr>
+            <td>查看等级对应的实际限额数值</td>
+            <td><a href="https://console.cloud.google.com/apis/api/generativelanguage.googleapis.com/quotas">console.cloud.google.com/apis/api/generativelanguage.googleapis.com/quotas</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout">
+      <strong>注意</strong>
+      <ul>
+        <li>Console 页面记得在顶部选对项目,或在 URL 后加 <code>?project=你的项目ID</code>。</li>
+        <li>Console 配额页只显示数值,<strong>不显示 Tier 名称</strong>;看等级本身要去 AI Studio。</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>升级机制要点</h2>
+    <ul>
+      <li>满足条件后<strong>自动升级</strong>,无需申请:Free → Tier 1 通常即时生效,更高等级约 10 分钟内生效。</li>
+      <li>「累计支付」按实际扣款计算——<strong>消耗免费试用赠金(如 $300)不计入升级门槛</strong>。</li>
+      <li>Tier 3 限额仍不够时,可通过 Rate limits 文档中的申请表单提额,或联系 Google Cloud 销售。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ Vertex AI ============ -->
+<section class="panel" id="vertex">
+  <div class="card">
+    <h2>配额机制 <span class="badge">无 T1/T2/T3</span></h2>
+    <p>Vertex AI <strong>不使用</strong> Tier 等级,机制如下:</p>
+    <ul>
+      <li><strong>Gemini 2.0 及之后的模型:动态共享配额(Dynamic Shared Quota, DSQ)</strong><br>
+          Google 将某模型在某区域的总容量动态分配给所有客户。你的项目没有固定配额数值,<strong>不需要也不能申请提额</strong>;高峰期可能收到 429,做好重试(指数退避)即可。</li>
+      <li><strong>更早的模型及 embedding、批量预测等:传统按项目配额</strong>,可查看并申请提额。</li>
+      <li><strong>需要有保障的吞吐量:</strong>购买 <a href="https://docs.cloud.google.com/vertex-ai/generative-ai/docs/provisioned-throughput">Provisioned Throughput</a>(预置吞吐量)。</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>查看方法</h2>
+    <h3>Console</h3>
+    <p><a href="https://console.cloud.google.com/iam-admin/quotas">console.cloud.google.com/iam-admin/quotas</a>(IAM 和管理 → 配额与系统限制),过滤框输入服务 <code>aiplatform.googleapis.com</code>。传统配额可在行末三点菜单选「修改配额」申请提额。</p>
+    <h3>命令行</h3>
+    <pre><code>gcloud beta quotas info list \
+  --service=aiplatform.googleapis.com \
+  --project=你的项目ID \
+  --format="table(quotaId, metric, dimensions)"</code></pre>
+    <h3>用量监控与告警</h3>
+    <p>通过 Cloud Monitoring 监控配额用量指标,可对接近上限设置告警。</p>
+  </div>
+</section>
+
+<!-- ============ 链接速查 ============ -->
+<section class="panel" id="links">
+  <div class="card">
+    <h2>常用链接速查</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>内容</th><th>链接</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Gemini API 等级与速率限制(官方)</td><td><a href="https://ai.google.dev/gemini-api/docs/rate-limits">ai.google.dev/gemini-api/docs/rate-limits</a></td></tr>
+          <tr><td>Gemini API 计费说明(官方)</td><td><a href="https://ai.google.dev/gemini-api/docs/billing">ai.google.dev/gemini-api/docs/billing</a></td></tr>
+          <tr><td>AI Studio 项目页(看 Tier)</td><td><a href="https://aistudio.google.com/projects">aistudio.google.com/projects</a></td></tr>
+          <tr><td>GCP 凭据页</td><td><a href="https://console.cloud.google.com/apis/credentials">console.cloud.google.com/apis/credentials</a></td></tr>
+          <tr><td>Gemini API 配额数值</td><td><a href="https://console.cloud.google.com/apis/api/generativelanguage.googleapis.com/quotas">console.cloud.google.com/apis/api/generativelanguage.googleapis.com/quotas</a></td></tr>
+          <tr><td>GCP 配额总页(Vertex AI 用)</td><td><a href="https://console.cloud.google.com/iam-admin/quotas">console.cloud.google.com/iam-admin/quotas</a></td></tr>
+          <tr><td>Vertex AI 生成式 AI 配额文档(官方)</td><td><a href="https://docs.cloud.google.com/vertex-ai/generative-ai/docs/quotas">docs.cloud.google.com/vertex-ai/generative-ai/docs/quotas</a></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<footer>GCP / Gemini 用量等级与配额查询指南 · 2026-07-15</footer>
+
+</div>
+
+<script>
+  const tabs = document.querySelectorAll('nav.tabs button');
+  const panels = document.querySelectorAll('.panel');
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      tabs.forEach(b => b.classList.remove('active'));
+      panels.forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.tab).classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>
