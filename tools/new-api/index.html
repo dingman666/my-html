@@ -1,0 +1,478 @@
+<title>New API 功能通俗指南</title>
+<style>
+  :root {
+    --bg: #fbfbfd;
+    --bg-section: #f5f5f7;
+    --card: #ffffff;
+    --card-border: rgba(0,0,0,0.07);
+    --text: #1d1d1f;
+    --text-2: #6e6e73;
+    --text-3: #86868b;
+    --accent: #0071e3;
+    --accent-ink: #0071e3;
+    --accent-soft: rgba(0,113,227,0.09);
+    --accent-line: rgba(0,113,227,0.22);
+    --shadow: 0 4px 22px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --nav-bg: rgba(251,251,253,0.72);
+    --track: #e7e7ec;
+    --thumb: #ffffff;
+    --thumb-shadow: 0 1px 3px rgba(0,0,0,0.14), 0 1px 1px rgba(0,0,0,0.05);
+    --divider: rgba(0,0,0,0.08);
+    --good: #1c9a4b;
+    --warn: #b26a00;
+    --crit: #d33a2e;
+    --code-bg: #f5f5f7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #000000;
+      --bg-section: #0e0e10;
+      --card: #1c1c1e;
+      --card-border: rgba(255,255,255,0.09);
+      --text: #f5f5f7;
+      --text-2: #a1a1a6;
+      --text-3: #86868b;
+      --accent: #2997ff;
+      --accent-ink: #2997ff;
+      --accent-soft: rgba(41,151,255,0.14);
+      --accent-line: rgba(41,151,255,0.32);
+      --shadow: 0 6px 30px rgba(0,0,0,0.55);
+      --nav-bg: rgba(0,0,0,0.68);
+      --track: #1c1c1e;
+      --thumb: #48484a;
+      --thumb-shadow: 0 1px 3px rgba(0,0,0,0.5);
+      --divider: rgba(255,255,255,0.1);
+      --good: #30d158;
+      --warn: #ff9f0a;
+      --crit: #ff453a;
+      --code-bg: #0e0e10;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #fbfbfd; --bg-section: #f5f5f7; --card: #ffffff; --card-border: rgba(0,0,0,0.07);
+    --text: #1d1d1f; --text-2: #6e6e73; --text-3: #86868b; --accent: #0071e3; --accent-ink: #0071e3;
+    --accent-soft: rgba(0,113,227,0.09); --accent-line: rgba(0,113,227,0.22);
+    --shadow: 0 4px 22px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --nav-bg: rgba(251,251,253,0.72); --track: #e7e7ec; --thumb: #ffffff;
+    --thumb-shadow: 0 1px 3px rgba(0,0,0,0.14), 0 1px 1px rgba(0,0,0,0.05);
+    --divider: rgba(0,0,0,0.08); --good: #1c9a4b; --warn: #b26a00; --crit: #d33a2e; --code-bg: #f5f5f7;
+  }
+  :root[data-theme="dark"] {
+    --bg: #000000; --bg-section: #0e0e10; --card: #1c1c1e; --card-border: rgba(255,255,255,0.09);
+    --text: #f5f5f7; --text-2: #a1a1a6; --text-3: #86868b; --accent: #2997ff; --accent-ink: #2997ff;
+    --accent-soft: rgba(41,151,255,0.14); --accent-line: rgba(41,151,255,0.32);
+    --shadow: 0 6px 30px rgba(0,0,0,0.55); --nav-bg: rgba(0,0,0,0.68); --track: #1c1c1e; --thumb: #48484a;
+    --thumb-shadow: 0 1px 3px rgba(0,0,0,0.5); --divider: rgba(255,255,255,0.1);
+    --good: #30d158; --warn: #ff9f0a; --crit: #ff453a; --code-bg: #0e0e10;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+                 "Helvetica Neue", "Segoe UI", "PingFang SC", "Microsoft YaHei", Roboto, sans-serif;
+    font-size: 17px;
+    line-height: 1.5;
+    letter-spacing: -0.01em;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 22px; }
+
+  /* Hero */
+  .hero { padding: 68px 0 30px; text-align: center; }
+  .eyebrow {
+    font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent-ink); margin: 0 0 16px;
+  }
+  .hero h1 {
+    font-size: clamp(34px, 6vw, 54px); font-weight: 600; line-height: 1.06;
+    letter-spacing: -0.028em; margin: 0 auto 18px; max-width: 16ch; text-wrap: balance;
+  }
+  .hero p {
+    font-size: clamp(17px, 2.4vw, 21px); color: var(--text-2); font-weight: 400;
+    max-width: 40ch; margin: 0 auto; line-height: 1.45; text-wrap: pretty;
+  }
+
+  /* Sticky segmented tab bar */
+  .tabbar {
+    position: sticky; top: 0; z-index: 20;
+    background: var(--nav-bg);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid var(--divider);
+    padding: 11px 0;
+    margin-top: 22px;
+  }
+  .seg {
+    display: flex; gap: 3px;
+    max-width: 720px; margin: 0 auto; padding: 3px;
+    background: var(--track); border-radius: 12px;
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .seg::-webkit-scrollbar { display: none; }
+  .seg button {
+    flex: 1 0 auto; white-space: nowrap;
+    border: 0; background: transparent; color: var(--text-2);
+    font-family: inherit; font-size: 14px; font-weight: 500; letter-spacing: -0.01em;
+    padding: 8px 16px; border-radius: 9px; cursor: pointer;
+    transition: color .25s ease, background .25s ease, box-shadow .25s ease;
+  }
+  .seg button:hover { color: var(--text); }
+  .seg button[aria-selected="true"] {
+    background: var(--thumb); color: var(--text); font-weight: 600;
+    box-shadow: var(--thumb-shadow);
+  }
+  .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* Panels */
+  main { padding: 40px 0 80px; }
+  .panel { display: none; animation: fade .4s ease; }
+  .panel.active { display: block; }
+  @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  .lead { font-size: 20px; color: var(--text-2); line-height: 1.5; max-width: 58ch; margin: 0 0 30px; text-wrap: pretty; }
+  .lead strong { color: var(--text); font-weight: 600; }
+
+  h2.sec {
+    font-size: 27px; font-weight: 600; letter-spacing: -0.022em; margin: 44px 0 18px;
+    text-wrap: balance;
+  }
+  h2.sec:first-child { margin-top: 0; }
+
+  .card {
+    background: var(--card); border: 1px solid var(--card-border); border-radius: 20px;
+    box-shadow: var(--shadow); padding: 26px 28px; margin: 0 0 18px;
+  }
+  .card h3 { font-size: 20px; font-weight: 600; letter-spacing: -0.015em; margin: 0 0 8px; }
+  .card p { margin: 0 0 4px; color: var(--text-2); }
+  .card p.tight { margin: 0; }
+
+  .grid { display: grid; gap: 18px; }
+  .grid.g3 { grid-template-columns: repeat(3, 1fr); }
+  .grid.g2 { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 720px) { .grid.g3, .grid.g2 { grid-template-columns: 1fr; } }
+
+  .ico {
+    width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center;
+    background: var(--accent-soft); color: var(--accent-ink); margin-bottom: 14px;
+  }
+  .ico svg { width: 23px; height: 23px; }
+  .kicker { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-3); }
+
+  /* numbered flow */
+  ol.flow { list-style: none; counter-reset: step; padding: 0; margin: 4px 0 0; }
+  ol.flow li {
+    counter-increment: step; position: relative; padding: 14px 0 14px 52px;
+    border-top: 1px solid var(--divider); color: var(--text-2);
+  }
+  ol.flow li:first-child { border-top: 0; }
+  ol.flow li strong { color: var(--text); font-weight: 600; }
+  ol.flow li::before {
+    content: counter(step); position: absolute; left: 0; top: 12px;
+    width: 30px; height: 30px; border-radius: 50%;
+    background: var(--accent); color: #fff; font-size: 14px; font-weight: 600;
+    display: grid; place-items: center; letter-spacing: 0;
+  }
+
+  /* callout */
+  .note {
+    border-radius: 16px; padding: 18px 20px; margin: 20px 0;
+    background: var(--accent-soft); border: 1px solid var(--accent-line);
+    display: flex; gap: 13px; align-items: flex-start;
+  }
+  .note .dot { flex: 0 0 auto; width: 20px; height: 20px; margin-top: 2px; color: var(--accent-ink); }
+  .note p { margin: 0; color: var(--text); font-size: 16px; }
+  .note strong { font-weight: 600; }
+
+  /* table */
+  .tablewrap { overflow-x: auto; border-radius: 16px; border: 1px solid var(--card-border); box-shadow: var(--shadow); margin: 6px 0 4px; }
+  table { border-collapse: collapse; width: 100%; background: var(--card); font-size: 15.5px; }
+  th, td { padding: 13px 18px; text-align: left; border-bottom: 1px solid var(--divider); }
+  th { font-weight: 600; color: var(--text-3); font-size: 12.5px; letter-spacing: 0.05em; text-transform: uppercase; background: var(--bg-section); }
+  td { color: var(--text-2); }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tr:last-child td { border-bottom: 0; }
+  td strong { color: var(--text); font-weight: 600; }
+  .tag { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 20px; }
+  .tag.hi { background: var(--accent-soft); color: var(--accent-ink); }
+  .tag.lo { background: var(--track); color: var(--text-3); }
+
+  /* feature list rows */
+  .feat { margin: 4px 0 0; }
+  .feat > div { display: flex; gap: 14px; padding: 16px 0; border-top: 1px solid var(--divider); }
+  .feat > div:first-child { border-top: 0; }
+  .feat .chk { flex: 0 0 auto; width: 22px; height: 22px; margin-top: 1px; color: var(--accent-ink); }
+  .feat b { font-weight: 600; display: block; margin-bottom: 2px; }
+  .feat span.d { color: var(--text-2); font-size: 15.5px; }
+
+  /* formula */
+  .formula {
+    background: var(--code-bg); border: 1px solid var(--card-border); border-radius: 16px;
+    padding: 20px 22px; margin: 10px 0; font-size: 16px; line-height: 1.9;
+    font-family: "SF Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+    overflow-x: auto;
+  }
+  .formula .r { color: var(--accent-ink); font-weight: 600; }
+  .formula .muted { color: var(--text-3); }
+
+  .footer { border-top: 1px solid var(--divider); padding: 28px 0 10px; margin-top: 40px; color: var(--text-3); font-size: 13.5px; line-height: 1.6; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+
+<div class="wrap">
+  <header class="hero"><link rel="icon" href="./icon.png">
+    <p class="eyebrow">New API · 功能通俗指南</p>
+    <h1>把一堆 AI 接口，理成一件顺手的事</h1>
+    <p>New API 是一个大模型接口的聚合与分发平台。这份指南用大白话，讲清它最常用的四块：渠道、计费、令牌与高可用。</p>
+  </header>
+</div>
+
+<nav class="tabbar" aria-label="功能分类">
+  <div class="seg" role="tablist">
+    <button role="tab" id="t-1" aria-controls="p-1" aria-selected="true">核心概念</button>
+    <button role="tab" id="t-2" aria-controls="p-2" aria-selected="false">渠道管理</button>
+    <button role="tab" id="t-3" aria-controls="p-3" aria-selected="false">计费倍率</button>
+    <button role="tab" id="t-4" aria-controls="p-4" aria-selected="false">令牌控制</button>
+    <button role="tab" id="t-5" aria-controls="p-5" aria-selected="false">运维监控</button>
+  </div>
+</nav>
+
+<main class="wrap">
+
+  <!-- ============ TAB 1 ============ -->
+  <section class="panel active" id="p-1" role="tabpanel" aria-labelledby="t-1">
+    <p class="lead">想象你开了一家 <strong>“AI 中间商”</strong>：上游从 OpenAI、Claude、Gemini 等多家进货，下游把一个统一接口交给你的应用或同事使用。New API 就是中间那张调度台——统一入口、统一计费、自动挑选最合适的上游。</p>
+
+    <h2 class="sec">三个角色，先认清</h2>
+    <div class="grid g3">
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h4"/><path d="M9 12l7-5"/><path d="M9 12l7 5"/><circle cx="4" cy="12" r="1.8"/><circle cx="18" cy="6" r="1.8"/><circle cx="18" cy="18" r="1.8"/></svg></div>
+        <p class="kicker">Channel</p>
+        <h3>渠道</h3>
+        <p class="tight">你的“进货渠道”。每个渠道对应一个上游账号——密钥、地址、以及它能跑哪些模型。</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="4"/><path d="M11 11l9 9"/><path d="M17 17l2.5-2.5"/><path d="M14.5 14.5L17 12"/></svg></div>
+        <p class="kicker">Token</p>
+        <h3>令牌</h3>
+        <p class="tight">你发出去的“门禁卡”，就是 sk- 开头的 API Key。谁想用你的服务，就拿一张令牌。</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17.5" cy="9" r="2.4"/><path d="M16 14.4a4.6 4.6 0 0 1 4.5 4.6"/></svg></div>
+        <p class="kicker">User / Group</p>
+        <h3>用户 · 分组</h3>
+        <p class="tight">谁在用、用哪一档价格。分组决定折扣倍率，以及能走哪些渠道。</p>
+      </div>
+    </div>
+
+    <h2 class="sec">一次请求，怎么走完</h2>
+    <div class="card">
+      <ol class="flow">
+        <li><strong>应用带着令牌请求</strong>——用 sk-xxx 调用某个模型，比如 gpt-4o。</li>
+        <li><strong>校验令牌</strong>——额度够不够？这个模型允不允许？没过就直接拦下。</li>
+        <li><strong>挑选渠道</strong>——按“模型 + 分组”筛出可用渠道，再按优先级和权重选一个。</li>
+        <li><strong>转发上游</strong>——把请求发给选中的渠道，拿回结果（支持流式返回）。</li>
+        <li><strong>扣费并记录</strong>——按倍率扣除额度，写一条明细日志，最后把结果返回应用。</li>
+      </ol>
+    </div>
+    <div class="note">
+      <svg class="dot" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-6h2zm0-8h-2V7h2z"/></svg>
+      <p>记住这条链路：<strong>令牌管“谁能进、花多少”，渠道管“从哪家上游出去”，倍率管“这一趟扣多少额度”。</strong>后面几个标签页就是把这三件事分别讲透。</p>
+    </div>
+  </section>
+
+  <!-- ============ TAB 2 ============ -->
+  <section class="panel" id="p-2" role="tabpanel" aria-labelledby="t-2">
+    <p class="lead">渠道是 New API 的核心。<strong>同一个模型可以配多个渠道</strong>，系统帮你自动挑、自动切。而“怎么挑”，全靠两个常被搞混的设置：优先级和权重。</p>
+
+    <h2 class="sec">优先级 vs 权重</h2>
+    <div class="grid g2">
+      <div class="card">
+        <p class="kicker">Priority · 决定“先用谁”</p>
+        <h3>优先级</h3>
+        <p>数值越高越优先。系统<strong>总是先用最高优先级</strong>那一档；只有当它们全挂了，才降级到下一档。</p>
+        <p class="tight" style="margin-top:8px;color:var(--text-3)">→ 这是“主备 / 梯队”关系。</p>
+      </div>
+      <div class="card">
+        <p class="kicker">Weight · 决定“同档怎么分”</p>
+        <h3>权重</h3>
+        <p>同一优先级的多个渠道之间做<strong>加权随机</strong>。被选中的概率 = 它的权重 ÷ 同档所有权重之和。</p>
+        <p class="tight" style="margin-top:8px;color:var(--text-3)">→ 这是“负载均衡”关系。</p>
+      </div>
+    </div>
+
+    <h2 class="sec">一个例子就懂</h2>
+    <p style="color:var(--text-2);margin:0 0 14px">三个渠道都能跑 gpt-4o：</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>渠道</th><th class="num">优先级</th><th class="num">权重</th><th>实际分到的流量</th></tr></thead>
+        <tbody>
+          <tr><td><strong>A</strong></td><td class="num">10</td><td class="num">3</td><td><span class="tag hi">约 75%</span> 最高档，按 3∶1 分</td></tr>
+          <tr><td><strong>B</strong></td><td class="num">10</td><td class="num">1</td><td><span class="tag hi">约 25%</span> 最高档，按 3∶1 分</td></tr>
+          <tr><td><strong>C</strong></td><td class="num">5</td><td class="num">100</td><td><span class="tag lo">0%（备用）</span> 优先级低，轮不到它</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="color:var(--text-2);margin:14px 0 0">正常情况下流量<strong style="color:var(--text)">只在 A、B 之间分</strong>——C 的权重再高也没用，因为它优先级低。只有当 A 和 B 都不可用时，才会兜底切到 C。</p>
+
+    <div class="note">
+      <svg class="dot" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-6h2zm0-8h-2V7h2z"/></svg>
+      <p><strong>一句话：优先级选梯队，权重在梯队内按比例分流量。</strong>权重是相对值——3∶1 和 30∶10 效果完全一样。</p>
+    </div>
+
+    <h2 class="sec">渠道还能做这些</h2>
+    <div class="card">
+      <div class="feat">
+        <div><svg class="chk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><b>模型映射 / 重定向</b><span class="d">把请求里的模型名改写成上游真实的模型名。比如对外统一叫 gpt-4，实际指向某个具体部署。</span></div></div>
+        <div><svg class="chk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><b>渠道分组</b><span class="d">给渠道打上分组标签，配合用户分组做“贵渠道只给高级组”的隔离。</span></div></div>
+        <div><svg class="chk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><b>自动禁用与恢复</b><span class="d">渠道连续报错会被自动拉黑，避免继续把请求送进坏渠道；稍后自动重试、恢复后自动启用。</span></div></div>
+        <div><svg class="chk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><b>一键测试</b><span class="d">测渠道通不通、测响应速度，方便上线前体检和日常排查。</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TAB 3 ============ -->
+  <section class="panel" id="p-3" role="tabpanel" aria-labelledby="t-3">
+    <p class="lead">New API 用 <strong>“额度（quota）”</strong> 作为内部通用货币。各家模型的真实价格，通过一套“倍率”折算成额度来记账。搞懂倍率，就看懂了每一笔扣费。</p>
+
+    <h2 class="sec">额度是什么</h2>
+    <div class="card">
+      <p>额度是平台内部的记账单位。默认 <strong>500,000 额度 = 1 美元</strong>（可在后台设置里改）。用户充值得到额度，每次请求按倍率从额度里扣。</p>
+    </div>
+
+    <h2 class="sec">三种倍率</h2>
+    <div class="grid g3">
+      <div class="card">
+        <p class="kicker">Model ratio</p>
+        <h3>模型倍率</h3>
+        <p class="tight">这个模型每 token 有多贵。越强的模型倍率越高——它是价格的基准。</p>
+      </div>
+      <div class="card">
+        <p class="kicker">Completion ratio</p>
+        <h3>补全倍率</h3>
+        <p class="tight">输出通常比输入贵，用它给输出 token 加价。比如 3 = 输出单价是输入的 3 倍。</p>
+      </div>
+      <div class="card">
+        <p class="kicker">Group ratio</p>
+        <h3>分组倍率</h3>
+        <p class="tight">给不同用户组打折或加价。VIP 组 0.8（打八折），普通组 1.0。</p>
+      </div>
+    </div>
+
+    <h2 class="sec">计费公式</h2>
+    <div class="formula">
+<span class="muted"># 每次请求消耗的额度</span>
+<span class="r">消耗额度</span> = 模型倍率 × 分组倍率 × ( 输入tokens + 输出tokens × 补全倍率 )
+
+<span class="muted"># 换算成钱（默认）</span>
+<span class="r">实际花费($)</span> = 消耗额度 ÷ 500,000
+    </div>
+    <div class="card">
+      <h3>小例子</h3>
+      <p>模型倍率 <strong>1</strong>、分组倍率 <strong>1</strong>、补全倍率 <strong>3</strong>；本次输入 <strong>1000</strong> token、输出 <strong>500</strong> token：</p>
+      <div class="formula" style="margin-top:12px">额度 = 1 × 1 × ( 1000 + 500 × 3 ) = <span class="r">2500</span>
+花费 = 2500 ÷ 500,000 ≈ <span class="r">$0.005</span></div>
+    </div>
+
+    <div class="note">
+      <svg class="dot" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-6h2zm0-8h-2V7h2z"/></svg>
+      <p>还有<strong>缓存倍率</strong>等更细的项——命中提示词缓存的那部分 token 会更便宜。具体默认值随版本与配置不同，<strong>以你后台的实际设置为准</strong>。</p>
+    </div>
+  </section>
+
+  <!-- ============ TAB 4 ============ -->
+  <section class="panel" id="p-4" role="tabpanel" aria-labelledby="t-4">
+    <p class="lead">令牌（Token）是你发给使用方的钥匙。<strong>每张令牌都能单独设规则，互不影响</strong>——这让你可以精细地控制“谁、能用什么、能花多少”。</p>
+
+    <h2 class="sec">一张令牌能设什么</h2>
+    <div class="card">
+      <div class="feat">
+        <div><svg class="chk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><b>额度上限</b><span class="d">这张卡最多能花多少额度，也可以设为“无限”。花完即停。</span></div></div>
+        <div><svg class="chk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><b>有效期</b><span class="d">设置过期时间，到点自动失效——发临时钥匙时很好用。</span></div></div>
+        <div><svg class="chk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><b>模型限制</b><span class="d">只允许调用指定的几个模型，防止有人拿你的卡去跑贵模型。</span></div></div>
+        <div><svg class="chk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><b>分组</b><span class="d">这张卡走哪一档价格与哪些渠道，由它绑定的分组决定。</span></div></div>
+        <div><svg class="chk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><b>IP 白名单</b><span class="d">只允许指定 IP 使用，钥匙泄露了也没法在别处调用。</span></div></div>
+      </div>
+    </div>
+
+    <h2 class="sec">用户与分组</h2>
+    <div class="card">
+      <p>用户归属到某个分组，分组决定它的<strong>倍率与可用渠道</strong>。这让你能轻松区分不同待遇——比如“内部同事 / 付费客户 / 免费试用”各走一档，同一套后台管到底。</p>
+    </div>
+
+    <h2 class="sec">充值与兑换码</h2>
+    <div class="card">
+      <p>支持用<strong>兑换码（redemption code）</strong>充值额度，也可对接在线支付。适合批量发放试用额度、或做分销：生成一批码，发出去，用户自己兑换。</p>
+    </div>
+  </section>
+
+  <!-- ============ TAB 5 ============ -->
+  <section class="panel" id="p-5" role="tabpanel" aria-labelledby="t-5">
+    <p class="lead">配好之后，剩下的就交给系统。New API 的一系列<strong>高可用与运维</strong>能力，让多渠道自动分流、坏了自动切、用量看得见。</p>
+
+    <h2 class="sec">稳定性</h2>
+    <div class="grid g2">
+      <div class="card">
+        <h3>负载均衡</h3>
+        <p class="tight">多渠道 + 优先级 + 权重，让流量自动分摊，并优先走高优先级的渠道。</p>
+      </div>
+      <div class="card">
+        <h3>自动重试 · 故障转移</h3>
+        <p class="tight">某渠道请求失败时，自动换下一个可用渠道重试，使用方基本无感。</p>
+      </div>
+      <div class="card">
+        <h3>健康检查</h3>
+        <p class="tight">定时或手动测试渠道可用性与速度；异常自动禁用，恢复后自动启用。</p>
+      </div>
+      <div class="card">
+        <h3>日志与统计看板</h3>
+        <p class="tight">每次请求都有明细（模型、token、消耗、耗时、渠道）；看板汇总用量与花费，方便对账排查。</p>
+      </div>
+    </div>
+
+    <h2 class="sec">兼容性</h2>
+    <div class="card">
+      <h3>一个入口，接住多种协议</h3>
+      <p>对外可用 <strong>OpenAI 兼容格式</strong>统一调用，你的现有代码几乎不用改；对内可对接 OpenAI、Claude、Gemini 等多家上游。</p>
+      <p style="margin-top:10px">同时支持流式输出、函数调用（function calling）、向量（embedding）、重排（rerank）、绘图等常见能力——把杂七杂八的接口收拢成一套。</p>
+    </div>
+
+    <div class="footer">
+      <p>本页面向使用者做通俗讲解，重在建立整体认识。部分默认值（如额度换算、各类倍率、自动禁用策略）会随 New API 的版本与你的后台配置不同，请以你实际部署的设置为准。</p>
+    </div>
+  </section>
+
+</main>
+
+<script>
+  (function () {
+    var tabs = Array.prototype.slice.call(document.querySelectorAll('.seg button'));
+    var panels = Array.prototype.slice.call(document.querySelectorAll('.panel'));
+
+    function select(i) {
+      tabs.forEach(function (t, k) { t.setAttribute('aria-selected', k === i ? 'true' : 'false'); });
+      panels.forEach(function (p, k) { p.classList.toggle('active', k === i); });
+    }
+
+    tabs.forEach(function (tab, i) {
+      tab.addEventListener('click', function () {
+        select(i);
+        tab.scrollIntoView({ block: 'nearest', inline: 'center' });
+      });
+      tab.addEventListener('keydown', function (e) {
+        var next = null;
+        if (e.key === 'ArrowRight') next = (i + 1) % tabs.length;
+        if (e.key === 'ArrowLeft') next = (i - 1 + tabs.length) % tabs.length;
+        if (next !== null) { e.preventDefault(); tabs[next].focus(); select(next); }
+      });
+    });
+  })();
+</script>
