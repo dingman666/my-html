@@ -67,6 +67,12 @@
       "name": "GCP / Gemini 用量等级与配额查询指南",
       "path": "tools/gcp-gemini/",
       "icon": "tools/gcp-gemini/icon.png"
+    },
+    {
+      "id": "new-api",
+      "name": "New API 功能通俗指南",
+      "path": "tools/new-api/",
+      "icon": "tools/new-api/icon.png"
     }
   ]
 }
