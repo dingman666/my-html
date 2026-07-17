@@ -73,6 +73,12 @@
       "name": "New API 功能通俗指南",
       "path": "tools/new-api/",
       "icon": "tools/new-api/icon.png"
+    },
+    {
+      "id": "aws-bedrock-kiro-429",
+      "name": "AWS Bedrock / Kiro 配额与 429 完全指南",
+      "path": "tools/aws-bedrock-kiro-429/",
+      "icon": "tools/aws-bedrock-kiro-429/icon.png"
     }
   ]
 }
