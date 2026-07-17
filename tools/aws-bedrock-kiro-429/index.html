@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS Bedrock / Kiro 配额与 429 完全指南</title>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --card: #ffffff;
+    --text: #1c2733;
+    --muted: #5b6b7b;
+    --border: #dfe4ea;
+    --accent: #0972d3;       /* AWS console blue */
+    --accent-soft: #e8f1fb;
+    --warn-bg: #fff7e6;
+    --warn-border: #f0c36d;
+    --ok-bg: #eafaf0;
+    --ok-border: #7bc89a;
+    --bad-bg: #fdeeee;
+    --bad-border: #e39a9a;
+    --code-bg: #eef1f4;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14181d;
+      --card: #1d232b;
+      --text: #e4e9ee;
+      --muted: #9aa8b6;
+      --border: #323c47;
+      --accent: #4da3f5;
+      --accent-soft: #1c3350;
+      --warn-bg: #3a300f;
+      --warn-border: #8a6d1f;
+      --ok-bg: #12301e;
+      --ok-border: #2c6e48;
+      --bad-bg: #3a1c1c;
+      --bad-border: #7c3b3b;
+      --code-bg: #2a323c;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", "Microsoft YaHei", -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+  }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 24px 20px 80px; }
+  header h1 { font-size: 1.5rem; margin: 8px 0 4px; }
+  header p.sub { color: var(--muted); margin: 0 0 20px; font-size: 0.95rem; }
+
+  /* tabs */
+  .tabs {
+    display: flex; flex-wrap: wrap; gap: 4px;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 22px;
+    position: sticky; top: 0;
+    background: var(--bg);
+    padding-top: 8px; z-index: 10;
+  }
+  .tab-btn {
+    appearance: none; border: none; cursor: pointer;
+    background: transparent; color: var(--muted);
+    font-size: 0.9rem; font-weight: 600;
+    padding: 10px 11px;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    font-family: inherit;
+  }
+  .tab-btn:hover { color: var(--accent); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .panel { display: none; }
+  .panel.active { display: block; animation: fade .18s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(4px);} to { opacity: 1; transform: none;} }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin-bottom: 18px;
+  }
+  h2 { font-size: 1.2rem; margin: 4px 0 12px; }
+  h3 { font-size: 1.02rem; margin: 18px 0 8px; }
+  code {
+    background: var(--code-bg);
+    padding: 1px 6px; border-radius: 4px;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 0.88em;
+    word-break: break-all;
+  }
+  .url {
+    display: block; background: var(--code-bg);
+    padding: 8px 12px; border-radius: 6px;
+    font-family: Consolas, monospace; font-size: 0.85rem;
+    margin: 6px 0 12px; word-break: break-all;
+    color: var(--muted);
+  }
+  table {
+    width: 100%; border-collapse: collapse;
+    margin: 10px 0 16px; font-size: 0.92rem;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px; text-align: left;
+    vertical-align: top;
+  }
+  th { background: var(--accent-soft); font-weight: 600; }
+  .table-scroll { overflow-x: auto; }
+
+  .tip, .warn, .bad {
+    border-radius: 8px; padding: 12px 16px; margin: 12px 0;
+    font-size: 0.93rem;
+  }
+  .tip  { background: var(--ok-bg);   border: 1px solid var(--ok-border); }
+  .warn { background: var(--warn-bg); border: 1px solid var(--warn-border); }
+  .bad  { background: var(--bad-bg);  border: 1px solid var(--bad-border); }
+  .tip::before  { content: "💡 "; }
+  .warn::before { content: "⚠️ "; }
+  .bad::before  { content: "⛔ "; }
+
+  ul, ol { padding-left: 22px; }
+  li { margin: 4px 0; }
+  .kbd {
+    display: inline-block; border: 1px solid var(--border);
+    border-bottom-width: 2px; border-radius: 5px;
+    padding: 0 7px; font-size: 0.85em; background: var(--card);
+  }
+  .flow {
+    background: var(--code-bg); border-radius: 8px;
+    padding: 14px 18px; font-family: Consolas, monospace;
+    font-size: 0.85rem; overflow-x: auto; white-space: pre;
+    line-height: 1.9;
+  }
+  .big-num {
+    font-size: 1.5rem; font-weight: 700; color: var(--accent);
+    margin-right: 8px;
+  }
+  .tldr-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 12px 0; border-bottom: 1px dashed var(--border);
+  }
+  .tldr-item:last-child { border-bottom: none; }
+  footer { color: var(--muted); font-size: 0.82rem; margin-top: 30px; text-align: center; }
+</style>
+  <link rel="icon" href="./icon.png">
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>AWS Bedrock / Kiro 配额与 429 完全指南</h1>
+  <p class="sub">配额页面怎么看 · TBD 动态配额 · Kiro 限流 · "256V 账号"误区 · 429 排查实战</p>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button class="tab-btn active" data-panel="p0">⓪ 速览（先看这个）</button>
+  <button class="tab-btn" data-panel="p1">① 两个配额页面</button>
+  <button class="tab-btn" data-panel="p2">② Service Quotas</button>
+  <button class="tab-btn" data-panel="p3">③ Model quotas</button>
+  <button class="tab-btn" data-panel="p4">④ TBD 是什么</button>
+  <button class="tab-btn" data-panel="p5">⑤ 429 排查实战</button>
+  <button class="tab-btn" data-panel="p6">⑥ Kiro 的 429</button>
+  <button class="tab-btn" data-panel="p7">⑦ 账号误区(256V)</button>
+</nav>
+
+<!-- ═══════════════ ⓪ 速览 ═══════════════ -->
+<section class="panel active" id="p0">
+  <div class="card">
+    <h2>全部内容，六句话</h2>
+
+    <div class="tldr-item">
+      <span class="big-num">1</span>
+      <div><strong>AWS 给每个账号设了调用上限</strong>（每分钟请求数 RPM、每分钟 token 数 TPM）。两个控制台页面——Service Quotas 和 Bedrock 的 Model quotas——都是<strong>看这些上限</strong>的，前者全量平铺，后者按模型整理。</div>
+    </div>
+
+    <div class="tldr-item">
+      <span class="big-num">2</span>
+      <div><strong>真正限制你的是 "Applied value"，不是 "AWS default"。</strong>默认值只是纸面数字，AWS 会按账号信任度动态调低——新账号 applied 值可能只有默认值的零头，甚至是 0（模型退役/被禁用）。</div>
+    </div>
+
+    <div class="tldr-item">
+      <span class="big-num">3</span>
+      <div><strong>TBD = 动态配额</strong>：AWS 不公布固定值，按区域容量和账号历史用量浮动分配。不能自助提额，只能靠稳定用量慢慢涨，或走工单。</div>
+    </div>
+
+    <div class="tldr-item">
+      <span class="big-num">4</span>
+      <div><strong>配额是"上限"不是"保证"。</strong>区域容量紧张时（us-east-1 / us-west-2 高峰很常见），远没到配额也会 429。同一模型走不同路径（直连 / 跨区域 profile / mantle 端点）吃的是<strong>不同的配额</strong>。</div>
+    </div>
+
+    <div class="tldr-item">
+      <span class="big-num">5</span>
+      <div><strong>Kiro 的 429 和你的 AWS 配额无关。</strong>Kiro 是托管服务，推理跑在 AWS 自己的容量池上，限流由订阅套餐、短窗口频率、风控（VPN/代理会触发）和高峰容量决定，阈值不公开、不可自助调。</div>
+    </div>
+
+    <div class="tldr-item">
+      <span class="big-num">6</span>
+      <div><strong>"256V 账号"和 Bedrock 配额没有关系。</strong>256v 是 EC2 的 vCPU 配额，AWS 各服务配额相互独立。高配 EC2 账号的 Bedrock applied 值照样可能被压得很低——唯一可靠的做法是用 CLI 查自己账号的真实数字（见 ⑦）。</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>429 了？30 秒定位</h2>
+    <div class="flow">哪里报的 429？
+ ├─ Kiro IDE ──────────────→ 看标签页 ⑥（和你的 AWS 配额无关）
+ └─ 自己代码调 Bedrock
+      │
+      ├─ 报错含 "Too many requests" → RPM 被打满
+      ├─ 报错含 "Too many tokens"   → TPM 被打满（先怀疑 Output TPM）
+      │
+      ├─ 第一步：确认调用路径（三者配额独立）
+      │    anthropic.claude-*     → 直连按需配额
+      │    us.anthropic.claude-*  → Cross-region 配额
+      │    BedrockMantle 客户端    → [bedrock-mantle endpoint] 配额
+      │
+      ├─ 第二步：查自己账号的 Applied 值（标签页 ⑦ 的 CLI）
+      │    Applied 远低于 Default → 账号被动态降额（新号常见）
+      │    查不到 / TBD           → 动态配额，看标签页 ④
+      │
+      └─ 第三步：Applied 明明够却间歇性 429
+           → 区域容量拥挤，错峰 / 换区 / 走跨区域 profile</div>
+  </div>
+
+  <div class="card">
+    <h2>三个对象的对照表</h2>
+    <div class="table-scroll">
+    <table>
+      <tr>
+        <th style="width:20%"></th>
+        <th>Bedrock（自己账号调用）</th>
+        <th>Kiro IDE</th>
+      </tr>
+      <tr>
+        <td><strong>限额能查到吗</strong></td>
+        <td>✅ Service Quotas / Model quotas 页面、CLI（TBD 模型除外）</td>
+        <td>❌ 不公开精确阈值</td>
+      </tr>
+      <tr>
+        <td><strong>能提额吗</strong></td>
+        <td>✅ 可调配额自助申请；TBD 靠用量增长/工单</td>
+        <td>❌ 只能升级套餐、调整使用节奏</td>
+      </tr>
+      <tr>
+        <td><strong>429 主因</strong></td>
+        <td>账号被动态降额、Output TPM 打满、区域容量拥挤</td>
+        <td>短窗口频率、风控（VPN/代理）、高峰容量、套餐额度</td>
+      </tr>
+      <tr>
+        <td><strong>和 256v 有关吗</strong></td>
+        <td>❌ 无关（vCPU 是 EC2 的配额）</td>
+        <td>❌ 完全无关（不走你的 AWS 账号）</td>
+      </tr>
+    </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ ① 两个页面 ═══════════════ -->
+<section class="panel" id="p1">
+  <div class="card">
+    <h2>两个配额页面的关系</h2>
+    <p>AWS 对每个账号调用 Bedrock 设了上限，这两个页面都是<strong>看上限</strong>的，入口和组织方式不同：</p>
+    <div class="table-scroll">
+    <table>
+      <tr>
+        <th style="width:22%">对比项</th>
+        <th>Service Quotas 控制台</th>
+        <th>Bedrock 控制台 → Model quotas</th>
+      </tr>
+      <tr>
+        <td>入口</td>
+        <td>Service Quotas 服务（AWS 通用配额中心）→ 选 Bedrock</td>
+        <td>Bedrock 控制台左侧菜单里的 <strong>Model quotas</strong></td>
+      </tr>
+      <tr>
+        <td>组织方式</td>
+        <td>一条条配额平铺，靠搜索框过滤（如搜 "opus"）</td>
+        <td><strong>按模型组织</strong>，直接看每个模型的推理配额</td>
+      </tr>
+      <tr>
+        <td>覆盖范围</td>
+        <td>Bedrock 的<strong>全部</strong>配额：推理、批量、微调、Agents、Knowledge Bases……</td>
+        <td>聚焦<strong>模型推理配额</strong>（RPM / TPM）</td>
+      </tr>
+      <tr>
+        <td>特有内容</td>
+        <td>Applied vs Default 对比、Adjustability（是否可调）</td>
+        <td>能看到 <strong>TBD（动态配额）</strong>模型的状态</td>
+      </tr>
+      <tr>
+        <td>提额入口</td>
+        <td>✅ Request increase at account level</td>
+        <td>✅ 也有申请入口（部分转 Service Quotas 或工单）</td>
+      </tr>
+    </table>
+    </div>
+    <div class="flow">┌──────────────────────────────────────────────────┐
+│              AWS 账号的 Bedrock 配额（按区域）        │
+└──────────────────────────────────────────────────┘
+        ▲                              ▲
+        │ 全量视角（所有配额类型）          │ 模型视角（推理配额）
+        │                              │
+┌───────────────────┐        ┌────────────────────────┐
+│  Service Quotas    │        │  Bedrock 控制台          │
+│  → Bedrock         │        │  → Model quotas         │
+└───────────────────┘        └────────────────────────┘</div>
+    <p>底层是同一套账号配额，Model quotas 是 Bedrock 给自己做的"专属仪表盘"。</p>
+  </div>
+
+  <div class="card">
+    <h2>什么时候看哪个</h2>
+    <ul>
+      <li><strong>查某个模型的推理限额 / 看到 TBD</strong> → Model quotas（标签页 ③④）</li>
+      <li><strong>查批量推理、微调、Agents 等非推理配额</strong> → Service Quotas（标签页 ②）</li>
+      <li><strong>审计账号：哪些提额过、哪些被清零</strong> → Service Quotas（有 Applied vs Default 对比）</li>
+      <li><strong>程序报 429</strong> → 按标签页 ⑤ 的流程走</li>
+    </ul>
+    <div class="warn"><strong>配额是按区域（region）独立的。</strong>us-east-1 和 us-west-2 是两套完全独立的数字，要用控制台右上角的区域选择器分别看。</div>
+  </div>
+</section>
+
+<!-- ═══════════════ ② Service Quotas ═══════════════ -->
+<section class="panel" id="p2">
+  <div class="card">
+    <h2>Service Quotas → Bedrock 配额列表</h2>
+    <span class="url">https://&lt;region&gt;.console.aws.amazon.com/servicequotas/home/services/bedrock/quotas</span>
+    <p>AWS 通用的"配额总账本"，列出你的账号在当前区域对 Bedrock 的<strong>所有</strong>限额。用顶部搜索框过滤（比如搜 <code>opus</code>、<code>tokens per minute</code>）。</p>
+
+    <h3>每一列怎么读</h3>
+    <div class="table-scroll">
+    <table>
+      <tr><th style="width:34%">列名</th><th>含义</th></tr>
+      <tr>
+        <td><strong>Quota name</strong></td>
+        <td>配额名，一般是「维度 + 模型」，如 <code>Output tokens per minute for Claude Opus 4.8</code></td>
+      </tr>
+      <tr>
+        <td><strong>Applied account-level quota value</strong></td>
+        <td>⭐ <strong>你账号实际生效的值</strong>——真正限制你的是这个数字</td>
+      </tr>
+      <tr>
+        <td><strong>AWS default quota value</strong></td>
+        <td>纸面默认值。<br>Applied &gt; Default → 提额成功过；<br>Applied &lt; Default → 账号被动态降额（新号常见）；<br>Applied = 0 → 该配额对你被禁用（如已退役的 Claude 3 Opus）</td>
+      </tr>
+      <tr>
+        <td><strong>Utilization</strong></td>
+        <td>当前用量占比。大部分推理配额显示 <em>Not available</em>（不上报），实际用量要看 CloudWatch 或自己统计</td>
+      </tr>
+      <tr>
+        <td><strong>Adjustability</strong></td>
+        <td><em>Account level</em> = 可申请提额；<em>Not adjustable</em> = 硬上限，申请也没用</td>
+      </tr>
+    </table>
+    </div>
+
+    <h3>Bedrock 配额的常见类别（搜索关键词）</h3>
+    <div class="table-scroll">
+    <table>
+      <tr><th style="width:40%">关键词</th><th>是什么</th></tr>
+      <tr><td><code>requests per minute</code>（RPM）</td><td>每分钟调用次数上限</td></tr>
+      <tr><td><code>tokens per minute</code>（TPM）</td><td>每分钟 token 量上限——通常先打满的是 <strong>Output</strong> TPM（一般比 Input 小 5~10 倍）</td></tr>
+      <tr><td><code>Cross-region model inference</code></td><td>走跨区域推理 profile（模型 ID 形如 <code>us.anthropic.*</code>）的独立配额</td></tr>
+      <tr><td><code>[bedrock-mantle endpoint]</code></td><td>走新 Messages-API 端点（SDK 的 <code>AnthropicBedrockMantle</code> 客户端）的独立配额</td></tr>
+      <tr><td><code>Batch inference</code></td><td>批量推理：文件大小、任务大小、并发数（多为固定值不可调）</td></tr>
+      <tr><td>其他</td><td>微调任务数、Provisioned Throughput、Agents / Knowledge Bases 等</td></tr>
+    </table>
+    </div>
+
+    <div class="warn"><strong>同一个模型走不同调用路径，吃的是不同的配额。</strong>排查限流前先确认代码用的是哪条路径。</div>
+
+    <h3>提额操作步骤</h3>
+    <ol>
+      <li>搜索并勾选目标配额（必须是 <em>Account level</em> 可调的）</li>
+      <li>点右上角 <span class="kbd">Request increase at account level</span></li>
+      <li>填入期望值 → 提交</li>
+      <li>小幅提升通常自动批；大幅提升转人工审核（可能要说明用量场景），预留几天</li>
+      <li>在左侧 <em>Quota request history</em> 跟踪审批状态</li>
+    </ol>
+  </div>
+</section>
+
+<!-- ═══════════════ ③ Model quotas ═══════════════ -->
+<section class="panel" id="p3">
+  <div class="card">
+    <h2>Bedrock 控制台 → Model quotas</h2>
+    <span class="url">https://&lt;region&gt;.console.aws.amazon.com/bedrock/home?region=&lt;region&gt;#/model-quotas</span>
+    <p>Bedrock 控制台<strong>自带</strong>的配额页面，把与<strong>模型推理</strong>相关的配额按模型整理出来，比 Service Quotas 的平铺列表直观。</p>
+
+    <h3>页面上能看到什么</h3>
+    <ul>
+      <li><strong>按模型分组</strong>的推理配额：RPM、TPM（部分分 Input / Output，部分是合并 TPM）</li>
+      <li>每条配额的<strong>当前生效值</strong></li>
+      <li>部分新模型显示 <strong>TBD</strong> —— 动态配额，详见标签页 ④</li>
+      <li>提额 / 申请入口</li>
+    </ul>
+
+    <h3>和 Service Quotas 的分工</h3>
+    <div class="table-scroll">
+    <table>
+      <tr><th style="width:38%">场景</th><th>建议用</th></tr>
+      <tr><td>"Claude XX 在这个区域每分钟能跑多少"</td><td>Model quotas（按模型直接找）</td></tr>
+      <tr><td>"这个模型显示 TBD，限额到底多少"</td><td>Model quotas + 标签页 ④</td></tr>
+      <tr><td>"查批量推理 / 微调 / Agents 的限额"</td><td>Service Quotas</td></tr>
+      <tr><td>"对比默认值，审计哪些配额被改过"</td><td>Service Quotas（有两列对比）</td></tr>
+    </table>
+    </div>
+
+    <div class="tip">两个页面底层是同一套配额。Service Quotas 里能搜到明确数字的，以那个 <strong>Applied value</strong> 为准；只在 Model quotas 里显示 TBD 的，是动态配额。</div>
+
+    <h3>burndown（token 折算率）</h3>
+    <p>对<strong>合并计量的 TPM</strong>（不分输入/输出），输出 token 消耗配额更快——部分较新的 Anthropic 模型按 <strong>1 个输出 token ≈ 5 个输入 token</strong> 折算。所以输出重的负载"看着有余量"也可能被限流。具体折算率以 AWS 官方文档为准。像 mantle 端点那样拆成 Input TPM / Output TPM 两条的，各算各的，不涉及折算。</p>
+  </div>
+</section>
+
+<!-- ═══════════════ ④ TBD ═══════════════ -->
+<section class="panel" id="p4">
+  <div class="card">
+    <h2>配额值显示 "TBD" 是什么意思？</h2>
+    <p><strong>TBD = To Be Determined（待定）。</strong>表示这条配额是<strong>动态配额</strong>：AWS 不公布固定数值，由 Bedrock 根据区域容量、账号历史用量等因素<strong>动态分配</strong>。常见于较新发布的模型。</p>
+
+    <h3>TBD 意味着什么</h3>
+    <div class="table-scroll">
+    <table>
+      <tr><th style="width:30%">方面</th><th>说明</th></tr>
+      <tr><td>有没有上限？</td><td><strong>有</strong>，只是不公开。打满同样返回 429 / ThrottlingException</td></tr>
+      <tr><td>Service Quotas 里能看到吗？</td><td>通常搜不到具体数值——所以要去 Model quotas 页面看</td></tr>
+      <tr><td>能自助提额吗？</td><td>一般<strong>不能</strong>走标准提额流程。会随稳定用量自动增长；大容量需求走工单 / 联系客户团队</td></tr>
+      <tr><td>值是固定的吗？</td><td>不是。同一账号不同时间、不同区域拿到的额度可能不同</td></tr>
+    </table>
+    </div>
+
+    <h3>为什么这样设计</h3>
+    <ul>
+      <li>新模型上线初期区域 GPU 容量有限且波动大，固定配额要么太保守要么兑现不了</li>
+      <li>按"实际在用的账号"倾斜容量，防止配额被囤积</li>
+      <li>模型成熟后，部分配额会从 TBD 转为公布的固定值</li>
+    </ul>
+
+    <h3>TBD 模型被限流怎么办</h3>
+    <ol>
+      <li><strong>指数退避重试</strong>：SDK 一般自带，确认没关掉</li>
+      <li><strong>削峰</strong>：排队、限速器、错峰任务</li>
+      <li><strong>Prompt caching</strong>：命中缓存的输入 token 大幅降低配额压力</li>
+      <li><strong>换路径 / 换区域</strong>：跨区域 profile 就是为了借多区域容量</li>
+      <li><strong>非实时任务走批量推理</strong>（Batch inference），配额分开计</li>
+      <li><strong>Provisioned Throughput</strong>：买断专用吞吐（成本高，适合稳定大流量）</li>
+      <li><strong>持续稳定地用</strong>：动态配额通常随健康用量自动上调</li>
+      <li>都不够 → <strong>开工单 / 联系客户团队</strong>，带上用量数据和业务场景</li>
+    </ol>
+
+    <div class="warn">别人报告的"某模型 RPM/TPM 数字"<strong>不代表</strong>你账号的额度——动态配额因账号而异，以自己账号实测为准。</div>
+  </div>
+</section>
+
+<!-- ═══════════════ ⑤ 429 实战 ═══════════════ -->
+<section class="panel" id="p5">
+  <div class="card">
+    <h2>429 / ThrottlingException 排查流程</h2>
+    <div class="flow">程序报 429 / ThrottlingException
+        │
+        ▼
+① 确认调用路径：代码用的是哪个端点/模型 ID？
+   ├─ anthropic.claude-*        → 直连按需配额
+   ├─ us.anthropic.claude-*     → Cross-region 配额
+   └─ AnthropicBedrockMantle    → [bedrock-mantle endpoint] 配额
+        │
+        ▼
+② 到对应配额页找那一行，看 Applied value
+   ├─ 有固定值 → 对比自己的实际吞吐（RPM？Input TPM？Output TPM？）
+   ├─ Applied 远低于 Default → 账号被动态降额（见标签页 ⑦）
+   └─ TBD      → 动态配额，见标签页 ④
+        │
+        ▼
+③ 判断打满的是哪个维度
+   "Too many requests" → RPM
+   "Too many tokens"   → TPM（先怀疑 Output TPM / burndown 折算）
+        │
+        ▼
+④ Applied 明明够却间歇性 429？
+   → 区域容量拥挤（按需配额是上限不是保证）
+   → 错峰 / 换区域 / 走跨区域 profile
+        │
+        ▼
+⑤ 对策：提额（可调的）/ 缓存 / 削峰 / 批量 / 换路径</div>
+
+    <h3>怎么知道自己实际用了多少</h3>
+    <ul>
+      <li><strong>CloudWatch</strong>：Bedrock 命名空间下有调用数、token 数、<code>InvocationThrottles</code>（被限流次数）等指标，可按模型 ID 维度做告警</li>
+      <li><strong>应用层自统计</strong>：每个响应的 <code>usage</code> 字段有 input/output token 数，按分钟窗口累计后和 Applied 值对比</li>
+      <li>配额页面的 Utilization 列大多是 <em>Not available</em>，别指望它</li>
+    </ul>
+
+    <h3>提额申请的实用建议</h3>
+    <ul>
+      <li>先算清楚要多少：<code>峰值并发 × 平均每请求 token 数 × 每分钟请求数</code>，留 30–50% 余量</li>
+      <li>输出 TPM 和输入 TPM <strong>分开申请</strong>（拆分计量的），瓶颈通常在输出侧</li>
+      <li>提额是<strong>按区域</strong>的，多区域部署要分别申请</li>
+      <li>审批需要时间（自动批几分钟，人工审可能几天），上线前提前办</li>
+      <li>大幅提额附上业务场景和用量预估，通过率更高</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ═══════════════ ⑥ Kiro ═══════════════ -->
+<section class="panel" id="p6">
+  <div class="card">
+    <h2>Kiro 的 429 由什么决定</h2>
+    <div class="bad"><strong>Kiro 的 429 和你的 AWS 账号 Bedrock 配额无关。</strong>Kiro 是 AWS 托管服务，推理跑在 AWS 自己的容量池上，不消耗你账号的 Bedrock 配额。Service Quotas 提额对 Kiro 无效，且 AWS 不公布 Kiro 的精确限流阈值。</div>
+
+    <h3>四层决定因素</h3>
+    <div class="table-scroll">
+    <table>
+      <tr><th style="width:26%">因素</th><th>说明</th></tr>
+      <tr>
+        <td><strong>1. 短窗口频率限制</strong><br>（最常见）</td>
+        <td>服务端按账号的短窗口吞吐限制（类似 RPM），和月度 credits 独立——credits 没用完照样 429。关键坑：<strong>一个 prompt ≠ 一次后端调用</strong>，agent 执行任务（spec、hooks、多步循环）会在后台发大量模型调用，"才发一句话就 429" 是正常现象</td>
+      </tr>
+      <tr>
+        <td><strong>2. 风控/信任状态</strong><br>（最隐蔽）</td>
+        <td>报错带 <em>"Due to suspicious activity..."</em> 的是风控限流。触发因素：<strong>VPN/代理接入、共享 IP、异常使用模式</strong>。有用户反馈解封后仍处于"隐藏的降级信任状态"被持续严格限流。国内经代理使用命中率高</td>
+      </tr>
+      <tr>
+        <td><strong>3. 订阅层级与 credits</strong></td>
+        <td>套餐决定月度额度（Free 50 / Pro $20 1,000 / Pro+ $40 2,000 / Power $200 10,000 credits，按 prompt 复杂度分数计扣）。<strong>credits 耗尽和 429 是两种不同拦截</strong>：前者提示额度用完，后者是 "Too many requests"</td>
+      </tr>
+      <tr>
+        <td><strong>4. 上游容量（高峰拥挤）</strong></td>
+        <td>共享容量池，美区工作时间高峰更容易限流；模型越高端容量越紧张。无法控制，只能重试/错峰</td>
+      </tr>
+    </table>
+    </div>
+
+    <h3>对症下药</h3>
+    <div class="table-scroll">
+    <table>
+      <tr><th style="width:38%">症状</th><th>对策</th></tr>
+      <tr><td>偶发 429，重试就好</td><td>短窗口限流 → 等 30s~几分钟，避免连续快速触发大任务</td></tr>
+      <tr><td>提示 suspicious activity</td><td>风控 → 停用 VPN/代理、换干净网络；持续则去 GitHub issues 提工单</td></tr>
+      <tr><td>一直 429、几乎不可用</td><td>可能是隐藏信任降级或服务端事件 → 查 status、提 issue</td></tr>
+      <tr><td>大任务频繁中断</td><td>把 spec 拆小、减少一次交互触发的 agent 步数、精简上下文</td></tr>
+    </table>
+    </div>
+
+    <h3>和 Bedrock 的本质区别</h3>
+    <p>Bedrock 的 429：能查到具体配额数字、能自助提额。<br>
+    Kiro 的 429：<strong>阈值不公开、不可自助调整</strong>，能动的杠杆只有套餐、使用节奏和网络环境。</p>
+  </div>
+</section>
+
+<!-- ═══════════════ ⑦ 账号误区 ═══════════════ -->
+<section class="panel" id="p7">
+  <div class="card">
+    <h2>"256V 账号" ≠ 高 Bedrock 配额</h2>
+    <div class="bad"><strong>256v（EC2 vCPU 配额 256）和 Bedrock 的 RPM/TPM 没有任何直接关系。</strong>AWS 各服务的配额相互独立——256v 衡量的是 EC2 的 vCPU 上限，社区拿它当"账号成熟度"的代理指标，但一个 256v 账号的 Bedrock applied 配额照样可能很低。</div>
+
+    <h3>你的真实 RPM/TPM 由什么决定</h3>
+    <p>Bedrock 配额 = <strong>账号 × 区域 × 模型 × 调用路径</strong> 四个维度共同决定，而且：</p>
+    <ol>
+      <li><strong>AWS 按账号动态下调。</strong>"AWS default" 只是纸面值，新账号 / 低消费史 / 低信任账号的 <strong>applied 值经常远低于 default</strong>（社区大量案例：默认 50 RPM 的模型，新账号 applied 只有 1~2 RPM）。这是"高配账号也一调就 429"的主因</li>
+      <li><strong>新模型是 TBD 动态配额</strong>，连固定数字都没有，随容量和用量历史浮动</li>
+      <li><strong>即使配额没打满也可能 429</strong>：按需调用的配额是"上限"不是"保证"，区域容量紧张时照样限流</li>
+    </ol>
+
+    <h3>查自己账号真实数字的 CLI（换成实际 region）</h3>
+    <p>你账号实际生效的值（关键看这个）：</p>
+    <div class="flow">aws service-quotas list-service-quotas `
+  --service-code bedrock --region us-west-2 `
+  --query "Quotas[?contains(QuotaName,'Claude')].{Name:QuotaName,Applied:Value}" `
+  --output table</div>
+    <p>AWS 纸面默认值（对比用）：</p>
+    <div class="flow">aws service-quotas list-aws-default-service-quotas `
+  --service-code bedrock --region us-west-2 `
+  --query "Quotas[?contains(QuotaName,'Claude')].{Name:QuotaName,Default:Value}" `
+  --output table</div>
+    <div class="tip">两条结果对比：<strong>Applied ≠ Default 的行就是被改过的配额</strong>（提额过或被降额/清零）。Applied 远小于 Default → 账号被动态降额，这基本就是你 429 的答案。TBD 动态配额不会出现在 CLI 结果里，要看 Bedrock 控制台的 Model quotas 页面。</div>
+
+    <h3>被降额了怎么办</h3>
+    <ul>
+      <li><strong>正常持续使用</strong>：健康的用量历史会让动态配额缓慢恢复/增长</li>
+      <li><strong>有付费历史 + 开 support 工单</strong>说明业务场景，可申请提额（新账号通过率低）</li>
+      <li><strong>代码侧兜底</strong>：指数退避重试（SDK 默认开着别关）、错峰、prompt caching、多区域 fallback</li>
+      <li><strong>非实时任务</strong>走批量推理，稳定大流量考虑 Provisioned Throughput</li>
+    </ul>
+
+    <div class="warn"><strong>如果账号是买来的：</strong>这类账号常见"看着 EC2 配额高、Bedrock 早被风控降额"的情况，且提额申请很难通过。买前无法验证 Bedrock applied 值，买后先跑上面的 CLI 摸底。</div>
+  </div>
+</section>
+
+<footer>
+  基于 AWS 控制台页面、官方文档与社区案例整理 · 数值与页面布局以 AWS / Kiro 官方为准 · 更新于 2026-07
+</footer>
+
+</div>
+
+<script>
+  const tabs = document.querySelectorAll('.tab-btn');
+  const panels = document.querySelectorAll('.panel');
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      tabs.forEach(b => b.classList.remove('active'));
+      panels.forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.panel).classList.add('active');
+      window.scrollTo({ top: 0 });
+    });
+  });
+</script>
+</body>
+</html>
