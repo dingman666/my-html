@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>KIRO 格式转换器</title>
+<style>
+  :root{
+    --bg-1:#f5f5f7; --bg-2:#e9e9ee;
+    --card:rgba(255,255,255,.72);
+    --card-solid:#ffffff;
+    --stroke:rgba(0,0,0,.08);
+    --text:#1d1d1f; --text-2:#6e6e73; --text-3:#8e8e93;
+    --accent:#0071e3; --accent-press:#0058b8;
+    --field:#f5f5f7; --field-stroke:rgba(0,0,0,.06);
+    --seg-bg:#e4e4e9; --seg-sel:#ffffff;
+    --ok:#34c759; --warn:#ff9f0a; --err:#ff3b30;
+    --shadow:0 12px 40px rgba(0,0,0,.10), 0 2px 8px rgba(0,0,0,.05);
+    --mono:'SF Mono',ui-monospace,'JetBrains Mono',Menlo,Consolas,'Liberation Mono',monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Helvetica Neue','PingFang SC','Microsoft YaHei',system-ui,sans-serif;
+  }
+  html[data-theme="dark"]{
+    --bg-1:#000000; --bg-2:#1c1c1e;
+    --card:rgba(28,28,30,.72);
+    --card-solid:#1c1c1e;
+    --stroke:rgba(255,255,255,.1);
+    --text:#f5f5f7; --text-2:#aeaeb2; --text-3:#8e8e93;
+    --accent:#0a84ff; --accent-press:#409cff;
+    --field:#2c2c2e; --field-stroke:rgba(255,255,255,.08);
+    --seg-bg:#2c2c2e; --seg-sel:#4a4a4e;
+    --shadow:0 16px 48px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.4);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:var(--sans); color:var(--text);
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(10,132,255,.12), transparent 60%),
+      radial-gradient(1000px 500px at 110% 10%, rgba(175,82,222,.10), transparent 55%),
+      linear-gradient(180deg,var(--bg-1),var(--bg-2));
+    background-attachment:fixed;
+    min-height:100vh; padding:28px 20px 56px;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    transition:background .4s ease,color .3s ease;
+  }
+  .wrap{max-width:1120px;margin:0 auto}
+
+  /* Header */
+  header{display:flex;align-items:center;gap:16px;margin:8px 4px 26px}
+  .logo{
+    width:56px;height:56px;border-radius:16px;flex:none;
+    background:linear-gradient(145deg,#0a84ff,#0060df);
+    display:grid;place-items:center;color:#fff;font-weight:700;font-size:15px;
+    letter-spacing:.5px;box-shadow:0 8px 22px rgba(10,132,255,.4);
+  }
+  .htext h1{font-size:26px;font-weight:700;letter-spacing:-.02em}
+  .htext p{color:var(--text-2);font-size:14px;margin-top:3px}
+  .theme-btn{
+    margin-left:auto;width:44px;height:44px;border-radius:50%;border:1px solid var(--stroke);
+    background:var(--card);backdrop-filter:blur(20px);cursor:pointer;font-size:19px;
+    display:grid;place-items:center;transition:transform .2s,background .3s;color:var(--text);
+  }
+  .theme-btn:hover{transform:scale(1.06)} .theme-btn:active{transform:scale(.94)}
+
+  /* Toolbar */
+  .toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:0 4px 18px}
+  .seg{display:inline-flex;background:var(--seg-bg);border-radius:12px;padding:3px;gap:2px}
+  .seg button{
+    border:0;background:transparent;color:var(--text-2);font-family:inherit;font-size:13.5px;
+    font-weight:600;padding:8px 16px;border-radius:9px;cursor:pointer;transition:all .22s ease;
+    white-space:nowrap;
+  }
+  .seg button.on{background:var(--seg-sel);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.14)}
+  .spacer{flex:1}
+  .chip{
+    display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;
+    padding:8px 14px;border-radius:10px;border:1px solid var(--stroke);
+    background:var(--card);backdrop-filter:blur(20px);color:var(--text);cursor:pointer;
+    transition:transform .15s,background .25s,border-color .25s;
+  }
+  .chip:hover{transform:translateY(-1px);border-color:rgba(10,132,255,.4)}
+  .chip:active{transform:translateY(0) scale(.97)}
+  .chip svg{width:15px;height:15px}
+
+  /* Panels */
+  .grid{display:grid;grid-template-columns:1fr 56px 1fr;gap:0;align-items:stretch}
+  .panel{
+    background:var(--card);backdrop-filter:blur(24px) saturate(180%);
+    -webkit-backdrop-filter:blur(24px) saturate(180%);
+    border:1px solid var(--stroke);border-radius:22px;box-shadow:var(--shadow);
+    padding:18px 18px 16px;display:flex;flex-direction:column;min-height:320px;
+  }
+  .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:0 2px}
+  .panel-head .lbl{font-size:13px;font-weight:700;color:var(--text-2);letter-spacing:.02em;
+    display:flex;align-items:center;gap:8px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--accent)}
+  .panel-head .tools{display:flex;gap:6px}
+  .icon-btn{
+    width:32px;height:32px;border-radius:9px;border:1px solid var(--field-stroke);
+    background:var(--field);cursor:pointer;display:grid;place-items:center;color:var(--text-2);
+    transition:all .18s;
+  }
+  .icon-btn:hover{color:var(--accent);border-color:rgba(10,132,255,.4)}
+  .icon-btn:active{transform:scale(.9)} .icon-btn svg{width:16px;height:16px}
+  textarea{
+    flex:1;width:100%;resize:none;border:0;outline:0;background:transparent;
+    color:var(--text);font-family:var(--mono);font-size:13.5px;line-height:1.7;
+    letter-spacing:.01em;padding:4px 2px;
+  }
+  textarea::placeholder{color:var(--text-3);font-family:var(--sans)}
+  #output{white-space:pre-wrap;word-break:break-all}
+
+  .arrow{display:grid;place-items:center}
+  .arrow .a-inner{
+    width:44px;height:44px;border-radius:50%;background:var(--accent);color:#fff;
+    display:grid;place-items:center;box-shadow:0 8px 20px rgba(10,132,255,.4);
+    transition:transform .3s cubic-bezier(.34,1.56,.64,1);
+  }
+  .arrow.rev .a-inner{transform:rotate(180deg)}
+  .arrow svg{width:20px;height:20px}
+
+  /* Status bar */
+  .status{
+    display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin:16px 6px 0;
+    font-size:13px;color:var(--text-2);font-weight:500;
+  }
+  .status b{color:var(--text);font-weight:700}
+  .stat{display:inline-flex;align-items:center;gap:6px}
+  .stat .d{width:8px;height:8px;border-radius:50%}
+  .d.g{background:var(--ok)} .d.w{background:var(--warn)} .d.b{background:var(--accent)}
+
+  /* Preview cards */
+  .preview{margin-top:22px}
+  .preview-title{font-size:15px;font-weight:700;margin:0 6px 12px;display:flex;align-items:center;gap:8px}
+  .preview-title span{color:var(--text-3);font-weight:600;font-size:13px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
+  .card{
+    background:var(--card);backdrop-filter:blur(20px);border:1px solid var(--stroke);
+    border-radius:18px;padding:16px 16px 12px;box-shadow:0 4px 16px rgba(0,0,0,.05);
+    animation:pop .35s ease both;position:relative;overflow:hidden;
+  }
+  .card.bad{border-color:rgba(255,59,48,.45)}
+  .card .num{
+    position:absolute;top:12px;right:14px;font-size:12px;font-weight:700;color:var(--text-3);
+    font-family:var(--mono);
+  }
+  @keyframes pop{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+  .row{display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--field-stroke)}
+  .row:last-child{border-bottom:0}
+  .row .k{width:52px;flex:none;font-size:12px;color:var(--text-3);font-weight:600;padding-top:2px}
+  .row .v{flex:1;font-family:var(--mono);font-size:12.5px;word-break:break-all;line-height:1.5;color:var(--text)}
+  .row .v.miss{color:var(--err);font-style:italic;font-family:var(--sans)}
+  .row .cp{opacity:0;flex:none;cursor:pointer;color:var(--text-3);transition:all .15s;padding-top:1px}
+  .row:hover .cp{opacity:1} .row .cp:hover{color:var(--accent)} .row .cp svg{width:14px;height:14px}
+  .card-copy{
+    margin-top:8px;width:100%;border:0;background:transparent;color:var(--accent);
+    font-family:inherit;font-size:12.5px;font-weight:600;padding:6px;border-radius:8px;cursor:pointer;
+    transition:background .2s;
+  }
+  .card-copy:hover{background:rgba(10,132,255,.08)}
+
+  .empty{color:var(--text-3);text-align:center;padding:30px 0;font-size:13.5px}
+
+  footer{text-align:center;margin-top:34px;color:var(--text-3);font-size:12.5px;line-height:1.8}
+  footer .lock{display:inline-flex;align-items:center;gap:5px}
+  footer svg{width:13px;height:13px;vertical-align:-2px}
+
+  /* Toast */
+  .toast{
+    position:fixed;left:50%;bottom:34px;transform:translateX(-50%) translateY(20px);
+    background:var(--text);color:var(--bg-1);padding:11px 20px;border-radius:14px;
+    font-size:13.5px;font-weight:600;box-shadow:0 12px 40px rgba(0,0,0,.3);
+    opacity:0;pointer-events:none;transition:all .35s cubic-bezier(.34,1.56,.64,1);z-index:99;
+    display:flex;align-items:center;gap:8px;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast svg{width:16px;height:16px;color:var(--ok)}
+
+  @media(max-width:760px){
+    body{padding:20px 14px 40px}
+    .grid{grid-template-columns:1fr;gap:14px}
+    .arrow{padding:2px 0}
+    .arrow.rev .a-inner{transform:rotate(90deg)}
+    .arrow .a-inner{transform:rotate(90deg)}
+    .htext h1{font-size:22px}
+    .cards{grid-template-columns:1fr}
+    .toolbar .seg button{padding:8px 12px;font-size:13px}
+  }
+</style>
+  <link rel="icon" href="./icon.png">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">KIRO</div>
+    <div class="htext">
+      <h1>KIRO 格式转换器</h1>
+      <p>标准账号信息 ⇌ KIRO 管道格式 · 支持批量 · 本地处理</p>
+    </div>
+    <button class="theme-btn" id="themeBtn" title="切换深浅色">🌙</button>
+  </header>
+
+  <div class="toolbar">
+    <div class="seg" id="seg">
+      <button data-mode="auto" class="on">自动识别</button>
+      <button data-mode="toKiro">标准 → KIRO</button>
+      <button data-mode="toStd">KIRO → 标准</button>
+    </div>
+    <div class="spacer"></div>
+    <button class="chip" id="pasteBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+      粘贴
+    </button>
+    <button class="chip" id="demoBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>
+      填入示例
+    </button>
+  </div>
+
+  <div class="grid">
+    <!-- INPUT -->
+    <section class="panel">
+      <div class="panel-head">
+        <div class="lbl"><span class="dot"></span><span id="inLabel">输入 · 标准格式</span></div>
+        <div class="tools">
+          <button class="icon-btn" id="clearBtn" title="清空">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+          </button>
+        </div>
+      </div>
+      <textarea id="input" spellcheck="false" placeholder="粘贴账号信息，例如：&#10;登录地址: https://d-xxxx.awsapps.com/start 用户名: abcd 密码: P@ss!# 区域: us-east-1&#10;&#10;支持多条，每条账号自动识别。"></textarea>
+    </section>
+
+    <!-- ARROW -->
+    <div class="arrow" id="arrow">
+      <div class="a-inner">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </div>
+    </div>
+
+    <!-- OUTPUT -->
+    <section class="panel">
+      <div class="panel-head">
+        <div class="lbl"><span class="dot" style="background:var(--ok)"></span><span id="outLabel">输出 · KIRO 格式</span></div>
+        <div class="tools">
+          <button class="icon-btn" id="copyAllBtn" title="复制全部">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          </button>
+          <button class="icon-btn" id="dlBtn" title="下载 .txt">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          </button>
+        </div>
+      </div>
+      <textarea id="output" spellcheck="false" readonly placeholder="转换结果显示在这里…"></textarea>
+    </section>
+  </div>
+
+  <div class="status" id="status">
+    <span class="stat"><span class="d b"></span>共 <b id="cTotal">0</b> 条</span>
+    <span class="stat"><span class="d g"></span>成功 <b id="cOk">0</b></span>
+    <span class="stat"><span class="d w"></span>待补全 <b id="cBad">0</b></span>
+    <span class="stat" style="margin-left:auto;color:var(--text-3)">实时转换 · 无需联网</span>
+  </div>
+
+  <div class="preview" id="preview"></div>
+
+  <footer>
+    <div class="lock">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      所有转换均在浏览器本地完成，数据不会上传到任何服务器
+    </div>
+    <div style="margin-top:4px">KIRO 格式：<code style="font-family:var(--mono)">登录地址|用户名|密码|区域</code></div>
+  </footer>
+</div>
+
+<div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><span id="toastMsg">已复制</span></div>
+
+<script>
+/* ============ 字段定义 ============ */
+const FIELD_DEFS = [
+  { key:'url',    names:['登录地址','登陆地址','登录网址','登陆网址','登录链接','网址','链接','地址','loginurl','url'] },
+  { key:'user',   names:['用户名称','用户名','账户名','帐户名','账号','帐号','账户','帐户','用户','username','user'] },
+  { key:'pass',   names:['登录密码','登陆密码','密码','password','passwd','pass','pwd'] },
+  { key:'region', names:['区域代码','区域','地区','region'] },
+];
+const LABEL_TO_KEY = {};
+const ALL_NAMES = [];
+FIELD_DEFS.forEach(f=>f.names.forEach(n=>{ LABEL_TO_KEY[n.toLowerCase()]=f.key; ALL_NAMES.push(n); }));
+ALL_NAMES.sort((a,b)=>b.length-a.length);
+const esc = s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+const LABEL_RE = new RegExp('(' + ALL_NAMES.map(esc).join('|') + ')\\s*[:：]?\\s*','gi');
+
+/* ============ 解析：标准 → 记录 ============ */
+function parseStandard(text){
+  const matches = [];
+  let m;
+  LABEL_RE.lastIndex = 0;
+  while((m = LABEL_RE.exec(text)) !== null){
+    matches.push({ key: LABEL_TO_KEY[m[1].toLowerCase()], start:m.index, end:m.index+m[0].length });
+    if(m.index === LABEL_RE.lastIndex) LABEL_RE.lastIndex++;
+  }
+  const records = [];
+  for(let i=0;i<matches.length;i++){
+    const cur = matches[i];
+    const valEnd = (i+1<matches.length) ? matches[i+1].start : text.length;
+    const value = text.slice(cur.end, valEnd).trim().replace(/^[:：]\s*/,'');
+    if(cur.key === 'url') records.push({});
+    if(records.length){
+      const rec = records[records.length-1];
+      if(!(cur.key in rec)) rec[cur.key] = value;
+    }
+  }
+  return records;
+}
+
+/* ============ 解析：KIRO → 记录 ============ */
+function parseKiro(text){
+  return text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map(line=>{
+    const parts = line.split('|');
+    if(parts.length < 2) return { url:line, __raw:line };
+    return {
+      url: parts[0].trim(),
+      user: (parts[1]||'').trim(),
+      region: parts.length>=4 ? parts[parts.length-1].trim() : '',
+      pass: parts.length>=4 ? parts.slice(2,parts.length-1).join('|').trim() : (parts[2]||'').trim(),
+    };
+  });
+}
+
+/* ============ 生成输出 ============ */
+const need = ['url','user','pass','region'];
+const isComplete = r => need.every(k => r[k] && r[k].length);
+
+function toKiroLine(r){ return need.map(k=>r[k]||'').join('|'); }
+function toStdLine(r){
+  return `登录地址: ${r.url||''} 用户名: ${r.user||''} 密码: ${r.pass||''} 区域: ${r.region||''}`;
+}
+
+/* ============ 方向识别 ============ */
+function detect(text){
+  const hasLabel = /(登录地址|登陆地址|用户名|账号|帐号|密码|区域|地址)/.test(text);
+  const looksPipe = /^[^\n|]*\|[^\n]*\|/m.test(text);
+  if(hasLabel && !looksPipe) return 'toKiro';
+  if(!hasLabel && looksPipe) return 'toStd';
+  return hasLabel ? 'toKiro' : 'toStd';
+}
+
+/* ============ 主流程 ============ */
+let mode = 'auto';
+const $ = id => document.getElementById(id);
+const inputEl=$('input'), outputEl=$('output');
+
+function activeDirection(text){ return mode==='auto' ? detect(text) : mode; }
+
+function run(){
+  const text = inputEl.value;
+  const dir = activeDirection(text);
+  $('arrow').classList.toggle('rev', dir==='toStd');
+  $('inLabel').textContent  = dir==='toKiro' ? '输入 · 标准格式' : '输入 · KIRO 格式';
+  $('outLabel').textContent = dir==='toKiro' ? '输出 · KIRO 格式' : '输出 · 标准格式';
+
+  const records = dir==='toKiro' ? parseStandard(text) : parseKiro(text);
+  const lines = records.map(r => dir==='toKiro' ? toKiroLine(r) : toStdLine(r));
+  outputEl.value = lines.join('\n');
+
+  const ok = records.filter(isComplete).length;
+  $('cTotal').textContent = records.length;
+  $('cOk').textContent = ok;
+  $('cBad').textContent = records.length - ok;
+
+  renderPreview(records, dir);
+}
+
+function renderPreview(records, dir){
+  const box = $('preview');
+  if(!records.length){ box.innerHTML=''; return; }
+  const labelMap = {url:'地址',user:'用户名',pass:'密码',region:'区域'};
+  let html = `<div class="preview-title">解析预览 <span>点击字段可单独复制</span></div><div class="cards">`;
+  records.forEach((r,i)=>{
+    const bad = !isComplete(r);
+    html += `<div class="card${bad?' bad':''}" style="animation-delay:${Math.min(i*40,320)}ms"><div class="num">#${i+1}</div>`;
+    need.forEach(k=>{
+      const val = r[k]||'';
+      const missing = !val;
+      html += `<div class="row"><div class="k">${labelMap[k]}</div>`+
+        `<div class="v${missing?' miss':''}">${missing?'（缺失）':escHtml(val)}</div>`+
+        (missing?'':`<div class="cp" data-copy="${escAttr(val)}" title="复制"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></div>`)+
+        `</div>`;
+    });
+    const line = dir==='toKiro' ? toKiroLine(r) : toStdLine(r);
+    html += `<button class="card-copy" data-copy="${escAttr(line)}">复制这一条 ${dir==='toKiro'?'KIRO':'标准'} 格式</button></div>`;
+  });
+  html += `</div>`;
+  box.innerHTML = html;
+}
+
+function escHtml(s){ return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function escAttr(s){ return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ============ 复制 / 提示 ============ */
+let toastTimer;
+function toast(msg){
+  $('toastMsg').textContent = msg;
+  const t=$('toast'); t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),1600);
+}
+async function copy(text){
+  if(!text){ toast('没有可复制的内容'); return; }
+  try{
+    await navigator.clipboard.writeText(text);
+  }catch(e){
+    const ta=document.createElement('textarea');
+    ta.value=text; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); }catch(_){}
+    document.body.removeChild(ta);
+  }
+  toast('已复制到剪贴板');
+}
+
+/* ============ 事件绑定 ============ */
+inputEl.addEventListener('input', run);
+
+$('seg').addEventListener('click', e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  mode=b.dataset.mode;
+  [...$('seg').children].forEach(x=>x.classList.toggle('on',x===b));
+  run();
+});
+
+$('preview').addEventListener('click', e=>{
+  const el=e.target.closest('[data-copy]'); if(!el) return;
+  const t=document.createElement('textarea'); t.innerHTML=el.getAttribute('data-copy');
+  copy(t.value);
+});
+
+$('copyAllBtn').addEventListener('click',()=>copy(outputEl.value));
+$('clearBtn').addEventListener('click',()=>{ inputEl.value=''; run(); inputEl.focus(); });
+
+$('pasteBtn').addEventListener('click',async()=>{
+  try{ const t=await navigator.clipboard.readText(); inputEl.value=t; run(); toast('已粘贴'); }
+  catch(e){ toast('无法读取剪贴板，请手动粘贴'); inputEl.focus(); }
+});
+
+$('demoBtn').addEventListener('click',()=>{
+  inputEl.value =
+`登录地址: https://d-906676921a.awsapps.com/start 用户名: uxtz06brx 密码: m2@^lk/$)PbY$Jq)B3D>m%T%)!X 区域: us-east-1
+登录地址: https://d-906676feff.awsapps.com/start 用户名: uy11mvnr3 密码: HCpaci5u/c/jUo# 区域: us-east-1`;
+  run();
+});
+
+$('dlBtn').addEventListener('click',()=>{
+  const text=outputEl.value;
+  if(!text){ toast('没有可下载的内容'); return; }
+  const blob=new Blob([text],{type:'text/plain;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download='kiro_output.txt';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  toast('已下载 kiro_output.txt');
+});
+
+/* ============ 主题 ============ */
+const themeBtn=$('themeBtn');
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme',t);
+  themeBtn.textContent = t==='dark' ? '☀️' : '🌙';
+}
+(function initTheme(){
+  const saved=localStorage.getItem('kiro-theme');
+  const sys=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+  applyTheme(saved||sys);
+})();
+themeBtn.addEventListener('click',()=>{
+  const next=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
+  applyTheme(next); localStorage.setItem('kiro-theme',next);
+});
+
+/* 快捷键：Ctrl/Cmd + Enter 复制全部 */
+document.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){ e.preventDefault(); copy(outputEl.value); }
+});
+
+run();
+</script>
+</body>
+</html>
