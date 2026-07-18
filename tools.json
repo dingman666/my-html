@@ -79,6 +79,12 @@
       "name": "AWS Bedrock / Kiro 配额与 429 完全指南",
       "path": "tools/aws-bedrock-kiro-429/",
       "icon": "tools/aws-bedrock-kiro-429/icon.png"
+    },
+    {
+      "id": "kiro",
+      "name": "KIRO 格式转换器",
+      "path": "tools/kiro/",
+      "icon": "tools/kiro/icon.png"
     }
   ]
 }
