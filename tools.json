@@ -85,6 +85,12 @@
       "name": "KIRO 格式转换器",
       "path": "tools/kiro/",
       "icon": "tools/kiro/icon.png"
+    },
+    {
+      "id": "shucai",
+      "name": "蔬菜录入",
+      "path": "tools/shucai/",
+      "icon": "tools/shucai/icon.png"
     }
   ]
 }
