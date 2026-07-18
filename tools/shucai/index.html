@@ -61,7 +61,7 @@
   .seg{
     display:flex;gap:4px;background:var(--card-2);
     border:1px solid var(--line);
-    padding:4px;border-radius:14px;margin:0 auto 26px;max-width:360px;
+    padding:4px;border-radius:14px;margin:0 auto 26px;max-width:480px;
   }
   .seg button{
     flex:1;border:0;background:transparent;color:var(--text);
@@ -175,6 +175,7 @@
   <div class="seg">
     <button id="tabTextBtn" class="active" onclick="switchTab('text')">文本整理</button>
     <button id="tabImgBtn" onclick="switchTab('img')">图片识别</button>
+    <button id="tabLinkBtn" onclick="switchTab('link')">链接识别</button>
   </div>
 
   <!-- ================= 文本整理 ================= -->
@@ -311,6 +312,52 @@
     </div>
   </section>
 
+  <!-- ================= 链接识别 ================= -->
+  <section id="tabLink" class="hidden">
+    <div class="card">
+      <h2>链接识别（采购单）</h2>
+      <p class="sub">粘贴美团采购单分享链接，自动提取「商品名称 + 采购数量」，按清单格式输出，结果可再自行修改。</p>
+
+      <div class="field">
+        <label>采购单链接</label>
+        <textarea id="linkInput" style="min-height:88px;" spellcheck="false" placeholder="粘贴分享链接，例如：https://pos.meituan.com/web/scm-mobile/share/purchase/CGDD..."></textarea>
+      </div>
+
+      <div class="row">
+        <button class="btn" id="linkBtn" onclick="extractLink()">🔗 提取清单</button>
+        <button class="btn gray small" onclick="document.getElementById('linkInput').value='';">清空</button>
+      </div>
+
+      <div class="status info" id="linkStatus"></div>
+
+      <details style="margin-top:10px;">
+        <summary style="cursor:pointer;color:var(--text-2);font-size:13px;font-weight:600;list-style:none;">⚙️ 高级设置（代理，一般不用改）</summary>
+        <div style="margin-top:14px;">
+          <div class="field">
+            <label>代理地址（默认公共代理；不稳定时可换成你自己的）</label>
+            <input type="text" id="linkProxy" spellcheck="false" placeholder="https://proxy.cors.sh/">
+          </div>
+          <div class="field">
+            <label>代理密钥（可选，cors.sh 的 x-cors-api-key，没有就留空）</label>
+            <input type="text" id="corsKey" spellcheck="false" placeholder="没有就留空">
+          </div>
+          <button class="btn gray small" onclick="saveLinkCfg()">💾 保存代理设置</button>
+        </div>
+      </details>
+
+      <hr class="divider">
+
+      <div class="field">
+        <label>提取结果（可编辑）</label>
+        <textarea id="linkOut" class="out" spellcheck="false" placeholder="提取结果会显示在这里…"></textarea>
+      </div>
+      <div class="row">
+        <button class="btn green" onclick="copyEl('linkOut')">📋 复制结果</button>
+        <button class="btn gray small" onclick="sendLinkToText()">→ 发送到「文本整理」</button>
+      </div>
+    </div>
+  </section>
+
   <footer>蔬菜录入 · 本地运行，数据只存在你的电脑上 🍃</footer>
 </div>
 
@@ -410,11 +457,11 @@ function toListFormat(text){
 
 /* ---------- Tab 切换 ---------- */
 function switchTab(t){
-  const isText = t==='text';
-  document.getElementById('tabText').classList.toggle('hidden', !isText);
-  document.getElementById('tabImg').classList.toggle('hidden', isText);
-  document.getElementById('tabTextBtn').classList.toggle('active', isText);
-  document.getElementById('tabImgBtn').classList.toggle('active', !isText);
+  const cap = s => s.charAt(0).toUpperCase()+s.slice(1);
+  ['text','img','link'].forEach(name=>{
+    document.getElementById('tab'+cap(name)).classList.toggle('hidden', name!==t);
+    document.getElementById('tab'+cap(name)+'Btn').classList.toggle('active', name===t);
+  });
 }
 
 /* ---------- 文本整理 ---------- */
@@ -716,8 +763,104 @@ function toast(msg){
   toastTimer = setTimeout(()=>t.classList.remove('show'), 1600);
 }
 
+/* ---------- 链接识别（美团采购单分享页）---------- */
+const LS_LINK = 'vegAdmin_link';
+function loadLinkCfg(){
+  let d = {};
+  try{ d = JSON.parse(localStorage.getItem(LS_LINK)||'{}'); }catch(e){}
+  document.getElementById('linkProxy').value = d.proxy || 'https://proxy.cors.sh/';
+  if(d.corsKey) document.getElementById('corsKey').value = d.corsKey;
+}
+function saveLinkCfg(){
+  localStorage.setItem(LS_LINK, JSON.stringify({
+    proxy: document.getElementById('linkProxy').value.trim(),
+    corsKey: document.getElementById('corsKey').value.trim()
+  }));
+  toast('代理设置已保存');
+}
+function proxyPrefix(){
+  let p = document.getElementById('linkProxy').value.trim() || 'https://proxy.cors.sh/';
+  if(!/[\/=]$/.test(p)) p += '/';   // 末尾需为 / 或 =
+  return p;
+}
+function corsHeaders(){
+  const k = document.getElementById('corsKey').value.trim();
+  return k ? {'x-cors-api-key':k} : {};
+}
+// 解析分享链接：/share/purchase/<orderSn>/<hqId>/<timestamp>/<token>
+function parseMeituanLink(link){
+  let u; try{ u = new URL(link.trim()); }catch(e){ return null; }
+  const m = u.pathname.match(/\/share\/purchase\/([^/]+)\/([^/]+)\/([^/]+)\/([^/?]+)/);
+  if(!m) return null;
+  return {
+    orderSn:m[1], hqId:m[2], timestamp:m[3], token:m[4],
+    isFast:(u.searchParams.get('isFast')||'').toLowerCase()==='true'
+  };
+}
+function fmtDate(ts){
+  const d = new Date(Number(ts)); if(isNaN(d.getTime())) return '';
+  const p = n => String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());
+}
+// orderTO -> 清单格式文本
+function orderToList(o){
+  const lines = [];
+  const head = [o.orgName, fmtDate(o.expectTime), '叫货'].filter(Boolean).join(' ');
+  if(head.trim()) lines.push(head);
+  if(o.supplierName) lines.push('供应商 '+o.supplierName);
+  (o.detailList||[]).forEach(it=>{
+    const qty = ((it.amount!=null && it.amount!=='') ? String(it.amount) : '') + (it.unit||'');
+    lines.push([it.goodsName, qty].filter(Boolean).join(' '));
+    const rm = (it.goodsRemark || it.remark || '').toString().trim();
+    if(rm) lines.push('备注 '+rm);
+  });
+  return lines.join('\n');
+}
+async function extractLink(){
+  const link = document.getElementById('linkInput').value.trim();
+  if(!link){ setStatus('linkStatus','请先粘贴采购单链接','err'); return; }
+  const p = parseMeituanLink(link);
+  if(!p){ setStatus('linkStatus','没识别出美团采购单链接，请检查链接是否完整','err'); return; }
+  const btn = document.getElementById('linkBtn');
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span> 提取中…';
+  setStatus('linkStatus','正在读取采购单…','info');
+  try{
+    const variants = p.isFast ? ['scm-plus','scm'] : ['scm','scm-plus'];
+    let orderTO=null, lastMsg='';
+    for(const v of variants){
+      const target = `https://pos.meituan.com/api/v1/${v}/demand-service-purchasedemand-get-by-token`;
+      let res;
+      try{
+        res = await fetch(proxyPrefix()+target, {
+          method:'POST',
+          headers:{'Content-Type':'application/json', ...corsHeaders()},
+          body:JSON.stringify({ tokenTO:{ hqId:p.hqId, orderSn:p.orderSn, timestamp:p.timestamp, token:p.token } })
+        });
+      }catch(e){ lastMsg='代理请求失败：'+e.message; continue; }
+      if(!res.ok){ lastMsg='HTTP '+res.status; continue; }
+      let data; try{ data = await res.json(); }catch(e){ lastMsg='返回的不是有效数据（代理可能未透传）'; continue; }
+      if(data && data.data && data.data.orderTO){ orderTO = data.data.orderTO; break; }
+      lastMsg = (data && data.status && data.status.msg) || '订单数据为空';
+    }
+    if(!orderTO) throw new Error(lastMsg||'未获取到数据');
+    document.getElementById('linkOut').value = orderToList(orderTO);
+    setStatus('linkStatus', '✅ 提取成功，共 '+((orderTO.detailList||[]).length)+' 个商品', 'ok');
+    toast('提取成功');
+  }catch(err){
+    setStatus('linkStatus','❌ 提取失败：'+err.message+'（若为跨域/代理问题，可在「高级设置」换成自己的代理）','err');
+  }finally{
+    btn.disabled=false; btn.innerHTML='🔗 提取清单';
+  }
+}
+function sendLinkToText(){
+  const v = document.getElementById('linkOut').value;
+  if(!v.trim()){ toast('没有可发送的内容'); return; }
+  document.getElementById('rawText').value = v; switchTab('text'); toast('已发送到文本整理');
+}
+
 /* 启动 */
 loadApi();
+loadLinkCfg();
 </script>
 </body>
 </html>
