@@ -91,6 +91,12 @@
       "name": "蔬菜录入",
       "path": "tools/shucai/",
       "icon": "tools/shucai/icon.png"
+    },
+    {
+      "id": "tupianshengcheng",
+      "name": "苹果风文字图片生成器",
+      "path": "tools/tupianshengcheng/",
+      "icon": "tools/tupianshengcheng/icon.png"
     }
   ]
 }
