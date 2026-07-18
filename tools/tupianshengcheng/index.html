@@ -1,0 +1,343 @@
+<!doctype html><html><head><link rel="icon" href="./icon.png"></head><body><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>苹果风文字图片生成器</title>
+<style>
+  :root{
+    --bg:#f5f5f7; --panel:#ffffff; --ink:#1d1d1f; --sub:#6e6e73;
+    --line:#e5e5ea; --accent:#0071e3; --accent-ink:#fff;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#000; --panel:#1c1c1e; --ink:#f5f5f7; --sub:#98989d; --line:#2c2c2e; }
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; height:100%; }
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{ display:grid; grid-template-columns:360px 1fr; height:100vh; }
+  @media (max-width:900px){ .app{ grid-template-columns:1fr; height:auto; } }
+
+  .side{ background:var(--panel); border-right:1px solid var(--line); padding:22px 20px 40px; overflow:auto; }
+  .side h1{ font-size:19px; font-weight:700; letter-spacing:-.02em; margin:2px 0; }
+  .side p.tip{ font-size:12px; color:var(--sub); margin:0 0 18px; line-height:1.5; }
+  .field{ margin-bottom:16px; }
+  .field > label{ display:block; font-size:12px; font-weight:600; color:var(--sub); margin-bottom:7px; }
+  input[type=text], textarea, select{
+    width:100%; border:1px solid var(--line); background:var(--bg); color:var(--ink);
+    border-radius:12px; padding:11px 12px; font-size:14px; font-family:inherit; outline:none;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  input:focus, textarea:focus, select:focus{
+    border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%, transparent);
+  }
+  textarea{ resize:vertical; min-height:120px; line-height:1.55; }
+  .row{ display:flex; gap:10px; }
+  .row > .field{ flex:1; }
+
+  .swatches{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+  .swatch{ height:40px; border-radius:10px; cursor:pointer; border:2px solid transparent; }
+  .swatch.on{ border-color:var(--accent); box-shadow:0 0 0 2px var(--panel) inset; }
+
+  .seg{ display:flex; background:var(--bg); border:1px solid var(--line); border-radius:11px; padding:3px; gap:3px; }
+  .seg button{ flex:1; border:0; background:transparent; color:var(--ink); padding:8px 6px; border-radius:8px; font-size:13px; font-family:inherit; cursor:pointer; }
+  .seg button.on{ background:var(--panel); box-shadow:0 1px 3px rgba(0,0,0,.12); font-weight:600; }
+
+  input[type=range]{ width:100%; accent-color:var(--accent); }
+  .switch{ display:flex; align-items:center; justify-content:space-between; }
+  .switch label{ font-size:13px; font-weight:600; }
+
+  .actions{ display:flex; gap:10px; margin-top:6px; }
+  .btn{ flex:1; border:0; border-radius:12px; padding:13px 14px; font-size:14px; font-weight:600; font-family:inherit; cursor:pointer; transition:transform .08s; }
+  .btn:active{ transform:scale(.97); }
+  .btn.primary{ background:var(--accent); color:var(--accent-ink); }
+  .btn.ghost{ background:var(--bg); color:var(--ink); border:1px solid var(--line); }
+  .status{ font-size:12px; color:var(--sub); margin-top:12px; min-height:16px; text-align:center; }
+
+  .preview{
+    display:flex; align-items:center; justify-content:center; padding:32px; overflow:auto;
+    background:radial-gradient(circle at 20% 20%, color-mix(in srgb,var(--ink) 4%,transparent), transparent 60%), var(--bg);
+  }
+  #canvas{ border-radius:20px; box-shadow:0 24px 60px rgba(0,0,0,.22); }
+</style>
+
+<div class="app">
+  <aside class="side">
+    <h1>苹果风文字图片</h1>
+    <p class="tip">输入文字，右侧实时预览，导出高清 PNG。纯离线渲染，所有浏览器可用。</p>
+
+    <div class="field">
+      <label>标题（可选）</label>
+      <input id="in-title" type="text" placeholder="例如：Think Different">
+    </div>
+    <div class="field">
+      <label>正文</label>
+      <textarea id="in-body" placeholder="在这里输入你的文字…&#10;支持多行换行。">简单，是终极的复杂。
+
+好的设计，是让复杂的东西变得清晰。</textarea>
+    </div>
+    <div class="field">
+      <label>落款（可选）</label>
+      <input id="in-foot" type="text" placeholder="例如：— 乔布斯">
+    </div>
+
+    <div class="field">
+      <label>背景主题</label>
+      <div class="swatches" id="swatches"></div>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label>对齐</label>
+        <div class="seg" id="align">
+          <button data-v="left" class="on">左对齐</button>
+          <button data-v="center">居中</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>引号装饰</label>
+        <div class="seg" id="mark">
+          <button data-v="0" class="on">无</button>
+          <button data-v="1">“”</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>画面比例</label>
+      <select id="ratio">
+        <option value="auto">自动高度 (宽 800)</option>
+        <option value="1:1">正方形 1:1 (800×800)</option>
+        <option value="4:5">竖版 4:5 (800×1000)</option>
+        <option value="9:16">手机竖屏 9:16 (720×1280)</option>
+        <option value="16:9">横版 16:9 (1280×720)</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>字号 <span id="fs-val" style="color:var(--sub);font-weight:400"></span></label>
+      <input id="in-size" type="range" min="20" max="48" step="1" value="30">
+    </div>
+
+    <div class="field switch">
+      <label for="in-board">内容底板（毛玻璃）</label>
+      <input id="in-board" type="checkbox">
+    </div>
+
+    <div class="field">
+      <label>导出清晰度</label>
+      <select id="scale">
+        <option value="2">2× 高清</option>
+        <option value="3" selected>3× 超清</option>
+        <option value="4">4× 打印级</option>
+      </select>
+    </div>
+
+    <div class="actions">
+      <button class="btn primary" id="btn-download">下载 PNG</button>
+      <button class="btn ghost" id="btn-copy">复制图片</button>
+    </div>
+    <div class="status" id="status"></div>
+  </aside>
+
+  <main class="preview">
+    <canvas id="canvas"></canvas>
+  </main>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const FAMILY = '-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI","PingFang SC","Microsoft YaHei","Helvetica Neue",sans-serif';
+
+  // 背景主题：solid 或 linear(角度+色标)，ink=文字色
+  const THEMES = [
+    { name:'云白', bg:{type:'solid', c:'#f5f5f7'}, ink:'#1d1d1f' },
+    { name:'暮光', bg:{type:'linear', angle:160, stops:[[0,'#0f2027'],[.55,'#203a43'],[1,'#2c5364']]}, ink:'#f5f5f7' },
+    { name:'晨曦', bg:{type:'linear', angle:135, stops:[[0,'#ff9a9e'],[.55,'#fad0c4'],[1,'#fecfef']]}, ink:'#3a2b33' },
+    { name:'海洋', bg:{type:'linear', angle:150, stops:[[0,'#4facfe'],[1,'#00f2fe']]}, ink:'#06263a' },
+    { name:'极光', bg:{type:'linear', angle:135, stops:[[0,'#a18cd1'],[1,'#fbc2eb']]}, ink:'#2c2340' },
+    { name:'蜜桃', bg:{type:'linear', angle:135, stops:[[0,'#f6d365'],[1,'#fda085']]}, ink:'#4a2f1a' },
+    { name:'深空', bg:{type:'linear', angle:160, stops:[[0,'#000000'],[1,'#1c1c1e']]}, ink:'#f5f5f7' },
+    { name:'薄荷', bg:{type:'linear', angle:150, stops:[[0,'#d4fc79'],[1,'#96e6a1']]}, ink:'#1f3d2b' },
+  ];
+
+  const $ = id => document.getElementById(id);
+  const state = { theme:0, align:'left', mark:false, ratio:'auto', size:30, board:false };
+  const mctx = document.createElement('canvas').getContext('2d'); // 测量用
+
+  // ---- 色块 ----
+  function cssBg(t){
+    if(t.bg.type==='solid') return t.bg.c;
+    return 'linear-gradient('+t.bg.angle+'deg,'+t.bg.stops.map(s=>s[1]+' '+(s[0]*100)+'%').join(',')+')';
+  }
+  const sw = $('swatches');
+  THEMES.forEach((t,i)=>{
+    const d=document.createElement('div');
+    d.className='swatch'+(i===0?' on':''); d.style.background=cssBg(t); d.title=t.name;
+    d.onclick=()=>{ state.theme=i; [...sw.children].forEach(c=>c.classList.remove('on')); d.classList.add('on'); render(); };
+    sw.appendChild(d);
+  });
+
+  function seg(id,key,cast){
+    $(id).addEventListener('click',e=>{
+      const b=e.target.closest('button'); if(!b) return;
+      [...e.currentTarget.children].forEach(c=>c.classList.remove('on')); b.classList.add('on');
+      state[key]=cast?cast(b.dataset.v):b.dataset.v; render();
+    });
+  }
+  seg('align','align'); seg('mark','mark',v=>v==='1');
+  ['in-title','in-body','in-foot'].forEach(id=>$(id).addEventListener('input',render));
+  $('ratio').addEventListener('change',e=>{state.ratio=e.target.value; render();});
+  $('in-board').addEventListener('change',e=>{state.board=e.target.checked; render();});
+  $('in-size').addEventListener('input',e=>{state.size=+e.target.value; render();});
+
+  // ---- 工具 ----
+  const fontStr = (w,s)=> w+' '+s+'px '+FAMILY;
+
+  function gradLine(angle,W,H){
+    const a=angle*Math.PI/180, dx=Math.sin(a), dy=-Math.cos(a);
+    const half=(Math.abs(W*dx)+Math.abs(H*dy))/2, cx=W/2, cy=H/2;
+    return [cx-dx*half, cy-dy*half, cx+dx*half, cy+dy*half];
+  }
+  function roundRect(ctx,x,y,w,h,r){
+    if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(x,y,w,h,r); return; }
+    ctx.beginPath(); ctx.moveTo(x+r,y);
+    ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+  }
+
+  // 中英混排换行：CJK 逐字，拉丁按词
+  function wrap(ctx, text, maxW){
+    const out=[];
+    text.split('\n').forEach(para=>{
+      if(para===''){ out.push(''); return; }
+      const tokens = para.match(/[一-鿿　-〿＀-￯]|[A-Za-z0-9'’.,!?;:%()\/\-]+|\s+|[^\s]/g) || [];
+      let line='';
+      tokens.forEach(tk=>{
+        const test=line+tk;
+        if(line!=='' && ctx.measureText(test).width>maxW){
+          out.push(line.replace(/\s+$/,''));
+          line = /^\s+$/.test(tk) ? '' : tk;
+        } else line=test;
+      });
+      out.push(line);
+    });
+    return out;
+  }
+
+  // ---- 布局（逻辑像素，与缩放无关）----
+  function layout(){
+    const R={ 'auto':[800,null],'1:1':[800,800],'4:5':[800,1000],'9:16':[720,1280],'16:9':[1280,720] };
+    const [W,Hfix]=R[state.ratio];
+    const padH=72, padV=80, gap=26, bpH=44, bpV=46;
+    const textX = state.board ? padH+bpH : padH;
+    const textW = state.board ? W-2*padH-2*bpH : W-2*padH;
+
+    const s=state.size, titleSize=Math.round(s*1.55), footSize=Math.round(s*0.72), markSize=Math.round(s*2);
+    const blocks=[];
+    const add=(text,size,weight,lhF,alpha,isMark)=>{
+      mctx.font=fontStr(weight,size);
+      const lines = isMark ? [text] : wrap(mctx,text,textW);
+      blocks.push({lines, lh:size*lhF, size, weight, alpha});
+    };
+    if(state.mark) add('“',markSize,'700',0.9,0.28,true);
+    const title=$('in-title').value, body=$('in-body').value, foot=$('in-foot').value;
+    if(title) add(title,titleSize,'700',1.22,1);
+    if(body!=='') add(body,s,'400',1.62,1);
+    if(foot) add(foot,footSize,'500',1.5,0.62);
+
+    let contentH=0;
+    blocks.forEach((b,i)=>{ contentH += b.lines.length*b.lh; if(i<blocks.length-1) contentH+=gap; });
+
+    const boxH = state.board ? contentH+2*bpV : contentH;
+    const H = Hfix!=null ? Hfix : Math.round(2*padV+boxH);
+    const boxY = Hfix!=null ? (H-boxH)/2 : padV;
+    const textStartY = state.board ? boxY+bpV : boxY;
+    const board = state.board ? {x:padH, y:boxY, w:W-2*padH, h:boxH} : null;
+
+    return {W,H, blocks, textX, textW, textStartY, gap, board, ink:THEMES[state.theme].ink, align:state.align};
+  }
+
+  // ---- 绘制 ----
+  function draw(canvas, S, L){
+    L = L || layout();
+    canvas.width=Math.round(L.W*S); canvas.height=Math.round(L.H*S);
+    const ctx=canvas.getContext('2d');
+    ctx.setTransform(S,0,0,S,0,0);
+
+    // 背景
+    const bg=THEMES[state.theme].bg;
+    if(bg.type==='solid') ctx.fillStyle=bg.c;
+    else { const g=ctx.createLinearGradient(...gradLine(bg.angle,L.W,L.H)); bg.stops.forEach(st=>g.addColorStop(st[0],st[1])); ctx.fillStyle=g; }
+    ctx.fillRect(0,0,L.W,L.H);
+
+    // 毛玻璃底板
+    if(L.board){
+      ctx.save();
+      ctx.shadowColor='rgba(0,0,0,.16)'; ctx.shadowBlur=40; ctx.shadowOffsetY=10;
+      ctx.fillStyle='rgba(255,255,255,.16)'; roundRect(ctx,L.board.x,L.board.y,L.board.w,L.board.h,32); ctx.fill();
+      ctx.restore();
+      ctx.strokeStyle='rgba(255,255,255,.30)'; ctx.lineWidth=1; roundRect(ctx,L.board.x,L.board.y,L.board.w,L.board.h,32); ctx.stroke();
+    }
+
+    // 文字
+    ctx.textBaseline='top';
+    ctx.textAlign = L.align==='center' ? 'center' : 'left';
+    const x = L.align==='center' ? L.textX+L.textW/2 : L.textX;
+    let y=L.textStartY;
+    L.blocks.forEach((b,bi)=>{
+      ctx.font=fontStr(b.weight,b.size); ctx.fillStyle=L.ink; ctx.globalAlpha=b.alpha;
+      b.lines.forEach((ln,i)=> ctx.fillText(ln, x, y+i*b.lh));
+      ctx.globalAlpha=1;
+      y += b.lines.length*b.lh;
+      if(bi<L.blocks.length-1) y+=L.gap;
+    });
+  }
+
+  // ---- 预览 ----
+  function render(){
+    $('fs-val').textContent=state.size+'px';
+    const L=layout();
+    const wrapEl=document.querySelector('.preview'), pad=64;
+    const scale=Math.min((wrapEl.clientWidth-pad)/L.W, (wrapEl.clientHeight-pad)/L.H, 1);
+    const dpr=window.devicePixelRatio||1;
+    const canvas=$('canvas');
+    canvas.style.width=(L.W*scale)+'px'; canvas.style.height=(L.H*scale)+'px';
+    draw(canvas, Math.max(scale*dpr, 0.1), L);
+  }
+  window.addEventListener('resize', render);
+
+  // ---- 导出 ----
+  const status=$('status');
+  const say=(m,ok)=>{ status.textContent=m; status.style.color=ok?'#34c759':'var(--sub)'; };
+  function exportBlob(scale){
+    const c=document.createElement('canvas'); draw(c, scale);
+    return new Promise((res,rej)=> c.toBlob(b=> b?res(b):rej(new Error('生成失败')),'image/png'));
+  }
+  $('btn-download').addEventListener('click', async ()=>{
+    say('正在生成…');
+    try{
+      const blob=await exportBlob(+$('scale').value);
+      const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+      a.download='apple-text-'+Date.now()+'.png';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+      say('已下载 ✓', true);
+    }catch(e){ say('导出失败：'+e.message); }
+  });
+  $('btn-copy').addEventListener('click', async ()=>{
+    say('正在复制…');
+    try{
+      const blob=await exportBlob(+$('scale').value);
+      await navigator.clipboard.write([ new ClipboardItem({'image/png':blob}) ]);
+      say('已复制到剪贴板 ✓', true);
+    }catch(e){ say('此浏览器不支持复制，请用「下载 PNG」'); }
+  });
+
+  render();
+})();
+</script>
+</body></html>
