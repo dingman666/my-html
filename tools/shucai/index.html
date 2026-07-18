@@ -279,6 +279,14 @@
       </div>
 
       <div class="field" style="margin-top:18px;">
+        <label>输出格式</label>
+        <select id="outFmt" onchange="onFmtChange()">
+          <option value="list">清单格式（每行一个 · 带备注 · 自动去编号去冒号）</option>
+          <option value="comma">逗号分隔（品种,数量,品种,数量…）</option>
+        </select>
+      </div>
+
+      <div class="field">
         <label>识别要求（可自行修改）</label>
         <textarea id="prompt" style="min-height:80px;"></textarea>
       </div>
@@ -363,12 +371,42 @@ const SAMPLE = `成都大悦城店 2026-07-17 叫货
 37.鸡蛋：1斤
 备注：1板`;
 
-const DEFAULT_PROMPT = "提取有数量的品种，保留品种和数量，品种间用逗号隔开。只输出结果，不要多余解释。";
+/* 两种识别输出格式对应的提示词 */
+const PROMPTS = {
+  list: `请识别这张叫货单/清单图片，按从上到下的顺序逐行提取，输出成纯文本清单，严格遵守：
+1. 保留表头信息行，如店名、日期、"叫货"、供应商等（例如「成都大悦城店 2026-07-17 叫货」「供应商 小菜仓」）。
+2. 每个品种单独占一行，格式为「品种 数量」，品种与数量之间用一个空格，例如「香菇 3斤」。
+3. 只保留有数量的品种，没有数量的品种跳过。
+4. 若某品种带有备注，另起一行输出「备注 内容」，例如「备注 紧实的」。
+5. 去掉所有序号（如 1. 2. 39.）；不要用冒号，一律用空格代替。
+6. 直接输出清单文本，不要任何多余解释、表格或代码块。`,
+  comma: "提取有数量的品种，保留品种和数量，品种间用逗号隔开。只输出结果，不要多余解释。"
+};
+const DEFAULT_FMT = 'list';
 
 /* ---------- 初始化 ---------- */
 document.getElementById('rawText').value = SAMPLE;
-document.getElementById('prompt').value = DEFAULT_PROMPT;
+document.getElementById('outFmt').value = DEFAULT_FMT;
+document.getElementById('prompt').value = PROMPTS[DEFAULT_FMT];
 let imageDataUrl = null;
+
+/* 单行清洗：去行首序号 + 冒号换空格 + 合并多余空格 */
+function cleanOneLine(line){
+  return line
+    .replace(/^\s*\d+\s*[.．、]\s*/, '')  // 行首序号 1. 39. 全角．顿号、
+    .replace(/[:：]+/g, ' ')             // 中英文冒号换成空格
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim();
+}
+/* 整段转「每行一个」清单格式（去空行、去代码块围栏） */
+function toListFormat(text){
+  return String(text)
+    .replace(/```[a-z]*\s*/gi, '').replace(/```/g, '')
+    .split(/\r?\n/)
+    .map(cleanOneLine)
+    .filter(s => s.length > 0)
+    .join('\n');
+}
 
 /* ---------- Tab 切换 ---------- */
 function switchTab(t){
@@ -382,22 +420,20 @@ function switchTab(t){
 /* ---------- 文本整理 ---------- */
 function cleanText(){
   const raw = document.getElementById('rawText').value;
-  const lines = raw.split(/\r?\n/);
-  const out = lines.map(line=>{
-    let s = line;
-    // 去掉行首序号：1. / 39. / 全角．/ 顿号、
-    s = s.replace(/^\s*\d+\s*[.．、]\s*/, '');
-    // 冒号（中英文）换成空格
-    s = s.replace(/[:：]+/g, ' ');
-    // 合并多余空格
-    s = s.replace(/[ \t]{2,}/g, ' ').trim();
-    return s;
-  });
+  const out = raw.split(/\r?\n/).map(cleanOneLine);
   document.getElementById('outText').value = out.join('\n');
   toast('整理完成');
 }
 function resetText(){ document.getElementById('rawText').value = SAMPLE; toast('已恢复示例'); }
-function resetPrompt(){ document.getElementById('prompt').value = DEFAULT_PROMPT; toast('已恢复默认要求'); }
+
+/* ---------- 图片识别：输出格式切换 ---------- */
+function onFmtChange(){
+  document.getElementById('prompt').value = PROMPTS[document.getElementById('outFmt').value];
+}
+function resetPrompt(){
+  document.getElementById('prompt').value = PROMPTS[document.getElementById('outFmt').value];
+  toast('已恢复默认要求');
+}
 
 /* ---------- 复制 ---------- */
 function copyEl(id){
@@ -651,14 +687,18 @@ async function recognize(){
   if(!baseUrl || !apiKey){ setStatus('recStatus','请先在上方配置中转站 API','err'); document.getElementById('apiDetails').open=true; document.getElementById('apiHead').classList.add('open'); return; }
   if(!model){ setStatus('recStatus','请先获取并选择一个模型','err'); return; }
   if(!imageDataUrl){ setStatus('recStatus','请先上传图片','err'); return; }
-  const prompt = document.getElementById('prompt').value.trim() || DEFAULT_PROMPT;
+  const fmt = document.getElementById('outFmt').value;
+  const prompt = document.getElementById('prompt').value.trim() || PROMPTS[fmt];
   const btn = document.getElementById('recBtn');
   btn.disabled=true; btn.innerHTML='<span class="spin"></span> 识别中…';
   setStatus('recStatus','正在识别，请稍候…','info');
   try{
-    const text = await smartChat(prompt, imageDataUrl);
-    document.getElementById('recOut').value = (typeof text==='string'? text : JSON.stringify(text)).trim();
-    setStatus('recStatus','✅ 识别完成','ok');
+    let text = await smartChat(prompt, imageDataUrl);
+    text = (typeof text==='string' ? text : JSON.stringify(text)).trim();
+    // 清单格式：识别后自动换行转换，去编号去冒号
+    if(fmt === 'list') text = toListFormat(text);
+    document.getElementById('recOut').value = text;
+    setStatus('recStatus','✅ 识别完成'+(fmt==='list'?'（已自动整理成清单）':''),'ok');
     toast('识别完成');
   }catch(err){
     setStatus('recStatus','❌ 识别失败：'+err.message,'err');
