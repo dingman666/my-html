@@ -455,6 +455,48 @@
   }
   .add-group-btn:hover { background: var(--input-bg); }
 
+  .fav-filter { margin-bottom: 16px; }
+  .fav-search-input {
+    width: 100%;
+    border: none;
+    outline: none;
+    background: var(--input-bg);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-size: 14px;
+    font-family: inherit;
+    box-shadow: 0 0 0 1.5px transparent;
+    transition: box-shadow 0.2s ease;
+  }
+  .fav-search-input:focus { box-shadow: 0 0 0 3px var(--accent); }
+  .fav-search-input::placeholder { color: var(--text-secondary); }
+
+  .tag-filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .tag-chip {
+    border: none;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 12px;
+    border-radius: 980px;
+    background: var(--control-bg);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .tag-chip:hover { filter: brightness(0.96); }
+  @media (prefers-color-scheme: dark) {
+    .tag-chip:hover { filter: brightness(1.2); }
+  }
+  .tag-chip.active { background: var(--accent); color: #fff; }
+  .tag-chip-clear { background: transparent; color: var(--accent); }
+
   .fav-toolbar {
     display: flex;
     justify-content: flex-end;
@@ -510,6 +552,24 @@
     flex-shrink: 0;
     margin-top: 1px;
   }
+
+  .fav-qr-thumb {
+    width: 52px;
+    height: 52px;
+    border-radius: 11px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.14), 0 0 0 1px var(--divider);
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .fav-qr-thumb:hover { transform: scale(1.08); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2), 0 0 0 1px var(--divider); }
+  .fav-qr-thumb canvas { width: 100%; height: 100%; display: block; }
 
   .fav-body { flex: 1; min-width: 0; }
   .fav-text {
@@ -633,6 +693,55 @@
     margin-top: 22px;
   }
   .modal-actions .btn-danger { margin-right: auto; }
+
+  .scan-modal-card {
+    max-width: 340px;
+    text-align: center;
+    position: relative;
+    padding-top: 44px;
+  }
+  .modal-close-btn {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    border: none;
+    background: var(--control-bg);
+    color: var(--text-secondary);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .modal-close-btn:hover { background: var(--divider); color: var(--text); }
+  .scan-qr-frame {
+    display: inline-flex;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16), 0 0 0 1px var(--divider);
+    background: #fff;
+    line-height: 0;
+  }
+  #scanModalCanvas { display: block; width: 240px; height: 240px; }
+  .scan-modal-text {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 18px;
+    word-break: break-word;
+    max-height: 90px;
+    overflow-y: auto;
+  }
+  .scan-modal-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    margin-top: 12px;
+  }
 
   footer {
     text-align: center;
@@ -783,13 +892,15 @@
         <span id="favListTitle">全部常用信息</span>
         <span class="count" id="favCount">0 条</span>
       </div>
+      <div class="fav-filter">
+        <input type="text" id="favSearchInput" class="fav-search-input" placeholder="搜索文字、标签或备注…">
+        <div class="tag-filter-row" id="tagFilterRow" style="display:none"></div>
+      </div>
       <div class="fav-toolbar">
         <button class="btn btn-primary btn-sm" id="addFavBtn">+ 新增</button>
       </div>
       <ul class="fav-list" id="favList"></ul>
-      <div class="fav-empty" id="favEmpty" style="display:none">
-        还没有常用信息<br>点击「+ 新增」，或在生成 / 识别二维码后点击「☆ 加入常用」
-      </div>
+      <div class="fav-empty" id="favEmpty" style="display:none"></div>
     </section>
   </div>
 
@@ -827,6 +938,19 @@
       <button class="btn btn-danger" id="groupDeleteBtn" style="display:none">删除分组</button>
       <button class="btn btn-secondary" id="groupCancelBtn">取消</button>
       <button class="btn btn-primary" id="groupSaveBtn">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 扫码预览 弹窗 -->
+<div class="modal-overlay" id="scanModalOverlay" style="display:none">
+  <div class="modal-card scan-modal-card">
+    <button class="modal-close-btn" id="scanModalCloseBtn" aria-label="关闭">✕</button>
+    <div class="scan-qr-frame"><canvas id="scanModalCanvas"></canvas></div>
+    <p class="scan-modal-text" id="scanModalText"></p>
+    <div class="scan-modal-meta" id="scanModalMeta"></div>
+    <div class="modal-actions" style="justify-content:center; margin-top: 20px">
+      <button class="btn btn-secondary" id="scanModalUseBtn">用它生成二维码</button>
     </div>
   </div>
 </div>
@@ -872,6 +996,39 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return prefix + '_' + Date.now().toString(36) + '_' + seedCounter.toString(36);
   }
 
+  // 中文等多字节字符需按 UTF-8 编码写入二维码
+  if (typeof qrcode.stringToBytesFuncs === 'object' && qrcode.stringToBytesFuncs['UTF-8']) {
+    qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'];
+  }
+
+  // 将文字绘制为二维码到指定 canvas，返回 {count, size}；文字过长会抛出异常
+  function drawQrToCanvas(targetCanvas, text, ec, cellTarget, fg, bg) {
+    var qr = qrcode(0, ec);
+    qr.addData(text);
+    qr.make();
+
+    var count = qr.getModuleCount();
+    var quiet = 4; // 标准静区
+    var total = count + quiet * 2;
+    var cell = Math.max(1, Math.floor(cellTarget / total));
+    var size = cell * total;
+
+    targetCanvas.width = size;
+    targetCanvas.height = size;
+    var ctx = targetCanvas.getContext('2d');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, size, size);
+    ctx.fillStyle = fg;
+    for (var r = 0; r < count; r++) {
+      for (var c = 0; c < count; c++) {
+        if (qr.isDark(r, c)) {
+          ctx.fillRect((c + quiet) * cell, (r + quiet) * cell, cell, cell);
+        }
+      }
+    }
+    return { count: count, size: size };
+  }
+
   /* ================= 文字 → 二维码 ================= */
 
   var textInput = document.getElementById('textInput');
@@ -897,11 +1054,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   var debounceTimer = null;
   var hasQR = false;
 
-  // 中文等多字节字符需按 UTF-8 编码写入二维码
-  if (typeof qrcode.stringToBytesFuncs === 'object' && qrcode.stringToBytesFuncs['UTF-8']) {
-    qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'];
-  }
-
   function setEncodeButtons(enabled) {
     downloadBtn.disabled = !enabled;
     copyBtn.disabled = !enabled;
@@ -926,37 +1078,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
 
     try {
-      var qr = qrcode(0, ecLevel);
-      qr.addData(text);
-      qr.make();
-
-      var count = qr.getModuleCount();
-      var quiet = 4; // 标准静区
-      var total = count + quiet * 2;
       var target = parseInt(sizeRange.value, 10);
-      var cell = Math.max(1, Math.floor(target / total));
-      var size = cell * total;
-
-      canvas.width = size;
-      canvas.height = size;
-      var ctx = canvas.getContext('2d');
-      ctx.fillStyle = bgColor.value;
-      ctx.fillRect(0, 0, size, size);
-      ctx.fillStyle = fgColor.value;
-      for (var r = 0; r < count; r++) {
-        for (var c = 0; c < count; c++) {
-          if (qr.isDark(r, c)) {
-            ctx.fillRect((c + quiet) * cell, (r + quiet) * cell, cell, cell);
-          }
-        }
-      }
+      var result = drawQrToCanvas(canvas, text, ecLevel, target, fgColor.value, bgColor.value);
 
       hasQR = true;
       placeholder.style.display = 'none';
       errorMsg.style.display = 'none';
       qrFrame.style.display = 'block';
       qrFrame.style.background = bgColor.value;
-      qrMeta.textContent = size + ' × ' + size + ' px · ' + count + ' × ' + count + ' 模块 · 容错 ' + ecLevel;
+      qrMeta.textContent = result.size + ' × ' + result.size + ' px · ' + result.count + ' × ' + result.count + ' 模块 · 容错 ' + ecLevel;
       setEncodeButtons(true);
     } catch (e) {
       hasQR = false;
@@ -1237,8 +1367,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   var FAV_STORAGE_KEY = 'qr_favorites_v1';
   var DEFAULT_GROUP_ID = 'default';
   var currentGroupFilter = null; // null = 全部
+  var activeTagFilters = [];
+  var favSearchQuery = '';
   var draggingItemId = null;
   var draggingGroupId = null;
+
+  function resetFavFilters() {
+    activeTagFilters = [];
+    favSearchQuery = '';
+    favSearchInput.value = '';
+  }
 
   function loadFavData() {
     var raw;
@@ -1270,6 +1408,67 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   var favListEl = document.getElementById('favList');
   var favEmptyEl = document.getElementById('favEmpty');
   var addFavBtn = document.getElementById('addFavBtn');
+  var favSearchInput = document.getElementById('favSearchInput');
+  var tagFilterRow = document.getElementById('tagFilterRow');
+
+  favSearchInput.addEventListener('input', function () {
+    favSearchQuery = favSearchInput.value.trim().toLowerCase();
+    renderFavItems(loadFavData());
+  });
+
+  function computeAvailableTags(data) {
+    var scoped = data.items.filter(function (it) {
+      return currentGroupFilter === null || it.groupId === currentGroupFilter;
+    });
+    var counts = {};
+    scoped.forEach(function (it) {
+      (it.tags || []).forEach(function (t) { counts[t] = (counts[t] || 0) + 1; });
+    });
+    return Object.keys(counts)
+      .sort(function (a, b) { return counts[b] - counts[a]; })
+      .map(function (t) { return { tag: t, count: counts[t] }; });
+  }
+
+  function renderTagFilterChips(data) {
+    // 分组切换后，已选标签若在新范围内不存在则一并清除
+    var available = computeAvailableTags(data);
+    var availableSet = available.map(function (t) { return t.tag; });
+    activeTagFilters = activeTagFilters.filter(function (t) { return availableSet.indexOf(t) !== -1; });
+
+    tagFilterRow.innerHTML = '';
+    if (!available.length) {
+      tagFilterRow.style.display = 'none';
+      return;
+    }
+    tagFilterRow.style.display = 'flex';
+
+    available.forEach(function (t) {
+      var chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'tag-chip' + (activeTagFilters.indexOf(t.tag) !== -1 ? ' active' : '');
+      chip.textContent = t.tag + ' · ' + t.count;
+      chip.addEventListener('click', function () {
+        var idx = activeTagFilters.indexOf(t.tag);
+        if (idx === -1) activeTagFilters.push(t.tag); else activeTagFilters.splice(idx, 1);
+        renderFavItems(loadFavData());
+        renderTagFilterChips(loadFavData());
+      });
+      tagFilterRow.appendChild(chip);
+    });
+
+    if (activeTagFilters.length) {
+      var clearChip = document.createElement('button');
+      clearChip.type = 'button';
+      clearChip.className = 'tag-chip tag-chip-clear';
+      clearChip.textContent = '清除标签筛选 ✕';
+      clearChip.addEventListener('click', function () {
+        activeTagFilters = [];
+        renderFavItems(loadFavData());
+        renderTagFilterChips(loadFavData());
+      });
+      tagFilterRow.appendChild(clearChip);
+    }
+  }
 
   function renderGroups(data) {
     groupListEl.innerHTML = '';
@@ -1277,7 +1476,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     var allRow = document.createElement('div');
     allRow.className = 'group-row' + (currentGroupFilter === null ? ' active' : '');
     allRow.innerHTML = '<span class="group-name">全部</span><span class="group-count">' + data.items.length + '</span>';
-    allRow.addEventListener('click', function () { currentGroupFilter = null; renderFavorites(); });
+    allRow.addEventListener('click', function () { currentGroupFilter = null; resetFavFilters(); renderFavorites(); });
     groupListEl.appendChild(allRow);
 
     data.groups.forEach(function (group) {
@@ -1295,6 +1494,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       row.addEventListener('click', function (e) {
         if (e.target.closest('.group-edit-btn')) return;
         currentGroupFilter = group.id;
+        resetFavFilters();
         renderFavorites();
       });
       row.querySelector('.group-edit-btn').addEventListener('click', function (e) {
@@ -1371,15 +1571,48 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function renderFavItems(data) {
     favListEl.innerHTML = '';
     var filtered = data.items.filter(function (it) {
-      return currentGroupFilter === null || it.groupId === currentGroupFilter;
+      if (currentGroupFilter !== null && it.groupId !== currentGroupFilter) return false;
+      if (activeTagFilters.length && !activeTagFilters.some(function (t) { return (it.tags || []).indexOf(t) !== -1; })) return false;
+      if (favSearchQuery) {
+        var hay = (it.text + ' ' + (it.note || '') + ' ' + (it.tags || []).join(' ')).toLowerCase();
+        if (hay.indexOf(favSearchQuery) === -1) return false;
+      }
+      return true;
     });
 
     favCount.textContent = filtered.length + ' 条';
     var activeGroup = data.groups.filter(function (g) { return g.id === currentGroupFilter; })[0];
     favListTitle.textContent = currentGroupFilter === null ? '全部常用信息' : (activeGroup ? activeGroup.name : '全部常用信息');
 
-    favEmptyEl.style.display = filtered.length === 0 ? 'block' : 'none';
-    favListEl.style.display = filtered.length === 0 ? 'none' : 'flex';
+    var hasAnyFilter = favSearchQuery || activeTagFilters.length;
+    if (filtered.length === 0) {
+      favListEl.style.display = 'none';
+      favEmptyEl.style.display = 'block';
+      favEmptyEl.innerHTML = '';
+      if (data.items.length === 0) {
+        favEmptyEl.innerHTML = '还没有常用信息<br>点击「+ 新增」，或在生成 / 识别二维码后点击「☆ 加入常用」';
+      } else {
+        var msg = document.createElement('p');
+        msg.textContent = '没有符合筛选条件的常用信息';
+        favEmptyEl.appendChild(msg);
+        if (hasAnyFilter) {
+          var clearBtn = document.createElement('button');
+          clearBtn.type = 'button';
+          clearBtn.className = 'btn btn-secondary btn-sm';
+          clearBtn.style.marginTop = '14px';
+          clearBtn.textContent = '清除筛选条件';
+          clearBtn.addEventListener('click', function () {
+            resetFavFilters();
+            renderFavItems(loadFavData());
+            renderTagFilterChips(loadFavData());
+          });
+          favEmptyEl.appendChild(clearBtn);
+        }
+      }
+    } else {
+      favListEl.style.display = 'flex';
+      favEmptyEl.style.display = 'none';
+    }
 
     filtered.forEach(function (item, index) {
       var group = data.groups.filter(function (g) { return g.id === item.groupId; })[0];
@@ -1396,6 +1629,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       li.innerHTML =
         '<span class="drag-handle">⠿</span>' +
         '<span class="fav-index">' + (index + 1) + '</span>' +
+        '<div class="fav-qr-thumb" title="点击查看二维码，方便扫描"><canvas></canvas></div>' +
         '<div class="fav-body">' +
           '<div class="fav-text"></div>' +
           '<div class="fav-meta">' + groupTagHtml + tagsHtml + '</div>' +
@@ -1410,6 +1644,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       li.querySelector('.fav-text').textContent = item.text;
       var noteEl = li.querySelector('.fav-note');
       if (noteEl) noteEl.textContent = item.note;
+
+      var thumb = li.querySelector('.fav-qr-thumb');
+      var thumbCanvas = thumb.querySelector('canvas');
+      try {
+        drawQrToCanvas(thumbCanvas, item.text, 'M', 104, '#1d1d1f', '#ffffff');
+        thumb.addEventListener('click', function () { openScanModal(item); });
+      } catch (e) {
+        thumb.innerHTML = '⚠️';
+        thumb.title = '内容过长，无法生成二维码预览';
+        thumb.style.cursor = 'default';
+      }
 
       li.querySelector('[data-action="use"]').addEventListener('click', function () {
         textInput.value = item.text;
@@ -1477,6 +1722,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       currentGroupFilter = null;
     }
     renderGroups(data);
+    renderTagFilterChips(data);
     renderFavItems(data);
   }
 
@@ -1643,6 +1889,67 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     closeGroupModal();
     renderFavorites();
     showToast('已删除分组');
+  });
+
+  /* ---- 扫码预览 弹窗 ---- */
+
+  var scanModalOverlay = document.getElementById('scanModalOverlay');
+  var scanModalCanvas = document.getElementById('scanModalCanvas');
+  var scanModalText = document.getElementById('scanModalText');
+  var scanModalMeta = document.getElementById('scanModalMeta');
+  var scanModalCloseBtn = document.getElementById('scanModalCloseBtn');
+  var scanModalUseBtn = document.getElementById('scanModalUseBtn');
+
+  function openScanModal(item) {
+    try {
+      drawQrToCanvas(scanModalCanvas, item.text, 'M', 480, '#1d1d1f', '#ffffff');
+    } catch (e) {
+      showToast('内容过长，无法生成二维码');
+      return;
+    }
+    scanModalText.textContent = item.text;
+
+    var data = loadFavData();
+    var group = data.groups.filter(function (g) { return g.id === item.groupId; })[0];
+    scanModalMeta.innerHTML = '';
+    if (group) {
+      var groupTag = document.createElement('span');
+      groupTag.className = 'fav-group-tag';
+      groupTag.textContent = group.name;
+      scanModalMeta.appendChild(groupTag);
+    }
+    (item.tags || []).forEach(function (t) {
+      var tagEl = document.createElement('span');
+      tagEl.className = 'fav-tag';
+      tagEl.textContent = t;
+      scanModalMeta.appendChild(tagEl);
+    });
+
+    scanModalUseBtn.onclick = function () {
+      textInput.value = item.text;
+      closeScanModal();
+      setMode('encode');
+      render();
+      showToast('已生成二维码');
+    };
+
+    scanModalOverlay.style.display = 'flex';
+  }
+
+  function closeScanModal() {
+    scanModalOverlay.style.display = 'none';
+  }
+
+  scanModalCloseBtn.addEventListener('click', closeScanModal);
+  scanModalOverlay.addEventListener('click', function (e) {
+    if (e.target === scanModalOverlay) closeScanModal();
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    if (scanModalOverlay.style.display === 'flex') closeScanModal();
+    else if (itemModalOverlay.style.display === 'flex') closeItemModal();
+    else if (groupModalOverlay.style.display === 'flex') closeGroupModal();
   });
 
   render();
