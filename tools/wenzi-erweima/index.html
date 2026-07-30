@@ -686,6 +686,42 @@
     transition: box-shadow 0.2s ease;
   }
   .modal-card input[type="text"]:focus, .modal-card select:focus { box-shadow: 0 0 0 3px var(--accent); }
+
+  .group-select-row { display: flex; gap: 8px; align-items: center; }
+  .group-select-row select { flex: 1; min-width: 0; }
+  .group-add-inline-btn {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 10px;
+    background: var(--control-bg);
+    color: var(--accent);
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease;
+  }
+  .group-add-inline-btn:hover { filter: brightness(0.96); }
+  @media (prefers-color-scheme: dark) {
+    .group-add-inline-btn:hover { filter: brightness(1.2); }
+  }
+
+  .tag-picker-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-height: 26px;
+    margin-bottom: 10px;
+  }
+  .tag-picker-hint { font-size: 12px; color: var(--text-secondary); }
+  .tag-picker-input-row { display: flex; gap: 8px; align-items: center; }
+  .tag-picker-input-row input[type="text"] { flex: 1; min-width: 0; }
+
   .modal-actions {
     display: flex;
     justify-content: flex-end;
@@ -916,9 +952,18 @@
     <label>文字内容</label>
     <textarea id="modalText" placeholder="输入文字、网址或联系方式…"></textarea>
     <label>分组</label>
-    <select id="modalGroup"></select>
-    <label>标签（用逗号分隔，可选）</label>
-    <input type="text" id="modalTags" placeholder="例如：工作, 常用链接">
+    <div class="group-select-row">
+      <select id="modalGroup"></select>
+      <button type="button" class="group-add-inline-btn" id="modalAddGroupBtn" title="新建分组">+</button>
+    </div>
+    <label>标签（可选）</label>
+    <div class="tag-picker" id="tagPicker">
+      <div class="tag-picker-chips" id="tagPickerChips"></div>
+      <div class="tag-picker-input-row">
+        <input type="text" id="tagPickerInput" placeholder="输入新标签，按回车添加">
+        <button type="button" class="group-add-inline-btn" id="tagPickerAddBtn" title="添加标签">+</button>
+      </div>
+    </div>
     <label>备注（可选）</label>
     <input type="text" id="modalNote" placeholder="给这条信息加个说明">
     <div class="modal-actions">
@@ -1732,21 +1777,95 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   var itemModalTitle = document.getElementById('itemModalTitle');
   var modalText = document.getElementById('modalText');
   var modalGroup = document.getElementById('modalGroup');
-  var modalTags = document.getElementById('modalTags');
+  var modalAddGroupBtn = document.getElementById('modalAddGroupBtn');
+  var tagPickerChips = document.getElementById('tagPickerChips');
+  var tagPickerInput = document.getElementById('tagPickerInput');
+  var tagPickerAddBtn = document.getElementById('tagPickerAddBtn');
   var modalNote = document.getElementById('modalNote');
   var modalCancelBtn = document.getElementById('modalCancelBtn');
   var modalSaveBtn = document.getElementById('modalSaveBtn');
   var editingItemId = null;
+  var currentTagSet = []; // 当前弹窗中已选中的标签
 
-  function openItemModal(mode, itemId) {
+  // 供"分组"下拉框复用：填充分组选项并选中指定分组
+  function populateGroupSelect(selectEl, selectedId) {
     var data = loadFavData();
-    modalGroup.innerHTML = '';
+    selectEl.innerHTML = '';
     data.groups.forEach(function (g) {
       var opt = document.createElement('option');
       opt.value = g.id;
       opt.textContent = g.name;
-      modalGroup.appendChild(opt);
+      selectEl.appendChild(opt);
     });
+    selectEl.value = selectedId;
+  }
+
+  modalAddGroupBtn.addEventListener('click', function () {
+    groupModalReturnSelect = modalGroup;
+    groupModalReturnPrevValue = modalGroup.value;
+    openGroupModal('add');
+  });
+
+  // 标签选择器：展示全局已用过的标签供勾选，同时可输入新标签
+  function computeAllTagsWithCounts() {
+    var data = loadFavData();
+    var counts = {};
+    data.items.forEach(function (it) {
+      (it.tags || []).forEach(function (t) { counts[t] = (counts[t] || 0) + 1; });
+    });
+    return counts;
+  }
+
+  function renderTagPicker() {
+    var counts = computeAllTagsWithCounts();
+    var allTags = Object.keys(counts);
+    currentTagSet.forEach(function (t) { if (allTags.indexOf(t) === -1) allTags.push(t); });
+    allTags.sort(function (a, b) {
+      var diff = (counts[b] || 0) - (counts[a] || 0);
+      return diff !== 0 ? diff : a.localeCompare(b);
+    });
+
+    tagPickerChips.innerHTML = '';
+    if (!allTags.length) {
+      var hint = document.createElement('span');
+      hint.className = 'tag-picker-hint';
+      hint.textContent = '还没有标签，输入后按回车或点击 + 创建';
+      tagPickerChips.appendChild(hint);
+      return;
+    }
+    allTags.forEach(function (t) {
+      var chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'tag-chip' + (currentTagSet.indexOf(t) !== -1 ? ' active' : '');
+      chip.textContent = t;
+      chip.addEventListener('click', function () {
+        var idx = currentTagSet.indexOf(t);
+        if (idx === -1) currentTagSet.push(t); else currentTagSet.splice(idx, 1);
+        renderTagPicker();
+      });
+      tagPickerChips.appendChild(chip);
+    });
+  }
+
+  function commitTagInput() {
+    var parts = tagPickerInput.value.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+    parts.forEach(function (t) {
+      if (currentTagSet.indexOf(t) === -1) currentTagSet.push(t);
+    });
+    tagPickerInput.value = '';
+    renderTagPicker();
+  }
+
+  tagPickerAddBtn.addEventListener('click', commitTagInput);
+  tagPickerInput.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    commitTagInput();
+  });
+
+  function openItemModal(mode, itemId) {
+    var data = loadFavData();
+    tagPickerInput.value = '';
 
     if (mode === 'edit' && itemId) {
       var item = data.items.filter(function (it) { return it.id === itemId; })[0];
@@ -1754,17 +1873,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       editingItemId = itemId;
       itemModalTitle.textContent = '编辑常用信息';
       modalText.value = item.text;
-      modalGroup.value = item.groupId;
-      modalTags.value = (item.tags || []).join(', ');
+      populateGroupSelect(modalGroup, item.groupId);
+      currentTagSet = (item.tags || []).slice();
       modalNote.value = item.note || '';
     } else {
       editingItemId = null;
       itemModalTitle.textContent = '新增常用信息';
       modalText.value = mode === 'prefill' ? itemId : '';
-      modalGroup.value = currentGroupFilter || DEFAULT_GROUP_ID;
-      modalTags.value = '';
+      populateGroupSelect(modalGroup, currentGroupFilter || DEFAULT_GROUP_ID);
+      currentTagSet = [];
       modalNote.value = '';
     }
+    renderTagPicker();
     itemModalOverlay.style.display = 'flex';
     setTimeout(function () { modalText.focus(); }, 30);
   }
@@ -1791,7 +1911,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   modalSaveBtn.addEventListener('click', function () {
     var text = modalText.value.trim();
     if (!text) { showToast('请输入文字内容'); modalText.focus(); return; }
-    var tags = modalTags.value.split(',').map(function (t) { return t.trim(); }).filter(Boolean);
+    if (tagPickerInput.value.trim()) commitTagInput(); // 保存时顺带提交输入框里未确认的标签
+    var tags = currentTagSet.slice();
     var data = loadFavData();
 
     if (editingItemId) {
@@ -1828,6 +1949,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   var groupDeleteBtn = document.getElementById('groupDeleteBtn');
   var editingGroupId = null;
 
+  // 当分组弹窗是从"分组"下拉框的 + 按钮打开时，记录要回填新分组的 select 及其原值（用于取消时还原）
+  var groupModalReturnSelect = null;
+  var groupModalReturnPrevValue = null;
+
   function openGroupModal(mode, groupId) {
     if (mode === 'edit' && groupId) {
       var data = loadFavData();
@@ -1852,26 +1977,46 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     editingGroupId = null;
   }
 
+  // 取消 / 关闭弹窗：若是从下拉框的 + 按钮打开且未成功新建，则把该下拉框还原为之前的选中值
+  function cancelGroupModal() {
+    if (groupModalReturnSelect) {
+      groupModalReturnSelect.value = groupModalReturnPrevValue;
+      groupModalReturnSelect = null;
+      groupModalReturnPrevValue = null;
+    }
+    closeGroupModal();
+  }
+
   addGroupBtn.addEventListener('click', function () { openGroupModal('add'); });
-  groupCancelBtn.addEventListener('click', closeGroupModal);
+  groupCancelBtn.addEventListener('click', cancelGroupModal);
   groupModalOverlay.addEventListener('click', function (e) {
-    if (e.target === groupModalOverlay) closeGroupModal();
+    if (e.target === groupModalOverlay) cancelGroupModal();
   });
 
   groupSaveBtn.addEventListener('click', function () {
     var name = groupNameInput.value.trim();
     if (!name) { showToast('请输入分组名称'); groupNameInput.focus(); return; }
     var data = loadFavData();
+    var newGroup = null;
 
     if (editingGroupId) {
       var group = data.groups.filter(function (g) { return g.id === editingGroupId; })[0];
       if (group) group.name = name;
       showToast('已保存分组');
     } else {
-      data.groups.push({ id: makeId('grp'), name: name });
+      newGroup = { id: makeId('grp'), name: name };
+      data.groups.push(newGroup);
       showToast('已新建分组');
     }
     saveFavData(data);
+
+    // 若是从下拉框新建，把新分组回填并选中到发起请求的下拉框，同时不再触发取消还原
+    if (newGroup && groupModalReturnSelect) {
+      populateGroupSelect(groupModalReturnSelect, newGroup.id);
+    }
+    groupModalReturnSelect = null;
+    groupModalReturnPrevValue = null;
+
     closeGroupModal();
     renderFavorites();
   });
@@ -1947,9 +2092,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
+    // 分组弹窗可能叠加在常用信息弹窗之上，需优先关闭最上层的弹窗
     if (scanModalOverlay.style.display === 'flex') closeScanModal();
+    else if (groupModalOverlay.style.display === 'flex') cancelGroupModal();
     else if (itemModalOverlay.style.display === 'flex') closeItemModal();
-    else if (groupModalOverlay.style.display === 'flex') closeGroupModal();
   });
 
   render();
