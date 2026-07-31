@@ -1,0 +1,1318 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NewAPI 价格纠正器</title>
+<style>
+:root{
+  --bg:#f5f5f7; --bg2:#ffffff; --card:rgba(255,255,255,.72); --cardSolid:#fff;
+  --txt:#1d1d1f; --txt2:#6e6e73; --txt3:#8e8e93;
+  --line:rgba(0,0,0,.10); --line2:rgba(0,0,0,.055);
+  --accent:#0071e3; --accentH:#0077ed; --accentSoft:rgba(0,113,227,.10);
+  --green:#1d9e4b; --greenSoft:rgba(29,158,75,.10);
+  --red:#d7263d; --redSoft:rgba(215,38,61,.10);
+  --amber:#b7791f; --amberSoft:rgba(183,121,31,.12);
+  --shadow:0 1px 2px rgba(0,0,0,.04),0 8px 28px rgba(0,0,0,.07);
+  --shadowUp:0 1px 2px rgba(0,0,0,.05),0 18px 48px rgba(0,0,0,.12);
+  --r:18px; --r2:12px; --r3:9px;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#000; --bg2:#1c1c1e; --card:rgba(30,30,32,.72); --cardSolid:#1c1c1e;
+    --txt:#f5f5f7; --txt2:#a1a1a6; --txt3:#8e8e93;
+    --line:rgba(255,255,255,.13); --line2:rgba(255,255,255,.07);
+    --accent:#0a84ff; --accentH:#3a9bff; --accentSoft:rgba(10,132,255,.16);
+    --green:#32d74b; --greenSoft:rgba(50,215,75,.14);
+    --red:#ff453a; --redSoft:rgba(255,69,58,.14);
+    --amber:#ffd60a; --amberSoft:rgba(255,214,10,.14);
+    --shadow:0 1px 2px rgba(0,0,0,.5),0 8px 28px rgba(0,0,0,.5);
+    --shadowUp:0 1px 2px rgba(0,0,0,.6),0 18px 48px rgba(0,0,0,.6);
+  }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","PingFang SC","Helvetica Neue","Microsoft YaHei",system-ui,sans-serif;
+  background:var(--bg); color:var(--txt);
+  -webkit-font-smoothing:antialiased; font-size:15px; line-height:1.55;
+  letter-spacing:-.006em;
+}
+body::before{
+  content:''; position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background:
+    radial-gradient(900px 520px at 12% -8%,rgba(0,113,227,.13),transparent 62%),
+    radial-gradient(760px 480px at 92% 4%,rgba(120,80,220,.11),transparent 60%),
+    radial-gradient(700px 500px at 50% 108%,rgba(0,180,150,.08),transparent 62%);
+}
+/* ---------- title bar ---------- */
+.titlebar{
+  position:sticky; top:0; z-index:60;
+  backdrop-filter:saturate(180%) blur(22px); -webkit-backdrop-filter:saturate(180%) blur(22px);
+  background:color-mix(in srgb,var(--bg) 78%,transparent);
+  border-bottom:1px solid var(--line2);
+}
+.titlebar .inner{max-width:1180px;margin:0 auto;padding:12px 22px;display:flex;align-items:center;gap:14px}
+.logo{width:30px;height:30px;border-radius:9px;background:linear-gradient(145deg,#0a84ff,#5e5ce6);display:grid;place-items:center;color:#fff;font-weight:700;font-size:14px;flex:none;box-shadow:0 2px 8px rgba(10,132,255,.35)}
+.titlebar h1{font-size:16px;font-weight:600;margin:0;letter-spacing:-.02em}
+.titlebar .sub{font-size:12.5px;color:var(--txt3);margin-left:2px}
+.spacer{flex:1}
+/* ---------- layout ---------- */
+main{max-width:1180px;margin:0 auto;padding:26px 22px 120px}
+.card{
+  background:var(--card); backdrop-filter:blur(20px) saturate(160%); -webkit-backdrop-filter:blur(20px) saturate(160%);
+  border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--shadow);
+  padding:22px 24px; margin-bottom:20px;
+}
+.card.disabled{opacity:.42;pointer-events:none;filter:saturate(.5)}
+.card > h2{
+  font-size:12px;font-weight:640;letter-spacing:.075em;text-transform:uppercase;color:var(--txt3);
+  margin:0 0 14px;display:flex;align-items:center;gap:9px
+}
+.step{width:20px;height:20px;border-radius:50%;background:var(--accentSoft);color:var(--accent);display:grid;place-items:center;font-size:11px;font-weight:700;letter-spacing:0;flex:none}
+h3{font-size:15px;font-weight:600;margin:20px 0 9px;letter-spacing:-.01em}
+h3:first-child{margin-top:0}
+p.hint{color:var(--txt2);font-size:13.5px;margin:6px 0}
+.muted{color:var(--txt3)}
+code{font-family:var(--mono);font-size:12.5px;background:var(--line2);padding:1.5px 6px;border-radius:5px}
+/* ---------- dropzone ---------- */
+.drop{
+  border:1.6px dashed var(--line); border-radius:var(--r2); padding:38px 24px; text-align:center;
+  transition:.22s cubic-bezier(.4,0,.2,1); cursor:pointer; background:var(--line2);
+}
+.drop:hover{border-color:var(--accent);background:var(--accentSoft)}
+.drop.hot{border-color:var(--accent);background:var(--accentSoft);transform:scale(1.008)}
+.drop .big{font-size:30px;line-height:1;margin-bottom:10px}
+.drop .t{font-weight:600;font-size:15px}
+.drop .s{color:var(--txt3);font-size:13px;margin-top:5px}
+/* ---------- buttons ---------- */
+button{font:inherit;cursor:pointer;border:none;transition:.16s cubic-bezier(.4,0,.2,1)}
+.btn{
+  background:var(--accent);color:#fff;border-radius:980px;padding:9px 20px;font-size:14px;font-weight:550;
+  box-shadow:0 1px 3px rgba(0,0,0,.14);letter-spacing:-.008em;
+}
+.btn:hover{background:var(--accentH);transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,113,227,.32)}
+.btn:active{transform:translateY(0) scale(.985)}
+.btn:disabled{opacity:.4;pointer-events:none;box-shadow:none}
+.btn.sec{background:var(--line2);color:var(--txt);box-shadow:none}
+.btn.sec:hover{background:var(--line);box-shadow:none;transform:translateY(-1px)}
+.btn.sm{padding:6px 14px;font-size:13px}
+.btn.ghost{background:transparent;color:var(--accent);box-shadow:none;padding:6px 10px}
+.btn.ghost:hover{background:var(--accentSoft);transform:none}
+.btn.danger{background:var(--red)}
+.btn.danger:hover{background:var(--red);box-shadow:0 4px 14px rgba(215,38,61,.32)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+/* ---------- segmented ---------- */
+.seg{display:inline-flex;background:var(--line2);border-radius:9px;padding:2px;gap:2px}
+.seg button{background:transparent;color:var(--txt2);border-radius:7px;padding:5px 13px;font-size:13px;font-weight:500}
+.seg button.on{background:var(--cardSolid);color:var(--txt);box-shadow:0 1px 3px rgba(0,0,0,.12);font-weight:600}
+/* ---------- inputs ---------- */
+input[type=text],input[type=number],select,textarea{
+  font:inherit;background:var(--cardSolid);color:var(--txt);border:1px solid var(--line);
+  border-radius:var(--r3);padding:7px 10px;outline:none;transition:.15s;width:100%;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3.5px var(--accentSoft)}
+textarea{font-family:var(--mono);font-size:12.5px;line-height:1.5;resize:vertical;min-height:130px}
+label.fld{display:block;font-size:12px;color:var(--txt3);margin-bottom:4px;font-weight:500}
+.grid{display:grid;gap:12px}
+/* ---------- tables ---------- */
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r2);background:var(--cardSolid)}
+table{border-collapse:separate;border-spacing:0;width:100%;font-size:13px}
+th,td{padding:8px 11px;text-align:left;border-bottom:1px solid var(--line2);white-space:nowrap}
+th{background:var(--line2);font-weight:600;font-size:11.5px;color:var(--txt2);position:sticky;top:0;z-index:2;letter-spacing:.02em}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--line2)}
+td.n,th.n{text-align:right;font-family:var(--mono);font-size:12px;font-variant-numeric:tabular-nums}
+.pin{position:sticky;left:0;background:var(--cardSolid);z-index:1}
+tbody tr:hover .pin{background:var(--line2)}
+th.pin{background:var(--line2);z-index:3}
+table input[type=number]{width:84px;padding:4px 7px;font-family:var(--mono);font-size:12px;text-align:right}
+/* ---------- stats ---------- */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:12px}
+.stat{background:var(--cardSolid);border:1px solid var(--line);border-radius:var(--r2);padding:15px 16px}
+.stat .k{font-size:11.5px;color:var(--txt3);font-weight:550;letter-spacing:.03em;text-transform:uppercase}
+.stat .v{font-size:25px;font-weight:640;letter-spacing:-.028em;margin-top:5px;font-variant-numeric:tabular-nums;line-height:1.15}
+.stat .d{font-size:12px;color:var(--txt3);margin-top:3px}
+.stat.good .v{color:var(--green)} .stat.bad .v{color:var(--red)} .stat.acc .v{color:var(--accent)}
+/* ---------- pills / badges ---------- */
+.pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:980px;font-size:12px;font-weight:550;background:var(--line2);color:var(--txt2)}
+.pill.g{background:var(--greenSoft);color:var(--green)}
+.pill.r{background:var(--redSoft);color:var(--red)}
+.pill.a{background:var(--accentSoft);color:var(--accent)}
+.pill.w{background:var(--amberSoft);color:var(--amber)}
+/* ---------- progress ---------- */
+.prog{height:5px;border-radius:99px;background:var(--line2);overflow:hidden;margin:12px 0 6px}
+.prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),#5e5ce6);border-radius:99px;transition:width .18s linear}
+/* ---------- notice ---------- */
+.notice{border-radius:var(--r2);padding:12px 15px;font-size:13.5px;display:flex;gap:11px;align-items:flex-start;margin:12px 0;line-height:1.5}
+.notice.i{background:var(--accentSoft);color:var(--accent)}
+.notice.w{background:var(--amberSoft);color:var(--amber)}
+.notice.g{background:var(--greenSoft);color:var(--green)}
+.notice.e{background:var(--redSoft);color:var(--red)}
+.notice b{font-weight:640}
+/* ---------- toast ---------- */
+#toasts{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:300;display:flex;flex-direction:column;gap:9px;align-items:center;pointer-events:none}
+.toast{
+  background:rgba(30,30,32,.92);color:#fff;padding:11px 20px;border-radius:980px;font-size:13.5px;font-weight:500;
+  box-shadow:var(--shadowUp);backdrop-filter:blur(18px);animation:tin .28s cubic-bezier(.2,.9,.3,1);max-width:min(560px,90vw)
+}
+@keyframes tin{from{opacity:0;transform:translateY(14px) scale(.95)}to{opacity:1;transform:none}}
+/* ---------- modal ---------- */
+.modal{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.42);backdrop-filter:blur(10px);display:none;padding:28px;align-items:center;justify-content:center}
+.modal.on{display:flex}
+.modal .box{background:var(--cardSolid);border-radius:var(--r);box-shadow:var(--shadowUp);width:min(1100px,100%);height:min(88vh,900px);display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--line)}
+.modal .bar{padding:13px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:11px}
+.modal iframe{flex:1;border:none;background:#fff;width:100%}
+/* ---------- misc ---------- */
+details{border:1px solid var(--line);border-radius:var(--r2);padding:11px 15px;margin:12px 0;background:var(--cardSolid)}
+summary{cursor:pointer;font-weight:550;font-size:13.5px;list-style:none;user-select:none;display:flex;align-items:center;gap:7px}
+summary::-webkit-details-marker{display:none}
+summary::before{content:'›';display:inline-block;transition:transform .2s;font-size:18px;color:var(--txt3);line-height:1}
+details[open] summary::before{transform:rotate(90deg)}
+.sep{height:1px;background:var(--line2);margin:18px 0}
+.kbd{font-family:var(--mono);font-size:11px;background:var(--line2);border:1px solid var(--line);border-radius:5px;padding:1px 5px}
+.scroll{max-height:440px;overflow:auto}
+.chk{display:inline-flex;align-items:center;gap:7px;font-size:13.5px;cursor:pointer;user-select:none}
+.chk input{width:auto;margin:0}
+@media(max-width:720px){
+  main{padding:16px 13px 90px}.card{padding:17px 15px}
+  .stat .v{font-size:21px}
+}
+</style>
+  <link rel="icon" href="./icon.png">
+</head>
+<body>
+
+<header class="titlebar">
+  <div class="inner">
+    <div class="logo">¥</div>
+    <div>
+      <h1>NewAPI 价格纠正器</h1>
+      <div class="sub">日志重算 · 差额审计 · 报告导出</div>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn sec sm" id="btnReset">重置</button>
+  </div>
+</header>
+
+<main>
+
+<!-- ══════════ 1. 导入 ══════════ -->
+<section class="card" id="c1">
+  <h2><span class="step">1</span>导入日志</h2>
+
+  <div class="seg" id="srcSeg" style="margin-bottom:14px">
+    <button data-src="file" class="on">选择 / 拖入文件</button>
+    <button data-src="paste">粘贴内容</button>
+  </div>
+
+  <div id="paneFile">
+    <div class="drop" id="drop">
+      <div class="big">📄</div>
+      <div class="t">把 CSV / TSV 日志拖到这里</div>
+      <div class="s">或点击选择文件 · 支持数百 MB（流式读取，不占内存）</div>
+    </div>
+    <input type="file" id="fileInput" accept=".csv,.tsv,.txt,text/csv" hidden>
+  </div>
+
+  <div id="panePaste" style="display:none">
+    <textarea id="pasteBox" placeholder="直接 Ctrl+V 粘贴 CSV 内容（含表头）…"></textarea>
+    <div class="row" style="margin-top:10px">
+      <button class="btn" id="btnUsePaste">使用这段内容</button>
+      <span class="muted" style="font-size:12.5px">适合小样本；大文件请用文件模式</span>
+    </div>
+  </div>
+
+  <div class="row" style="margin-top:14px">
+    <div style="min-width:150px">
+      <label class="fld">文件编码</label>
+      <select id="encSel">
+        <option value="utf-8">UTF-8（含 BOM）</option>
+        <option value="gbk">GBK / GB18030</option>
+        <option value="utf-16le">UTF-16 LE</option>
+      </select>
+    </div>
+    <div style="min-width:150px">
+      <label class="fld">分隔符</label>
+      <select id="delimSel">
+        <option value="auto">自动识别</option>
+        <option value=",">逗号 ,</option>
+        <option value="&#9;">制表符 Tab</option>
+        <option value=";">分号 ;</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="scanProg" style="display:none">
+    <div class="prog"><i id="scanBar"></i></div>
+    <div class="muted" style="font-size:12.5px" id="scanTxt">扫描中…</div>
+  </div>
+
+  <div id="fileInfo"></div>
+</section>
+
+<!-- ══════════ 2. 识别 ══════════ -->
+<section class="card disabled" id="c2">
+  <h2><span class="step">2</span>字段识别与数据概览</h2>
+  <div id="mapArea"></div>
+  <div id="overview"></div>
+</section>
+
+<!-- ══════════ 3. 定价 ══════════ -->
+<section class="card disabled" id="c3">
+  <h2><span class="step">3</span>单价与倍率</h2>
+
+  <p class="hint">
+    单价单位为 <b>美元 / 每 100 万 token</b>。<b>原价</b> = 日志当时实际计费用的价格（可一键反推），
+    <b>正确价</b> = 应该使用的价格。金额 = (输入×单价 + 输出×单价 + 缓存读×单价 + 缓存写×单价) ÷ 1,000,000 × 倍率。
+  </p>
+
+  <div class="row" style="margin:14px 0">
+    <button class="btn sec sm" id="btnInfer">🔍 自动反推原价</button>
+    <button class="btn sec sm" id="btnCopyOld">原价 → 正确价</button>
+    <button class="btn sec sm" id="btnFetchOR">☁️ 拉取 OpenRouter 实时价</button>
+    <span class="pill" id="orStatus" style="display:none"></span>
+  </div>
+
+  <div id="priceArea"></div>
+
+  <div class="sep"></div>
+
+  <h3>缓存写入 TTL 处理</h3>
+  <p class="hint">日志里「缓存写」只有一列，但 5 分钟缓存（1.25×输入）和 1 小时缓存（2×输入）单价不同。工具可以按每行原始金额反推出当时用的是哪一档。</p>
+  <div class="seg" id="cwSeg">
+    <button data-cw="auto" class="on">自动按行反推</button>
+    <button data-cw="5m">全部按 5 分钟</button>
+    <button data-cw="1h">全部按 1 小时</button>
+  </div>
+
+  <div class="sep"></div>
+
+  <h3>额度取整（计费量化）</h3>
+  <p class="hint">NewAPI 内部把金额存成<b>整数额度单位</b>（常见为 1 美元 = 500,000 额度），每条日志的金额都会先量化再落库。工具可以自动识别这个口径，让纠正后的金额与 NewAPI 实际会扣的分毫不差。</p>
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">
+    <div>
+      <label class="fld">量化模式</label>
+      <select id="quantMode">
+        <option value="auto">自动识别（推荐）</option>
+        <option value="off">关闭，不量化</option>
+        <option value="custom">自定义</option>
+      </select>
+    </div>
+    <div>
+      <label class="fld">每美元额度单位数</label>
+      <input type="number" id="quantU" value="500000" step="any">
+    </div>
+    <div>
+      <label class="fld">取整方式</label>
+      <select id="quantR">
+        <option value="halfup">四舍五入（半值进位）</option>
+        <option value="ceil">向上取整</option>
+        <option value="floor">向下取整</option>
+      </select>
+    </div>
+  </div>
+  <div id="quantInfo"></div>
+
+  <div class="sep"></div>
+
+  <h3>其它</h3>
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(210px,1fr))">
+    <div>
+      <label class="fld">金额单位换算系数</label>
+      <input type="number" id="unitScale" value="1" step="any">
+      <div class="muted" style="font-size:11.5px;margin-top:4px">金额列若是「额度」而非美元，填 500000</div>
+    </div>
+    <div>
+      <label class="fld">金额小数位</label>
+      <input type="number" id="decimals" value="6" min="0" max="12" step="1">
+      <div class="muted" style="font-size:11.5px;margin-top:4px">留空则沿用原始位数</div>
+    </div>
+    <div>
+      <label class="fld">未匹配行处理</label>
+      <select id="fallbackMode">
+        <option value="derive">按原金额等比推导（推荐）</option>
+        <option value="default">按默认 TTL 计算</option>
+        <option value="keep">保持原金额不变</option>
+      </select>
+    </div>
+    <div>
+      <label class="fld">仅处理类型</label>
+      <input type="text" id="typeFilter" placeholder="留空 = 全部；如：消费">
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 4. 计算 ══════════ -->
+<section class="card disabled" id="c4">
+  <h2><span class="step">4</span>重算结果</h2>
+  <div class="row" style="margin-bottom:16px">
+    <button class="btn" id="btnRun">▶︎ 开始重算</button>
+    <span class="muted" style="font-size:12.5px" id="runHint">将完整重新扫描一遍文件</span>
+  </div>
+  <div id="runProg" style="display:none">
+    <div class="prog"><i id="runBar"></i></div>
+    <div class="muted" style="font-size:12.5px" id="runTxt"></div>
+  </div>
+  <div id="results"></div>
+</section>
+
+<!-- ══════════ 5. 导出 ══════════ -->
+<section class="card disabled" id="c5">
+  <h2><span class="step">5</span>预览与导出</h2>
+  <div class="row">
+    <button class="btn" id="btnDlCsv">⬇︎ 下载纠正后 CSV</button>
+    <button class="btn sec" id="btnPreviewReport">👁 预览 HTML 报告</button>
+    <button class="btn sec" id="btnDlReport">⬇︎ 下载 HTML 报告</button>
+    <button class="btn sec" id="btnDlJson">⬇︎ 下载 JSON 摘要</button>
+  </div>
+  <label class="chk" style="margin-top:12px"><input type="checkbox" id="addCols" checked>在 CSV 中追加「原金额 / 差额 / 缓存档位」列</label>
+  <div id="previewArea"></div>
+</section>
+
+</main>
+
+<div id="toasts"></div>
+<div class="modal" id="modal">
+  <div class="box">
+    <div class="bar">
+      <b style="font-size:14px">HTML 报告预览</b>
+      <div class="spacer"></div>
+      <button class="btn sec sm" id="btnModalDl">下载</button>
+      <button class="btn sec sm" id="btnModalClose">关闭</button>
+    </div>
+    <iframe id="reportFrame"></iframe>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ═══════════════════════════════════════════════════════════
+   NewAPI 价格纠正器 — 单文件流式实现
+   ═══════════════════════════════════════════════════════════ */
+
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const fmtInt = n => (n||0).toLocaleString('en-US');
+const fmtMoney = (n,d=6) => (n===undefined||n===null||!isFinite(n)) ? '—' : n.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const fmtM2 = n => fmtMoney(n,2);
+const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function toast(msg,ms=3000){
+  const el=document.createElement('div'); el.className='toast'; el.textContent=msg;
+  $('#toasts').appendChild(el);
+  setTimeout(()=>{el.style.transition='.3s';el.style.opacity='0';el.style.transform='translateY(10px)';setTimeout(()=>el.remove(),320)},ms);
+}
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+
+/* ───────────────── 内置价格库（美元 / 每百万 token） ───────────────── */
+// cw5 = 5分钟缓存写；cw1 = 1小时缓存写；cr = 缓存读
+const PRICE_DB = [
+ {g:'Anthropic',n:'Claude Fable 5',                  k:['fable-5','claude-fable'],            i:10,  o:50,   cr:1,     cw5:12.5, cw1:20},
+ {g:'Anthropic',n:'Claude Mythos 5',                 k:['mythos-5'],                          i:10,  o:50,   cr:1,     cw5:12.5, cw1:20},
+ {g:'Anthropic',n:'Claude Opus 5',                   k:['opus-5','claude-opus-5'],            i:5,   o:25,   cr:0.5,   cw5:6.25, cw1:10},
+ {g:'Anthropic',n:'Claude Opus 4.8',                 k:['opus-4-8','opus-4.8'],               i:5,   o:25,   cr:0.5,   cw5:6.25, cw1:10},
+ {g:'Anthropic',n:'Claude Opus 4.7',                 k:['opus-4-7','opus-4.7'],               i:5,   o:25,   cr:0.5,   cw5:6.25, cw1:10},
+ {g:'Anthropic',n:'Claude Opus 4.6',                 k:['opus-4-6','opus-4.6'],               i:5,   o:25,   cr:0.5,   cw5:6.25, cw1:10},
+ {g:'Anthropic',n:'Claude Opus 4.5',                 k:['opus-4-5','opus-4.5'],               i:5,   o:25,   cr:0.5,   cw5:6.25, cw1:10},
+ {g:'Anthropic',n:'Claude Opus 4.1',                 k:['opus-4-1','opus-4.1'],               i:15,  o:75,   cr:1.5,   cw5:18.75,cw1:30},
+ {g:'Anthropic',n:'Claude Sonnet 5（优惠价，至 2026-08-31）',k:['sonnet-5','claude-sonnet-5'], i:2,   o:10,   cr:0.2,   cw5:2.5,  cw1:4,   def:true},
+ {g:'Anthropic',n:'Claude Sonnet 5（标准价，2026-09-01 起）',k:[],                             i:3,   o:15,   cr:0.3,   cw5:3.75, cw1:6},
+ {g:'Anthropic',n:'Claude Sonnet 4.6',               k:['sonnet-4-6','sonnet-4.6'],           i:3,   o:15,   cr:0.3,   cw5:3.75, cw1:6},
+ {g:'Anthropic',n:'Claude Sonnet 4.5',               k:['sonnet-4-5','sonnet-4.5'],           i:3,   o:15,   cr:0.3,   cw5:3.75, cw1:6},
+ {g:'Anthropic',n:'Claude Sonnet 4',                 k:['sonnet-4'],                          i:3,   o:15,   cr:0.3,   cw5:3.75, cw1:6},
+ {g:'Anthropic',n:'Claude Haiku 4.5',                k:['haiku-4-5','haiku-4.5'],             i:1,   o:5,    cr:0.1,   cw5:1.25, cw1:2},
+ {g:'Anthropic',n:'Claude Haiku 3.5',                k:['haiku-3-5','3-5-haiku'],             i:0.8, o:4,    cr:0.08,  cw5:1,    cw1:1.6},
+
+ {g:'Google',n:'Gemini 3.6 Flash',                   k:['gemini-3.6-flash','gemini-3-6-flash'],i:1.5, o:7.5,  cr:0.15,  cw5:0,    cw1:0},
+ {g:'Google',n:'Gemini 3.5 Flash',                   k:['gemini-3.5-flash','gemini-3-5-flash'],i:1.5, o:9,    cr:0.15,  cw5:0,    cw1:0},
+ {g:'Google',n:'Gemini 3.5 Flash-Lite',              k:['gemini-3.5-flash-lite'],             i:0.3, o:2.5,  cr:0.03,  cw5:0,    cw1:0},
+ {g:'Google',n:'Gemini 3.1 Pro Preview（≤200k）',    k:['gemini-3.1-pro','gemini-3-1-pro'],   i:2,   o:12,   cr:0.2,   cw5:0,    cw1:0},
+ {g:'Google',n:'Gemini 3.1 Flash-Lite',              k:['gemini-3.1-flash-lite'],             i:0.25,o:1.5,  cr:0.025, cw5:0,    cw1:0},
+ {g:'Google',n:'Gemini 3 Flash Preview',             k:['gemini-3-flash'],                    i:0.5, o:3,    cr:0.05,  cw5:0,    cw1:0},
+ {g:'Google',n:'Gemini 2.5 Pro（≤200k）',            k:['gemini-2.5-pro','gemini-2-5-pro'],   i:1.25,o:10,   cr:0.125, cw5:0,    cw1:0},
+ {g:'Google',n:'Gemini 2.5 Pro（>200k）',            k:[],                                    i:2.5, o:15,   cr:0.25,  cw5:0,    cw1:0},
+ {g:'Google',n:'Gemini 2.5 Flash',                   k:['gemini-2.5-flash','gemini-2-5-flash'],i:0.3, o:2.5,  cr:0.03,  cw5:0,    cw1:0},
+ {g:'Google',n:'Gemini 2.5 Flash-Lite',              k:['gemini-2.5-flash-lite'],             i:0.1, o:0.4,  cr:0.01,  cw5:0,    cw1:0},
+ {g:'Google',n:'Gemini 2.0 Flash',                   k:['gemini-2.0-flash','gemini-2-0-flash'],i:0.1, o:0.4,  cr:0.025, cw5:0,    cw1:0},
+];
+let OR_MODELS = null;   // OpenRouter 实时价（点击后填充）
+
+/* ───────────────── 列名映射表 ───────────────── */
+const COLDEF = [
+  {id:'time',   label:'时间',    alias:['时间','创建时间','time','created_at','created','date','timestamp']},
+  {id:'type',   label:'类型',    alias:['类型','type','log_type']},
+  {id:'user',   label:'用户',    alias:['用户','用户名','username','user','user_name']},
+  {id:'model',  label:'模型',    alias:['模型','model','model_name','模型名称'],           req:true},
+  {id:'group',  label:'分组',    alias:['分组','group','token_group','渠道分组']},
+  {id:'in',     label:'输入',    alias:['输入','输入tokens','prompt_tokens','prompt','input','input_tokens','提示'],req:true},
+  {id:'out',    label:'输出',    alias:['输出','输出tokens','completion_tokens','completion','output','output_tokens','补全'],req:true},
+  {id:'cr',     label:'缓存读',  alias:['缓存读','缓存命中','cache_read','cache_read_tokens','cached_tokens','cache_hit','缓存读取']},
+  {id:'cw',     label:'缓存写',  alias:['缓存写','缓存创建','cache_write','cache_write_tokens','cache_creation','cache_creation_input_tokens','缓存写入']},
+  {id:'total',  label:'合计',    alias:['合计 tokens','合计tokens','合计','total','total_tokens','tokens']},
+  {id:'amount', label:'金额',    alias:['金额','费用','消费','quota','cost','price','amount','消费额度','额度'],req:true},
+  {id:'ms',     label:'耗时',    alias:['耗时(ms)','耗时','latency','use_time','duration','elapsed']},
+];
+
+/* ═══════════ CSV：引号感知的流式记录切分 ═══════════ */
+class RecordSplitter{
+  constructor(){this.buf='';this.pos=0;this.q=false;this.start=0;}
+  feed(chunk,sink){
+    this.buf+=chunk;
+    const b=this.buf;
+    while(this.pos<b.length){
+      const c=b[this.pos];
+      if(this.q){
+        if(c==='"'){ if(b[this.pos+1]==='"'){this.pos+=2;continue;} this.q=false; }
+        this.pos++; continue;
+      }
+      if(c==='"'){this.q=true;this.pos++;continue;}
+      if(c==='\n'){
+        let e=this.pos;
+        if(e>this.start&&b[e-1]==='\r')e--;
+        sink(this.buf.slice(this.start,e));
+        this.pos++; this.start=this.pos; continue;
+      }
+      this.pos++;
+    }
+    if(this.start>0){this.buf=this.buf.slice(this.start);this.pos-=this.start;this.start=0;}
+  }
+  flush(sink){
+    if(this.start<this.buf.length){const s=this.buf.slice(this.start); if(s.trim().length)sink(s);}
+    this.buf='';this.pos=0;this.start=0;this.q=false;
+  }
+}
+
+/* 解析一条记录 → 字段值 + 原始起止偏移（用于原样回写） */
+function parseRec(rec,D){
+  const f=[],st=[],en=[],n=rec.length; let i=0;
+  for(;;){
+    const start=i; let val;
+    if(rec[i]==='"'){
+      i++; let sb='';
+      while(i<n){
+        if(rec[i]==='"'){ if(rec[i+1]==='"'){sb+='"';i+=2;continue;} i++; break; }
+        sb+=rec[i++];
+      }
+      val=sb;
+      while(i<n&&rec[i]!==D)i++;
+    }else{
+      let j=i; while(j<n&&rec[j]!==D)j++;
+      val=rec.slice(i,j); i=j;
+    }
+    f.push(val); st.push(start); en.push(i);
+    if(i>=n)break;
+    i++;
+    if(i>=n){f.push('');st.push(i);en.push(i);break;}
+  }
+  return {f,st,en};
+}
+const csvCell = v => { v=String(v??''); return /[",\n\r\t;]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; };
+const num = v => { const x=parseFloat(String(v??'').replace(/[,\s￥$"']/g,'')); return isFinite(x)?x:0; };
+
+/* ═══════════ 流式扫描（可复扫，不驻留内存） ═══════════ */
+async function scanSource(src,enc,onRec,onProg,onTick){
+  const sp=new RecordSplitter(); let first=true, done=0, total=0;
+  const handle=r=>{ if(first){ if(r.charCodeAt(0)===0xFEFF)r=r.slice(1); first=false; } onRec(r); };
+  if(typeof src==='string'){
+    total=src.length;
+    const CH=1<<20;
+    for(let p=0;p<src.length;p+=CH){
+      sp.feed(src.slice(p,p+CH),handle); done=Math.min(p+CH,total);
+      if(onProg)onProg(done,total);
+      await sleep(0);
+      if(onTick)await onTick();
+    }
+  }else{
+    total=src.size;
+    const reader=src.stream().pipeThrough(new TextDecoderStream(enc,{fatal:false})).getReader();
+    let tick=0;
+    for(;;){
+      const {done:d,value}=await reader.read();
+      if(d)break;
+      done+=value.length; sp.feed(value,handle);
+      if(onProg&&(++tick%3===0))onProg(Math.min(done,total),total);
+      if(tick%3===0){ await sleep(0); if(onTick)await onTick(); }
+    }
+  }
+  sp.flush(handle);
+  if(onProg)onProg(total,total);
+  if(onTick)await onTick();
+}
+
+/* ═══════════ 最小二乘（正规方程 + 高斯消元） ═══════════ */
+function solveLS(rows,k){
+  const A=Array.from({length:k},()=>new Float64Array(k+1));
+  for(const {x,y} of rows){
+    for(let a=0;a<k;a++){
+      for(let b=0;b<k;b++)A[a][b]+=x[a]*x[b];
+      A[a][k]+=x[a]*y;
+    }
+  }
+  for(let c=0;c<k;c++){
+    let piv=c;
+    for(let r=c+1;r<k;r++) if(Math.abs(A[r][c])>Math.abs(A[piv][c]))piv=r;
+    if(Math.abs(A[piv][c])<1e-14)return null;
+    [A[c],A[piv]]=[A[piv],A[c]];
+    for(let r=0;r<k;r++){
+      if(r===c)continue;
+      const f=A[r][c]/A[c][c];
+      for(let b=c;b<=k;b++)A[r][b]-=f*A[c][b];
+    }
+  }
+  return Array.from({length:k},(_,c)=>A[c][k]/A[c][c]);
+}
+/* 取“好看”的价格：优先靠近常见值 */
+function snap(v){
+  if(!isFinite(v)||v<=0)return 0;
+  const cands=[0.01,0.02,0.025,0.03,0.05,0.075,0.08,0.1,0.125,0.15,0.18,0.2,0.25,0.27,0.3,0.36,0.4,0.5,0.54,0.6,0.72,0.75,0.8,0.9,1,1.25,1.5,1.6,1.8,2,2.25,2.5,2.7,3,3.6,3.75,4,4.5,5,6,6.25,7.5,8,9,10,12,12.5,13.5,15,16.2,18,18.75,20,21.6,25,30,37.5,50,60,75,120];
+  for(const c of cands) if(Math.abs(v-c)/c<0.012) return c;
+  const p=v>=10?2:(v>=1?3:4);
+  return +v.toFixed(p);
+}
+
+/* ═══════════ 额度量化（NewAPI 内部按整数额度单位计费） ═══════════ */
+const ROUNDF={halfup:x=>Math.floor(x+0.5+1e-7),ceil:x=>Math.ceil(x-1e-7),floor:x=>Math.floor(x+1e-7)};
+function qz(v,q){ return (!q||!q.U||q.U<=0)?v:ROUNDF[q.r||'halfup'](v*q.U)/q.U; }
+const QCAND=[500000,1000000,200000,100000,50000,10000,1000];
+function detectQuant(models,cfg){
+  const pool=[];
+  for(const [name,m] of models){
+    const O=cfg[name]&&cfg[name].old; if(!O||!O.i)continue;
+    for(const r of m.samples.slice(0,3000))pool.push({r,O});
+  }
+  if(!pool.length)return {U:0,r:'halfup',score:0,tot:0};
+  const hit=(q,dec)=>{
+    let ok=0;
+    for(const {r,O} of pool){
+      const b=(r[0]*O.i+r[1]*O.o+r[2]*O.cr)/1e6;
+      const f=q?(v=>qz(v,q)):(v=>+v.toFixed(dec));
+      if(Math.abs(f(b+r[3]*O.cw5/1e6)-r[4])<5e-10||Math.abs(f(b+r[3]*O.cw1/1e6)-r[4])<5e-10)ok++;
+    }
+    return ok;
+  };
+  let best={U:0,r:'halfup',score:hit(null,6),tot:pool.length};
+  for(const U of QCAND)for(const rm of ['halfup','ceil','floor']){
+    const s=hit({U,r:rm});
+    if(s>best.score)best={U,r:rm,score:s,tot:pool.length};
+  }
+  return best;
+}
+function applyQuantDetect(){
+  const q=detectQuant(S.models,S.cfg);
+  S.quant=q;
+  const pct=q.tot?q.score/q.tot*100:0;
+  if(q.U>0){
+    $('#quantU').value=q.U; $('#quantR').value=q.r;
+    $('#quantInfo').innerHTML=`<div class="notice ${pct>99.9?'g':'w'}">🎯<div>
+      <b>识别到计费量化口径：1 美元 = ${fmtInt(q.U)} 额度单位，${{halfup:'四舍五入（半值进位）',ceil:'向上取整',floor:'向下取整'}[q.r]}。</b><br>
+      公式：金额 = ${q.r==='halfup'?'⌊':(q.r==='ceil'?'⌈':'⌊')} 计算值 × ${fmtInt(q.U)}${q.r==='halfup'?' + 0.5 ⌋':(q.r==='ceil'?' ⌉':' ⌋')} ÷ ${fmtInt(q.U)}<br>
+      在 ${fmtInt(q.tot)} 行样本上可精确复现 <b>${pct.toFixed(3)}%</b> 的原始金额。</div></div>`;
+  }else{
+    $('#quantInfo').innerHTML=`<div class="notice i">ℹ️<div>未检测到额度量化（样本命中 ${pct.toFixed(2)}%），将按普通小数位输出。</div></div>`;
+  }
+}
+
+/* ═══════════ 全局状态 ═══════════ */
+const S={
+  src:null, srcName:'', srcSize:0, enc:'utf-8', delim:',',
+  header:null, headerRaw:'', map:{}, models:new Map(),
+  cfg:{}, cwMode:'auto', totals:null, out:null, rows:[], report:null, quant:null, quantUsed:null,
+};
+function resetAll(){
+  S.src=null;S.header=null;S.models=new Map();S.cfg={};S.totals=null;S.out=null;S.rows=[];S.report=null;S.quant=null;S.quantUsed=null;
+  ['#c2','#c3','#c4','#c5'].forEach(s=>$(s).classList.add('disabled'));
+  ['#fileInfo','#mapArea','#overview','#priceArea','#results','#previewArea','#quantInfo'].forEach(s=>$(s).innerHTML='');
+  $('#scanProg').style.display='none';$('#runProg').style.display='none';
+}
+$('#btnReset').onclick=()=>{resetAll();$('#pasteBox').value='';$('#fileInput').value='';toast('已重置');};
+
+/* ═══════════ 输入源切换 ═══════════ */
+$$('#srcSeg button').forEach(b=>b.onclick=()=>{
+  $$('#srcSeg button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+  const f=b.dataset.src==='file';
+  $('#paneFile').style.display=f?'':'none'; $('#panePaste').style.display=f?'none':'';
+});
+const drop=$('#drop');
+drop.onclick=()=>$('#fileInput').click();
+['dragenter','dragover'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.add('hot')}));
+['dragleave','drop'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.remove('hot')}));
+drop.addEventListener('drop',ev=>{const f=ev.dataTransfer.files[0]; if(f)loadFile(f);});
+$('#fileInput').onchange=e=>{const f=e.target.files[0]; if(f)loadFile(f);};
+$('#btnUsePaste').onclick=()=>{
+  const t=$('#pasteBox').value;
+  if(!t.trim())return toast('请先粘贴内容');
+  loadText(t);
+};
+
+function loadFile(f){ S.src=f; S.srcName=f.name; S.srcSize=f.size; return startScan(); }
+function loadText(t){ S.src=t; S.srcName='pasted.csv'; S.srcSize=t.length; return startScan(); }
+
+/* ═══════════ 分隔符 / 表头识别 ═══════════ */
+function detectDelim(line){
+  const sel=$('#delimSel').value;
+  if(sel!=='auto')return sel;
+  const cand=[',','\t',';','|'];
+  let best=',',bn=-1;
+  for(const d of cand){ const n=parseRec(line,d).f.length; if(n>bn){bn=n;best=d;} }
+  return best;
+}
+function autoMap(header){
+  const norm=s=>String(s||'').replace(/^﻿/,'').trim().toLowerCase().replace(/\s+/g,'');
+  const H=header.map(norm), map={};
+  for(const c of COLDEF){
+    let idx=-1;
+    for(const a of c.alias){ const i=H.indexOf(norm(a)); if(i>=0){idx=i;break;} }
+    if(idx<0) for(const a of c.alias){ const i=H.findIndex(h=>h.includes(norm(a))); if(i>=0){idx=i;break;} }
+    map[c.id]=idx;
+  }
+  return map;
+}
+
+/* ═══════════ PASS 1：扫描 ═══════════ */
+async function startScan(){
+  if(S.busy)return toast('正在处理中，请稍候…');
+  S.busy=true; $('#btnRun').disabled=true;
+  try{ await doScan(); } finally { S.busy=false; $('#btnRun').disabled=false; }
+}
+async function doScan(){
+  resetPanels();
+  $('#scanProg').style.display=''; $('#scanBar').style.width='0%';
+  S.enc=$('#encSel').value;
+  let n=0, headerDone=false, samplesCap=8000;
+  const models=new Map();
+
+  const t0=performance.now();
+  await scanSource(S.src,S.enc,rec=>{
+    if(!rec.trim())return;
+    if(!headerDone){
+      S.delim=detectDelim(rec);
+      S.headerRaw=rec;
+      S.header=parseRec(rec,S.delim).f.map(x=>x.replace(/^﻿/,''));
+      S.map=autoMap(S.header);
+      headerDone=true; return;
+    }
+    const M=S.map;
+    if(M.model<0||M.amount<0)return;
+    const {f}=parseRec(rec,S.delim);
+    const model=(f[M.model]||'(未知)').trim();
+    const inT=num(f[M.in]), outT=num(f[M.out]);
+    const crT=M.cr>=0?num(f[M.cr]):0, cwT=M.cw>=0?num(f[M.cw]):0;
+    const amt=num(f[M.amount]);
+    const type=M.type>=0?(f[M.type]||'').trim():'';
+
+    let m=models.get(model);
+    if(!m){m={model,rows:0,in:0,out:0,cr:0,cw:0,amt:0,types:new Map(),samples:[],dec:new Map()};models.set(model,m);}
+    m.rows++; m.in+=inT; m.out+=outT; m.cr+=crT; m.cw+=cwT; m.amt+=amt;
+    if(type)m.types.set(type,(m.types.get(type)||0)+1);
+    const ds=String(f[M.amount]||'').split('.')[1];
+    if(ds){const L=Math.min(ds.length,10); m.dec.set(L,(m.dec.get(L)||0)+1);}
+    if(m.samples.length<samplesCap&&amt>0) m.samples.push([inT,outT,crT,cwT,amt]);
+    n++;
+  },(d,t)=>{
+    const p=t?d/t*100:0;
+    $('#scanBar').style.width=p.toFixed(1)+'%';
+    $('#scanTxt').textContent=`扫描中… ${p.toFixed(1)}%  ·  已解析 ${fmtInt(n)} 行`;
+  });
+
+  const ms=performance.now()-t0;
+  S.models=models; S.totalRows=n;
+  $('#scanProg').style.display='none';
+
+  if(!S.header){ notice('#fileInfo','e','读取失败','没有识别到表头，请检查文件编码或分隔符。'); return; }
+  if(!n){ notice('#fileInfo','e','没有数据行','文件里只有表头，或字段映射失败。'); return; }
+
+  $('#fileInfo').innerHTML=`<div class="notice g">✅ <div><b>${esc(S.srcName)}</b> 解析完成 — ${fmtInt(n)} 行 · ${(S.srcSize/1048576).toFixed(2)} MB · 耗时 ${(ms/1000).toFixed(2)}s · 分隔符 <code>${S.delim==='\t'?'Tab':S.delim}</code></div></div>`;
+  renderMap(); renderOverview(); buildConfigs(); renderPrices();
+  $('#c2').classList.remove('disabled');$('#c3').classList.remove('disabled');$('#c4').classList.remove('disabled');
+  autoInfer(true);
+}
+function resetPanels(){
+  ['#c2','#c3','#c4','#c5'].forEach(s=>$(s).classList.add('disabled'));
+  ['#fileInfo','#mapArea','#overview','#priceArea','#results','#previewArea','#quantInfo'].forEach(s=>$(s).innerHTML='');
+  const ib=document.getElementById('inferBox'); if(ib)ib.remove();
+}
+function notice(sel,kind,title,body){
+  const ic={i:'ℹ️',w:'⚠️',g:'✅',e:'⛔'}[kind]||'ℹ️';
+  $(sel).innerHTML=`<div class="notice ${kind}">${ic}<div><b>${esc(title)}</b><br>${body}</div></div>`;
+}
+
+/* ═══════════ 字段映射 UI ═══════════ */
+function renderMap(){
+  const opts=i=>['<option value="-1">— 未使用 —</option>',...S.header.map((h,k)=>`<option value="${k}"${k===i?' selected':''}>${k}: ${esc(h)}</option>`)].join('');
+  const missing=COLDEF.filter(c=>c.req&&S.map[c.id]<0);
+  $('#mapArea').innerHTML=`
+    ${missing.length?`<div class="notice w">⚠️<div><b>缺少必需字段：</b>${missing.map(c=>c.label).join('、')}，请手动指定。</div></div>`:
+      `<div class="notice g">✅<div>已自动匹配全部关键字段。</div></div>`}
+    <details ${missing.length?'open':''}><summary>字段映射（${S.header.length} 列）</summary>
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(190px,1fr));margin-top:12px">
+        ${COLDEF.map(c=>`<div><label class="fld">${c.label}${c.req?' <span style="color:var(--red)">*</span>':''}</label>
+          <select data-col="${c.id}">${opts(S.map[c.id])}</select></div>`).join('')}
+      </div>
+    </details>`;
+  $$('#mapArea select').forEach(s=>s.onchange=()=>{ S.map[s.dataset.col]=+s.value; toast('字段映射已更新，请重新导入以生效'); });
+}
+
+/* ═══════════ 概览 ═══════════ */
+function renderOverview(){
+  const ms=[...S.models.values()].sort((a,b)=>b.amt-a.amt);
+  const T=ms.reduce((a,m)=>({rows:a.rows+m.rows,in:a.in+m.in,out:a.out+m.out,cr:a.cr+m.cr,cw:a.cw+m.cw,amt:a.amt+m.amt}),{rows:0,in:0,out:0,cr:0,cw:0,amt:0});
+  $('#overview').innerHTML=`
+    <div class="stats" style="margin:16px 0">
+      <div class="stat"><div class="k">总行数</div><div class="v">${fmtInt(T.rows)}</div><div class="d">${ms.length} 个模型</div></div>
+      <div class="stat"><div class="k">输入 / 输出</div><div class="v" style="font-size:19px">${fmtInt(T.in)}<span class="muted"> / </span>${fmtInt(T.out)}</div><div class="d">token</div></div>
+      <div class="stat"><div class="k">缓存读 / 写</div><div class="v" style="font-size:19px">${fmtInt(T.cr)}<span class="muted"> / </span>${fmtInt(T.cw)}</div><div class="d">token</div></div>
+      <div class="stat acc"><div class="k">日志原金额合计</div><div class="v">${fmtM2(T.amt)}</div><div class="d">按金额列直接求和</div></div>
+    </div>
+    <div class="tw"><table>
+      <thead><tr><th class="pin">模型</th><th class="n">行数</th><th class="n">输入</th><th class="n">输出</th><th class="n">缓存读</th><th class="n">缓存写</th><th class="n">原金额</th><th>类型</th></tr></thead>
+      <tbody>${ms.map(m=>`<tr>
+        <td class="pin"><b>${esc(m.model)}</b></td>
+        <td class="n">${fmtInt(m.rows)}</td><td class="n">${fmtInt(m.in)}</td><td class="n">${fmtInt(m.out)}</td>
+        <td class="n">${fmtInt(m.cr)}</td><td class="n">${fmtInt(m.cw)}</td><td class="n">${fmtMoney(m.amt,4)}</td>
+        <td>${[...m.types.entries()].map(([k,v])=>`<span class="pill">${esc(k)} ${fmtInt(v)}</span>`).join(' ')||'<span class="muted">—</span>'}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>`;
+}
+
+/* ═══════════ 配置构建 ═══════════ */
+function guessPreset(model){
+  const s=model.toLowerCase();
+  let best=null,bl=0;
+  for(const p of PRICE_DB) for(const k of p.k) if(s.includes(k)&&k.length>bl){best=p;bl=k.length;}
+  return best;
+}
+function buildConfigs(){
+  for(const m of S.models.keys()){
+    if(S.cfg[m])continue;
+    const p=guessPreset(m);
+    const blank={i:0,o:0,cr:0,cw5:0,cw1:0,r:1};
+    S.cfg[m]={old:{...blank},neo:p?{i:p.i,o:p.o,cr:p.cr,cw5:p.cw5,cw1:p.cw1,r:1}:{...blank},preset:p?p.n:''};
+  }
+}
+
+/* ═══════════ 价格表 UI ═══════════ */
+function presetOptions(sel){
+  const src = OR_MODELS ? [...PRICE_DB,...OR_MODELS] : PRICE_DB;
+  const groups={};
+  src.forEach((p,i)=>{(groups[p.g]=groups[p.g]||[]).push([i,p])});
+  return `<option value="">— 选择预设 —</option>`+Object.entries(groups).map(([g,arr])=>
+    `<optgroup label="${esc(g)}">${arr.map(([i,p])=>`<option value="${i}"${p.n===sel?' selected':''}>${esc(p.n)}</option>`).join('')}</optgroup>`).join('');
+}
+function priceRow(model,which,c){
+  const lab=which==='old'?'原价（错误）':'正确价';
+  const cls=which==='old'?'style="color:var(--red)"':'style="color:var(--green)"';
+  return `<tr data-m="${esc(model)}" data-w="${which}">
+    ${which==='old'?`<td class="pin" rowspan="2"><b>${esc(model)}</b><div class="muted" style="font-size:11.5px;font-weight:400">${fmtInt(S.models.get(model).rows)} 行</div></td>`:''}
+    <td ${cls}><b>${lab}</b></td>
+    ${['i','o','cr','cw5','cw1','r'].map(k=>`<td class="n"><input type="number" step="any" data-k="${k}" value="${c[k]}"></td>`).join('')}
+    ${which==='old'?`<td rowspan="2"><select class="presetSel" style="min-width:210px">${presetOptions(S.cfg[model].preset)}</select>
+      <div style="margin-top:6px"><button class="btn ghost sm applyPreset">应用到正确价</button></div></td>`:''}
+  </tr>`;
+}
+function renderPrices(){
+  const ms=[...S.models.keys()];
+  $('#priceArea').innerHTML=`<div class="tw"><table>
+    <thead><tr><th class="pin">模型</th><th>档位</th>
+      <th class="n">输入</th><th class="n">输出</th><th class="n">缓存读</th><th class="n">缓存写 5m</th><th class="n">缓存写 1h</th><th class="n">倍率</th><th>预设</th></tr></thead>
+    <tbody>${ms.map(m=>priceRow(m,'old',S.cfg[m].old)+priceRow(m,'neo',S.cfg[m].neo)).join('')}</tbody>
+  </table></div>`;
+  $$('#priceArea input[type=number]').forEach(inp=>inp.oninput=()=>{
+    const tr=inp.closest('tr'); S.cfg[tr.dataset.m][tr.dataset.w][inp.dataset.k]=parseFloat(inp.value)||0;
+  });
+  $$('#priceArea .applyPreset').forEach(b=>b.onclick=()=>{
+    const tr=b.closest('tr'), m=tr.dataset.m, sel=tr.querySelector('.presetSel');
+    if(sel.value===''){return toast('请先选择一个预设');}
+    const src = OR_MODELS ? [...PRICE_DB,...OR_MODELS] : PRICE_DB;
+    const p=src[+sel.value];
+    S.cfg[m].neo={i:p.i,o:p.o,cr:p.cr,cw5:p.cw5,cw1:p.cw1,r:S.cfg[m].neo.r};
+    S.cfg[m].preset=p.n; renderPrices(); toast(`已应用「${p.n}」到 ${m}`);
+  });
+}
+
+/* ═══════════ 自动反推原价 ═══════════ */
+function inferOne(m){
+  const S3=m.samples.filter(r=>r[3]===0);            // 无缓存写的行 → 解 3 个未知数
+  let base=null;
+  if(S3.length>=25){
+    base=solveLS(S3.map(r=>({x:[r[0]/1e6,r[1]/1e6,r[2]/1e6],y:r[4]})),3);
+  }
+  if(!base){
+    const s4=solveLS(m.samples.map(r=>({x:[r[0]/1e6,r[1]/1e6,r[2]/1e6,r[3]/1e6],y:r[4]})),4);
+    if(!s4)return null;
+    base=[s4[0],s4[1],s4[2]];
+    var cwGuess=s4[3];
+  }
+  const pi=snap(base[0]),po=snap(base[1]),pcr=snap(base[2]);
+  // 缓存写：逐行反解，取众数
+  const hist=new Map();
+  for(const r of m.samples){
+    if(r[3]<=0)continue;
+    const resid=r[4]-(r[0]*pi+r[1]*po+r[2]*pcr)/1e6;
+    const p=resid*1e6/r[3];
+    if(!isFinite(p)||p<=0)continue;
+    const key=Math.round(p*1000)/1000;
+    hist.set(key,(hist.get(key)||0)+1);
+  }
+  const modes=[...hist.entries()].sort((a,b)=>b[1]-a[1]).slice(0,6).map(([v,c])=>({v,c}));
+  let cw5=pi*1.25, cw1=pi*2, hits5=0,hits1=0;
+  if(modes.length){
+    // 匹配到 1.25× / 2× 的档位
+    const near=(a,b)=>b>0&&Math.abs(a-b)/b<0.02;
+    for(const {v,c} of modes){
+      if(near(v,pi*1.25))hits5+=c;
+      else if(near(v,pi*2))hits1+=c;
+    }
+    if(hits5===0&&hits1===0){ cw5=snap(modes[0].v); cw1=modes[1]?snap(modes[1].v):cw5; }
+  } else if(typeof cwGuess==='number'){ cw5=snap(cwGuess); cw1=cw5; }
+  return {i:pi,o:po,cr:pcr,cw5:snap(cw5),cw1:snap(cw1),r:1,
+          diag:{n3:S3.length,modes,hits5,hits1,cwRows:m.samples.filter(r=>r[3]>0).length}};
+}
+function autoInfer(silent){
+  const report=[];
+  for(const [name,m] of S.models){
+    const g=inferOne(m);
+    if(!g){report.push({name,ok:false});continue;}
+    S.cfg[name].old={i:g.i,o:g.o,cr:g.cr,cw5:g.cw5,cw1:g.cw1,r:1};
+    S.cfg[name].diag=g.diag;
+    // 校验：用推出的价格重算样本，看误差
+    let bad=0,tol=0;
+    for(const r of m.samples){
+      const b=(r[0]*g.i+r[1]*g.o+r[2]*g.cr)/1e6;
+      const a5=b+r[3]*g.cw5/1e6, a1=b+r[3]*g.cw1/1e6;
+      const e=Math.min(Math.abs(a5-r[4]),Math.abs(a1-r[4]));
+      tol=Math.max(r[4]*1e-5,2e-6);
+      if(e>tol)bad++;
+    }
+    report.push({name,ok:true,g,bad,tot:m.samples.length});
+  }
+  renderPrices();
+  try{ applyQuantDetect(); }catch(e){ console.warn(e); }
+  const okAll=report.filter(r=>r.ok);
+  const perfect=okAll.filter(r=>r.bad===0).length;
+  if(okAll.length){
+    const lines=okAll.map(r=>{
+      const pct=r.tot?(100*(r.tot-r.bad)/r.tot):0;
+      const badge=r.bad===0?'<span class="pill g">100% 命中</span>':(pct>95?`<span class="pill w">${pct.toFixed(2)}% 命中</span>`:`<span class="pill r">仅 ${pct.toFixed(1)}% 命中</span>`);
+      const d=r.g.diag;
+      return `<li><b>${esc(r.name)}</b> → 输入 <code>${r.g.i}</code> · 输出 <code>${r.g.o}</code> · 缓存读 <code>${r.g.cr}</code> · 缓存写 <code>${r.g.cw5}</code>/<code>${r.g.cw1}</code> ${badge}
+        <div class="muted" style="font-size:12px">样本 ${fmtInt(r.tot)} 行（其中含缓存写 ${fmtInt(d.cwRows)} 行：5m 档 ${fmtInt(d.hits5)}、1h 档 ${fmtInt(d.hits1)}）</div></li>`;
+    }).join('');
+    const box=document.createElement('div');
+    box.innerHTML=`<div class="notice ${perfect===okAll.length?'g':'w'}" style="display:block">
+      <b>🔍 已从日志反推出原始单价</b>
+      <ul style="margin:8px 0 0;padding-left:19px">${lines}</ul>
+      <div style="margin-top:8px;font-size:12.5px">「命中」= 用反推价格重算样本行，金额与日志完全一致的比例。100% 说明单价与倍率完全确定。</div>
+    </div>`;
+    const old=$('#priceArea').previousElementSibling;
+    const host=$('#priceArea');
+    const prev=document.getElementById('inferBox'); if(prev)prev.remove();
+    box.firstElementChild.id='inferBox';
+    host.parentNode.insertBefore(box.firstElementChild,host);
+  }
+  if(!silent)toast(`已反推 ${okAll.length} 个模型的原价`);
+}
+$('#btnInfer').onclick=()=>autoInfer(false);
+$('#btnCopyOld').onclick=()=>{ for(const m in S.cfg)S.cfg[m].neo={...S.cfg[m].old}; renderPrices(); toast('已把原价复制到正确价'); };
+
+/* ═══════════ OpenRouter 实时价 ═══════════ */
+$('#btnFetchOR').onclick=async()=>{
+  const st=$('#orStatus'); st.style.display=''; st.className='pill a'; st.textContent='拉取中…';
+  try{
+    const r=await fetch('https://openrouter.ai/api/v1/models');
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const j=await r.json();
+    OR_MODELS=j.data.filter(m=>m.pricing&&+m.pricing.prompt>0).map(m=>({
+      g:'OpenRouter · '+(m.id.split('/')[0]||'other'),
+      n:m.name+'  ['+m.id+']', k:[],
+      i:+m.pricing.prompt*1e6, o:+m.pricing.completion*1e6,
+      cr:+(m.pricing.input_cache_read||0)*1e6,
+      cw5:+(m.pricing.input_cache_write||0)*1e6,
+      cw1:+(m.pricing.input_cache_write_1h||m.pricing.input_cache_write||0)*1e6,
+      _id:m.id,
+    }));
+    // 自动按模型名匹配
+    let matched=0;
+    for(const name of S.models.keys()){
+      const low=name.toLowerCase();
+      const hit=OR_MODELS.find(p=>p._id.split('/').pop().toLowerCase()===low)
+             || OR_MODELS.find(p=>p._id.toLowerCase().endsWith('/'+low));
+      if(hit){ S.cfg[name].neo={i:hit.i,o:hit.o,cr:hit.cr,cw5:hit.cw5,cw1:hit.cw1,r:S.cfg[name].neo.r}; S.cfg[name].preset=hit.n; matched++; }
+    }
+    renderPrices();
+    st.className='pill g'; st.textContent=`已载入 ${OR_MODELS.length} 个模型 · 自动匹配 ${matched} 个`;
+    toast(`OpenRouter：${OR_MODELS.length} 个模型价格已载入，自动匹配 ${matched} 个`);
+  }catch(e){
+    st.className='pill r'; st.textContent='拉取失败：'+e.message;
+    toast('拉取失败（可能是网络或 CORS）：'+e.message,4500);
+  }
+};
+
+/* ═══════════ 缓存 TTL 模式 ═══════════ */
+$$('#cwSeg button').forEach(b=>b.onclick=()=>{ $$('#cwSeg button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); S.cwMode=b.dataset.cw; });
+
+/* ═══════════ PASS 2：重算 ═══════════ */
+$('#btnRun').onclick=async()=>{
+  if(!S.src)return toast('请先导入日志');
+  const scale=parseFloat($('#unitScale').value)||1;
+  const decIn=$('#decimals').value.trim();
+  const fixedDec=decIn===''?null:Math.max(0,Math.min(12,parseInt(decIn)||6));
+  const fb=$('#fallbackMode').value;
+  const tf=$('#typeFilter').value.trim();
+  const addCols=$('#addCols').checked;
+  const qm=$('#quantMode').value;
+  const Q = qm==='off'    ? {U:0,r:'halfup'}
+          : qm==='custom' ? {U:parseFloat($('#quantU').value)||0,r:$('#quantR').value}
+          : (S.quant&&S.quant.U>0 ? {U:S.quant.U,r:S.quant.r} : {U:0,r:'halfup'});
+  S.quantUsed=Q;
+  const qq=v=>qz(v,Q);
+
+  // 大文件：边算边写盘，输出不驻留内存
+  let writer=null;
+  const BIGF=40*1048576;
+  if(S.srcSize>BIGF&&window.showSaveFilePicker&&typeof S.src!=='string'){
+    if(confirm(`文件约 ${(S.srcSize/1048576).toFixed(0)} MB。建议边计算边写入磁盘，避免占用内存。\n\n现在选择「纠正后 CSV」的保存位置？\n（取消则改为算完后再下载，可能占用较多内存）`)){
+      try{
+        const h=await window.showSaveFilePicker({suggestedName:S.srcName.replace(/\.[^.]+$/,'')+'-已纠正.csv',
+          types:[{description:'CSV',accept:{'text/csv':['.csv']}}]});
+        writer=await h.createWritable(); await writer.write('﻿');
+      }catch(e){ if(e.name!=='AbortError')toast('无法写入：'+e.message); }
+    }
+  }
+
+  $('#runProg').style.display=''; $('#runBar').style.width='0%'; $('#results').innerHTML='';
+  const t0=performance.now();
+
+  const per=new Map();  // model → 统计
+  const parts=[];       // 输出块
+  let buf='', n=0, changed=0, unmatched=0, skipped=0, wrote=0;
+  const preview=[]; const PREVIEW_MAX=400;
+  let headerDone=false;
+
+  const push=s=>{ buf+=s; if(buf.length>1<<21){parts.push(buf);buf='';} };
+  const drain=writer?(async()=>{
+    if(buf.length>1<<20){parts.push(buf);buf='';}
+    while(parts.length){ const p=parts.shift(); wrote+=p.length; await writer.write(p); }
+  }):null;
+
+  await scanSource(S.src,S.enc,rec=>{
+    if(!rec.trim())return;
+    if(!headerDone){
+      headerDone=true;
+      push(rec+(addCols?`${S.delim}原金额${S.delim}差额${S.delim}缓存档位`:'')+'\n');
+      return;
+    }
+    const M=S.map, P=parseRec(rec,S.delim), f=P.f;
+    const model=(f[M.model]||'(未知)').trim();
+    const cfg=S.cfg[model];
+    const type=M.type>=0?(f[M.type]||'').trim():'';
+    if(!cfg||(tf&&type!==tf)){ skipped++; push(rec+(addCols?S.delim+S.delim+S.delim:'')+'\n'); return; }
+
+    const inT=num(f[M.in]),outT=num(f[M.out]);
+    const crT=M.cr>=0?num(f[M.cr]):0, cwT=M.cw>=0?num(f[M.cw]):0;
+    const rawAmt=String(f[M.amount]??''); const oldAmt=num(rawAmt);
+    const O=cfg.old,N=cfg.neo;
+
+    // 1) 判定缓存写档位，同时校验「原价」能否复现原金额
+    let tier='—', cwNewP=N.cw5, ok=true;
+    const base=(inT*O.i+outT*O.o+crT*O.cr)/1e6*O.r*scale;
+    const tol=Q.U>0?5e-10:Math.max(Math.abs(oldAmt)*2e-5,2e-6);
+    if(cwT>0){
+      const a5=qq(base+cwT*O.cw5/1e6*O.r*scale), a1=qq(base+cwT*O.cw1/1e6*O.r*scale);
+      const e5=Math.abs(a5-oldAmt), e1=Math.abs(a1-oldAmt);
+      if(S.cwMode==='5m'){ tier='5m'; ok=e5<=tol; }
+      else if(S.cwMode==='1h'){ tier='1h'; cwNewP=N.cw1; ok=e1<=tol; }
+      else if(e5<=tol&&e5<=e1){ tier='5m'; }
+      else if(e1<=tol){ tier='1h'; cwNewP=N.cw1; }
+      else{
+        ok=false;
+        if(fb==='derive'){
+          // 反解本行真实缓存写单价，再按新旧输入价等比缩放
+          const denom=cwT/1e6*O.r*scale;
+          const derived=denom>0?(oldAmt-base)/denom:0;
+          cwNewP=derived*((O.i>0&&isFinite(derived))?(N.i/O.i):1); tier='推导';
+        }else if(fb==='keep'){ tier='保持'; }
+        else { tier='5m*'; }
+      }
+    }else{
+      ok=Math.abs(qq(base)-oldAmt)<=tol;
+      if(!ok)tier='未匹配';
+    }
+    if(!ok)unmatched++;
+
+    // 2) 计算新金额（按识别出的额度口径量化）
+    const newAmt = (!ok&&fb==='keep') ? oldAmt
+                 : qq((inT*N.i+outT*N.o+crT*N.cr+cwT*cwNewP)/1e6*N.r*scale);
+    const dec=fixedDec!==null?fixedDec:((rawAmt.split('.')[1]||'').length||6);
+    const newStr=newAmt.toFixed(dec);
+    const diff=newAmt-oldAmt;
+
+    // 3) 原样回写（只替换金额字段）
+    const a=P.st[M.amount], b=P.en[M.amount];
+    let line = (a===undefined) ? rec : rec.slice(0,a)+csvCell(newStr)+rec.slice(b);
+    if(addCols) line += S.delim+csvCell(rawAmt)+S.delim+csvCell(diff.toFixed(dec))+S.delim+csvCell(tier);
+    push(line+'\n');
+
+    // 4) 统计
+    let p=per.get(model);
+    if(!p){p={model,rows:0,old:0,neo:0,in:0,out:0,cr:0,cw:0,t5:0,t1:0,bad:0};per.set(model,p);}
+    p.rows++;p.old+=oldAmt;p.neo+=newAmt;p.in+=inT;p.out+=outT;p.cr+=crT;p.cw+=cwT;
+    if(tier==='5m')p.t5++; else if(tier==='1h')p.t1++;
+    if(!ok)p.bad++;
+    if(Math.abs(diff)>1e-12)changed++;
+    if(preview.length<PREVIEW_MAX)preview.push({t:M.time>=0?f[M.time]:'',model,in:inT,out:outT,cr:crT,cw:cwT,old:oldAmt,neo:newAmt,diff,tier,dec});
+    n++;
+  },(d,t)=>{
+    const p=t?d/t*100:0;
+    $('#runBar').style.width=p.toFixed(1)+'%';
+    $('#runTxt').textContent=`重算中… ${p.toFixed(1)}%  ·  ${fmtInt(n)} 行${writer?`  ·  已写盘 ${(wrote/1048576).toFixed(1)} MB`:''}`;
+  },drain);
+
+  if(buf){parts.push(buf);buf='';}
+  if(writer){ while(parts.length)await writer.write(parts.shift()); await writer.close(); S.out=null; S.streamed=true; }
+  else { S.out=parts; S.streamed=false; }
+  S.rows=preview;
+  const ms=performance.now()-t0;
+  $('#runProg').style.display='none';
+
+  const T=[...per.values()].reduce((a,p)=>({rows:a.rows+p.rows,old:a.old+p.old,neo:a.neo+p.neo,bad:a.bad+p.bad}),{rows:0,old:0,neo:0,bad:0});
+  S.totals={...T,changed,unmatched,skipped,per:[...per.values()].sort((a,b)=>b.old-a.old),ms,n};
+  renderResults();
+  $('#c5').classList.remove('disabled');
+  toast(`重算完成：${fmtInt(n)} 行 · ${(ms/1000).toFixed(2)}s`);
+};
+
+/* ═══════════ 结果渲染 ═══════════ */
+function renderResults(){
+  const T=S.totals, d=T.neo-T.old, pct=T.old?d/T.old*100:0;
+  const over=d<0;
+  $('#results').innerHTML=`
+    <div class="stats">
+      <div class="stat"><div class="k">原金额合计</div><div class="v">${fmtM2(T.old)}</div><div class="d">日志中记录的金额</div></div>
+      <div class="stat acc"><div class="k">纠正后合计</div><div class="v">${fmtM2(T.neo)}</div><div class="d">按正确单价重算</div></div>
+      <div class="stat ${over?'good':'bad'}"><div class="k">${over?'多收（应退）':'少收（应补）'}</div><div class="v">${fmtM2(Math.abs(d))}</div><div class="d">${pct>=0?'+':''}${pct.toFixed(2)}%</div></div>
+      <div class="stat"><div class="k">金额变动行数</div><div class="v">${fmtInt(T.changed)}</div><div class="d">共 ${fmtInt(T.rows)} 行参与重算</div></div>
+    </div>
+    ${T.unmatched?`<div class="notice w">⚠️<div><b>${fmtInt(T.unmatched)} 行的原金额无法用当前「原价」解释。</b>已按「${$('#fallbackMode').selectedOptions[0].textContent}」处理。可先点「自动反推原价」再重算。</div></div>`:
+      `<div class="notice g">✅<div>全部 ${fmtInt(T.rows)} 行的原金额都能被「原价」精确复现，纠正结果可信。</div></div>`}
+    ${T.skipped?`<div class="notice i">ℹ️<div>${fmtInt(T.skipped)} 行被跳过（未配置模型或类型过滤），金额原样保留。</div></div>`:''}
+    <h3>分模型明细</h3>
+    <div class="tw"><table>
+      <thead><tr><th class="pin">模型</th><th class="n">行数</th><th class="n">原金额</th><th class="n">纠正后</th><th class="n">差额</th><th class="n">变动</th><th class="n">5m 档</th><th class="n">1h 档</th><th class="n">未匹配</th></tr></thead>
+      <tbody>${T.per.map(p=>{const dd=p.neo-p.old,pp=p.old?dd/p.old*100:0;return `<tr>
+        <td class="pin"><b>${esc(p.model)}</b></td><td class="n">${fmtInt(p.rows)}</td>
+        <td class="n">${fmtMoney(p.old,4)}</td><td class="n">${fmtMoney(p.neo,4)}</td>
+        <td class="n" style="color:${dd<0?'var(--green)':'var(--red)'}">${dd>=0?'+':''}${fmtMoney(dd,4)}</td>
+        <td class="n" style="color:${dd<0?'var(--green)':'var(--red)'}">${pp>=0?'+':''}${pp.toFixed(2)}%</td>
+        <td class="n">${fmtInt(p.t5)}</td><td class="n">${fmtInt(p.t1)}</td>
+        <td class="n">${p.bad?`<span class="pill r">${fmtInt(p.bad)}</span>`:'0'}</td></tr>`}).join('')}</tbody>
+    </table></div>`;
+  renderPreview();
+}
+function renderPreview(){
+  $('#previewArea').innerHTML=`<h3 style="margin-top:20px">前 ${S.rows.length} 行预览</h3>
+    <div class="tw scroll"><table>
+      <thead><tr><th class="pin">时间</th><th>模型</th><th class="n">输入</th><th class="n">输出</th><th class="n">缓存读</th><th class="n">缓存写</th><th>档位</th><th class="n">原金额</th><th class="n">纠正后</th><th class="n">差额</th></tr></thead>
+      <tbody>${S.rows.map(r=>`<tr>
+        <td class="pin" style="font-family:var(--mono);font-size:11.5px">${esc(r.t)}</td>
+        <td>${esc(r.model)}</td>
+        <td class="n">${fmtInt(r.in)}</td><td class="n">${fmtInt(r.out)}</td><td class="n">${fmtInt(r.cr)}</td><td class="n">${fmtInt(r.cw)}</td>
+        <td><span class="pill${r.tier==='1h'?' w':(r.tier==='5m'?'':' r')}">${esc(r.tier)}</span></td>
+        <td class="n">${fmtMoney(r.old,r.dec)}</td>
+        <td class="n"><b>${fmtMoney(r.neo,r.dec)}</b></td>
+        <td class="n" style="color:${r.diff<0?'var(--green)':'var(--red)'}">${r.diff>=0?'+':''}${fmtMoney(r.diff,r.dec)}</td>
+      </tr>`).join('')}</tbody></table></div>`;
+}
+
+/* ═══════════ 导出 ═══════════ */
+function dl(blob,name){
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+}
+$('#btnDlCsv').onclick=async()=>{
+  if(S.streamed)return toast('本次已在计算过程中直接写入你选择的文件，无需再次下载');
+  if(!S.out)return toast('请先重算');
+  const name=S.srcName.replace(/\.[^.]+$/,'')+'-已纠正.csv';
+  const bom='﻿';
+  if(window.showSaveFilePicker){
+    try{
+      const h=await window.showSaveFilePicker({suggestedName:name,types:[{description:'CSV',accept:{'text/csv':['.csv']}}]});
+      const w=await h.createWritable();
+      await w.write(bom);
+      for(const p of S.out) await w.write(p);
+      await w.close();
+      return toast('已保存（流式写入，无内存上限）');
+    }catch(e){ if(e.name==='AbortError')return; }
+  }
+  dl(new Blob([bom,...S.out],{type:'text/csv;charset=utf-8'}),name);
+  toast('已下载');
+};
+$('#btnDlJson').onclick=()=>{
+  if(!S.totals)return toast('请先重算');
+  const T=S.totals;
+  const j={
+    生成时间:new Date().toISOString(), 源文件:S.srcName, 总行数:T.n,
+    原金额合计:+T.old.toFixed(6), 纠正后合计:+T.neo.toFixed(6), 差额:+(T.neo-T.old).toFixed(6),
+    差额百分比:+(T.old?(T.neo-T.old)/T.old*100:0).toFixed(4),
+    金额变动行数:T.changed, 未匹配行数:T.unmatched, 跳过行数:T.skipped,
+    缓存写模式:S.cwMode,
+    额度量化:S.quantUsed&&S.quantUsed.U>0?{每美元额度单位:S.quantUsed.U,取整方式:S.quantUsed.r}:'未启用',
+    分模型:T.per.map(p=>({模型:p.model,行数:p.rows,输入:p.in,输出:p.out,缓存读:p.cr,缓存写:p.cw,
+      原金额:+p.old.toFixed(6),纠正后:+p.neo.toFixed(6),差额:+(p.neo-p.old).toFixed(6),
+      五分钟档行数:p.t5,一小时档行数:p.t1,未匹配:p.bad,
+      原单价:S.cfg[p.model].old,正确单价:S.cfg[p.model].neo})),
+  };
+  dl(new Blob([JSON.stringify(j,null,2)],{type:'application/json'}),S.srcName.replace(/\.[^.]+$/,'')+'-摘要.json');
+  toast('已下载 JSON');
+};
+$('#btnPreviewReport').onclick=()=>{
+  if(!S.totals)return toast('请先重算');
+  S.report=buildReport();
+  $('#reportFrame').srcdoc=S.report; $('#modal').classList.add('on');
+};
+$('#btnDlReport').onclick=()=>{
+  if(!S.totals)return toast('请先重算');
+  S.report=buildReport();
+  dl(new Blob([S.report],{type:'text/html;charset=utf-8'}),S.srcName.replace(/\.[^.]+$/,'')+'-纠正报告.html');
+  toast('已下载报告');
+};
+$('#btnModalClose').onclick=()=>$('#modal').classList.remove('on');
+$('#btnModalDl').onclick=()=>$('#btnDlReport').click();
+$('#modal').onclick=e=>{if(e.target.id==='modal')$('#modal').classList.remove('on')};
+
+/* ═══════════ HTML 报告生成 ═══════════ */
+function buildReport(){
+  const T=S.totals, d=T.neo-T.old, pct=T.old?d/T.old*100:0, over=d<0;
+  const now=new Date().toLocaleString('zh-CN',{hour12:false});
+  const Qd=S.quantUsed;
+  const priceRows=T.per.map(p=>{
+    const O=S.cfg[p.model].old,N=S.cfg[p.model].neo;
+    return `<tr><td rowspan="2" class="m">${esc(p.model)}</td><td class="tag r">原价</td>
+      <td class="n">${O.i}</td><td class="n">${O.o}</td><td class="n">${O.cr}</td><td class="n">${O.cw5}</td><td class="n">${O.cw1}</td><td class="n">${O.r}</td></tr>
+      <tr><td class="tag g">正确价</td>
+      <td class="n">${N.i}</td><td class="n">${N.o}</td><td class="n">${N.cr}</td><td class="n">${N.cw5}</td><td class="n">${N.cw1}</td><td class="n">${N.r}</td></tr>`;
+  }).join('');
+  const modelRows=T.per.map(p=>{const dd=p.neo-p.old,pp=p.old?dd/p.old*100:0;return `<tr>
+    <td class="m">${esc(p.model)}</td><td class="n">${fmtInt(p.rows)}</td>
+    <td class="n">${fmtInt(p.in)}</td><td class="n">${fmtInt(p.out)}</td><td class="n">${fmtInt(p.cr)}</td><td class="n">${fmtInt(p.cw)}</td>
+    <td class="n">${fmtMoney(p.old,4)}</td><td class="n">${fmtMoney(p.neo,4)}</td>
+    <td class="n ${dd<0?'gr':'rd'}">${dd>=0?'+':''}${fmtMoney(dd,4)}</td>
+    <td class="n ${dd<0?'gr':'rd'}">${pp>=0?'+':''}${pp.toFixed(2)}%</td></tr>`}).join('');
+  const sample=S.rows.slice(0,60).map(r=>`<tr>
+    <td class="mono">${esc(r.t)}</td><td class="m">${esc(r.model)}</td>
+    <td class="n">${fmtInt(r.in)}</td><td class="n">${fmtInt(r.out)}</td><td class="n">${fmtInt(r.cr)}</td><td class="n">${fmtInt(r.cw)}</td>
+    <td>${esc(r.tier)}</td><td class="n">${fmtMoney(r.old,r.dec)}</td><td class="n"><b>${fmtMoney(r.neo,r.dec)}</b></td>
+    <td class="n ${r.diff<0?'gr':'rd'}">${r.diff>=0?'+':''}${fmtMoney(r.diff,r.dec)}</td></tr>`).join('');
+  const maxAbs=Math.max(...T.per.map(p=>Math.abs(p.neo-p.old)),1e-9);
+  const bars=T.per.map(p=>{const dd=Math.abs(p.neo-p.old);return `<div class="bar">
+    <div class="bl">${esc(p.model)}</div>
+    <div class="bt"><i style="width:${(dd/maxAbs*100).toFixed(2)}%"></i></div>
+    <div class="bv">${fmtM2(p.neo-p.old)}</div></div>`}).join('');
+
+  return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NewAPI 价格纠正报告 — ${esc(S.srcName)}</title><style>
+:root{--bg:#f5f5f7;--card:#fff;--txt:#1d1d1f;--txt2:#6e6e73;--txt3:#8e8e93;--line:rgba(0,0,0,.1);--line2:rgba(0,0,0,.05);
+--acc:#0071e3;--gr:#1d9e4b;--rd:#d7263d;--sh:0 1px 2px rgba(0,0,0,.04),0 8px 26px rgba(0,0,0,.07);
+--mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+@media(prefers-color-scheme:dark){:root{--bg:#000;--card:#1c1c1e;--txt:#f5f5f7;--txt2:#a1a1a6;--txt3:#8e8e93;
+--line:rgba(255,255,255,.13);--line2:rgba(255,255,255,.07);--acc:#0a84ff;--gr:#32d74b;--rd:#ff453a;--sh:0 1px 2px rgba(0,0,0,.5),0 8px 26px rgba(0,0,0,.5)}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font-size:15px;line-height:1.6;letter-spacing:-.006em;
+font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Helvetica Neue","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1120px;margin:0 auto;padding:44px 22px 90px}
+.hero{text-align:center;margin-bottom:36px}
+.hero h1{font-size:34px;font-weight:680;letter-spacing:-.032em;margin:0 0 8px}
+.hero p{color:var(--txt2);margin:3px 0;font-size:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:var(--sh);padding:24px 26px;margin-bottom:20px}
+h2{font-size:12px;font-weight:640;letter-spacing:.075em;text-transform:uppercase;color:var(--txt3);margin:0 0 16px}
+h3{font-size:15px;font-weight:600;margin:22px 0 10px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:13px}
+.stat{border:1px solid var(--line);border-radius:13px;padding:16px}
+.stat .k{font-size:11.5px;color:var(--txt3);text-transform:uppercase;letter-spacing:.03em;font-weight:550}
+.stat .v{font-size:26px;font-weight:650;letter-spacing:-.03em;margin-top:5px;font-variant-numeric:tabular-nums}
+.stat .d{font-size:12px;color:var(--txt3)}
+.big{grid-column:1/-1;text-align:center;padding:30px}
+.big .v{font-size:52px;letter-spacing:-.04em}
+.gr{color:var(--gr)}.rd{color:var(--rd)}.ac{color:var(--acc)}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:13px}
+table{border-collapse:separate;border-spacing:0;width:100%;font-size:13px}
+th,td{padding:8px 11px;text-align:left;border-bottom:1px solid var(--line2);white-space:nowrap}
+th{background:var(--line2);font-size:11.5px;font-weight:600;color:var(--txt2);letter-spacing:.02em}
+tbody tr:last-child td{border-bottom:none}
+.n{text-align:right;font-family:var(--mono);font-size:12px;font-variant-numeric:tabular-nums}
+.m{font-weight:600}.mono{font-family:var(--mono);font-size:11.5px}
+.tag{font-weight:600;font-size:12px}.tag.r{color:var(--rd)}.tag.g{color:var(--gr)}
+.note{border-radius:13px;padding:13px 16px;font-size:13.5px;margin:14px 0;line-height:1.55}
+.note.g{background:rgba(29,158,75,.1);color:var(--gr)}.note.w{background:rgba(183,121,31,.13);color:#b7791f}
+.note.i{background:rgba(0,113,227,.1);color:var(--acc)}
+.bar{display:grid;grid-template-columns:220px 1fr 130px;gap:12px;align-items:center;margin:9px 0;font-size:13px}
+.bl{font-weight:550;overflow:hidden;text-overflow:ellipsis}
+.bt{height:9px;background:var(--line2);border-radius:99px;overflow:hidden}
+.bt i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),#5e5ce6);border-radius:99px}
+.bv{text-align:right;font-family:var(--mono);font-size:12px}
+.foot{text-align:center;color:var(--txt3);font-size:12px;margin-top:34px}
+@media print{body{background:#fff}.card{box-shadow:none;break-inside:avoid}}
+@media(max-width:640px){.bar{grid-template-columns:1fr;gap:4px}.bv{text-align:left}.hero h1{font-size:26px}.big .v{font-size:36px}}
+</style></head><body><div class="wrap">
+
+<div class="hero">
+  <h1>API 计费纠正报告</h1>
+  <p><b>${esc(S.srcName)}</b> · ${fmtInt(T.n)} 条日志 · ${T.per.length} 个模型</p>
+  <p style="color:var(--txt3)">生成于 ${now}</p>
+</div>
+
+<div class="card">
+  <h2>核心结论</h2>
+  <div class="stats">
+    <div class="stat big"><div class="k">${over?'多计费金额（应退还）':'少计费金额（应补收）'}</div>
+      <div class="v ${over?'gr':'rd'}">$${fmtM2(Math.abs(d))}</div>
+      <div class="d">相当于原账单的 ${Math.abs(pct).toFixed(2)}%</div></div>
+    <div class="stat"><div class="k">原账单金额</div><div class="v">$${fmtM2(T.old)}</div><div class="d">日志记录值</div></div>
+    <div class="stat"><div class="k">纠正后金额</div><div class="v ac">$${fmtM2(T.neo)}</div><div class="d">按正确单价重算</div></div>
+    <div class="stat"><div class="k">金额发生变动</div><div class="v">${fmtInt(T.changed)}</div><div class="d">/ ${fmtInt(T.rows)} 行</div></div>
+  </div>
+  ${T.unmatched?`<div class="note w"><b>提示：</b>有 ${fmtInt(T.unmatched)} 行的原金额无法用所填「原价」精确复现，已按回退策略处理，请复核。</div>`
+   :`<div class="note g"><b>校验通过：</b>全部 ${fmtInt(T.rows)} 行的原始金额都能用所填「原价」精确复现，说明单价与倍率判定准确，纠正结果可直接用于对账。</div>`}
+</div>
+
+<div class="card">
+  <h2>计费口径</h2>
+  <p style="font-size:13.5px;color:var(--txt2);margin-top:0">
+    金额 = ( 输入token×输入单价 + 输出token×输出单价 + 缓存读token×缓存读单价 + 缓存写token×缓存写单价 ) ÷ 1,000,000 × 倍率<br>
+    单价单位：美元 / 每百万 token。缓存写按 TTL 分 5 分钟档与 1 小时档，工具按每行原始金额自动判定档位（当前模式：<b>${S.cwMode==='auto'?'自动按行反推':(S.cwMode==='5m'?'全部按 5 分钟':'全部按 1 小时')}</b>）。
+    ${Qd&&Qd.U>0?`<br>额度量化：1 美元 = <b>${fmtInt(Qd.U)}</b> 额度单位，${{halfup:'四舍五入（半值进位）',ceil:'向上取整',floor:'向下取整'}[Qd.r]}——与 NewAPI 内部落库口径一致，纠正后金额即为系统实际会扣除的数值。`:''}
+  </p>
+  <div class="tw"><table>
+    <thead><tr><th>模型</th><th>档位</th><th class="n">输入</th><th class="n">输出</th><th class="n">缓存读</th><th class="n">缓存写 5m</th><th class="n">缓存写 1h</th><th class="n">倍率</th></tr></thead>
+    <tbody>${priceRows}</tbody></table></div>
+</div>
+
+<div class="card">
+  <h2>分模型差额</h2>
+  ${bars}
+  <div class="tw" style="margin-top:18px"><table>
+    <thead><tr><th>模型</th><th class="n">行数</th><th class="n">输入</th><th class="n">输出</th><th class="n">缓存读</th><th class="n">缓存写</th><th class="n">原金额</th><th class="n">纠正后</th><th class="n">差额</th><th class="n">变动</th></tr></thead>
+    <tbody>${modelRows}</tbody>
+    <tfoot><tr style="font-weight:650;background:var(--line2)">
+      <td>合计</td><td class="n">${fmtInt(T.rows)}</td><td colspan="4"></td>
+      <td class="n">${fmtMoney(T.old,4)}</td><td class="n">${fmtMoney(T.neo,4)}</td>
+      <td class="n ${over?'gr':'rd'}">${d>=0?'+':''}${fmtMoney(d,4)}</td>
+      <td class="n ${over?'gr':'rd'}">${pct>=0?'+':''}${pct.toFixed(2)}%</td></tr></tfoot>
+  </table></div>
+</div>
+
+<div class="card">
+  <h2>逐行样本（前 ${Math.min(60,S.rows.length)} 条）</h2>
+  <div class="tw"><table>
+    <thead><tr><th>时间</th><th>模型</th><th class="n">输入</th><th class="n">输出</th><th class="n">缓存读</th><th class="n">缓存写</th><th>档位</th><th class="n">原金额</th><th class="n">纠正后</th><th class="n">差额</th></tr></thead>
+    <tbody>${sample}</tbody></table></div>
+  <div class="note i">完整逐行结果请见同时导出的「已纠正 CSV」文件，其中包含原金额、差额与缓存档位三列。</div>
+</div>
+
+<div class="foot">由 NewAPI 价格纠正器生成 · 数据全部在本地浏览器中计算，未上传任何内容</div>
+</div></body></html>`;
+}
+</script>
+</body>
+</html>
