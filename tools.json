@@ -97,6 +97,12 @@
       "name": "苹果风文字图片生成器",
       "path": "tools/tupianshengcheng/",
       "icon": "tools/tupianshengcheng/icon.png"
+    },
+    {
+      "id": "newapi",
+      "name": "NewAPI 价格纠正器",
+      "path": "tools/newapi/",
+      "icon": "tools/newapi/icon.png"
     }
   ]
 }
