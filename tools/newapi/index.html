@@ -210,10 +210,10 @@ details[open] summary::before{transform:rotate(90deg)}
   <div id="paneFile">
     <div class="drop" id="drop">
       <div class="big">📄</div>
-      <div class="t">把 CSV / TSV 日志拖到这里</div>
-      <div class="s">或点击选择文件 · 支持数百 MB（流式读取，不占内存）</div>
+      <div class="t">把 CSV / TSV / Excel 日志拖到这里</div>
+      <div class="s">或点击选择文件 · 支持 .csv .tsv .txt .xlsx · 数百 MB 流式读取，不占内存</div>
     </div>
-    <input type="file" id="fileInput" accept=".csv,.tsv,.txt,text/csv" hidden>
+    <input type="file" id="fileInput" accept=".csv,.tsv,.txt,.xlsx,text/csv" hidden>
   </div>
 
   <div id="panePaste" style="display:none">
@@ -228,8 +228,10 @@ details[open] summary::before{transform:rotate(90deg)}
     <div style="min-width:150px">
       <label class="fld">文件编码</label>
       <select id="encSel">
+        <option value="auto">自动检测（推荐）</option>
         <option value="utf-8">UTF-8（含 BOM）</option>
         <option value="gbk">GBK / GB18030</option>
+        <option value="big5">Big5（繁体）</option>
         <option value="utf-16le">UTF-16 LE</option>
       </select>
     </div>
@@ -330,6 +332,11 @@ details[open] summary::before{transform:rotate(90deg)}
       <div class="muted" style="font-size:11.5px;margin-top:4px">留空则沿用原始位数</div>
     </div>
     <div>
+      <label class="fld">匹配容差（‰）</label>
+      <input type="number" id="tolPm" value="0.5" step="any" min="0">
+      <div class="muted" style="font-size:11.5px;margin-top:4px">原金额与反推值的允许相对误差，调大可提高容错</div>
+    </div>
+    <div>
       <label class="fld">未匹配行处理</label>
       <select id="fallbackMode">
         <option value="derive">按原金额等比推导（推荐）</option>
@@ -418,7 +425,7 @@ const PRICE_DB = [
  {g:'Anthropic',n:'Claude Opus 4.5',                 k:['opus-4-5','opus-4.5'],               i:5,   o:25,   cr:0.5,   cw5:6.25, cw1:10},
  {g:'Anthropic',n:'Claude Opus 4.1',                 k:['opus-4-1','opus-4.1'],               i:15,  o:75,   cr:1.5,   cw5:18.75,cw1:30},
  {g:'Anthropic',n:'Claude Sonnet 5（优惠价，至 2026-08-31）',k:['sonnet-5','claude-sonnet-5'], i:2,   o:10,   cr:0.2,   cw5:2.5,  cw1:4,   def:true},
- {g:'Anthropic',n:'Claude Sonnet 5（标准价，2026-09-01 起）',k:[],                             i:3,   o:15,   cr:0.3,   cw5:3.75, cw1:6},
+ {g:'Anthropic',n:'Claude Sonnet 5（标准价，2026-09-01 起）',k:['sonnet-5','claude-sonnet-5'], i:3,   o:15,   cr:0.3,   cw5:3.75, cw1:6},
  {g:'Anthropic',n:'Claude Sonnet 4.6',               k:['sonnet-4-6','sonnet-4.6'],           i:3,   o:15,   cr:0.3,   cw5:3.75, cw1:6},
  {g:'Anthropic',n:'Claude Sonnet 4.5',               k:['sonnet-4-5','sonnet-4.5'],           i:3,   o:15,   cr:0.3,   cw5:3.75, cw1:6},
  {g:'Anthropic',n:'Claude Sonnet 4',                 k:['sonnet-4'],                          i:3,   o:15,   cr:0.3,   cw5:3.75, cw1:6},
@@ -431,8 +438,8 @@ const PRICE_DB = [
  {g:'Google',n:'Gemini 3.1 Pro Preview（≤200k）',    k:['gemini-3.1-pro','gemini-3-1-pro'],   i:2,   o:12,   cr:0.2,   cw5:0,    cw1:0},
  {g:'Google',n:'Gemini 3.1 Flash-Lite',              k:['gemini-3.1-flash-lite'],             i:0.25,o:1.5,  cr:0.025, cw5:0,    cw1:0},
  {g:'Google',n:'Gemini 3 Flash Preview',             k:['gemini-3-flash'],                    i:0.5, o:3,    cr:0.05,  cw5:0,    cw1:0},
- {g:'Google',n:'Gemini 2.5 Pro（≤200k）',            k:['gemini-2.5-pro','gemini-2-5-pro'],   i:1.25,o:10,   cr:0.125, cw5:0,    cw1:0},
- {g:'Google',n:'Gemini 2.5 Pro（>200k）',            k:[],                                    i:2.5, o:15,   cr:0.25,  cw5:0,    cw1:0},
+ {g:'Google',n:'Gemini 2.5 Pro（≤200k）',            k:['gemini-2.5-pro','gemini-2-5-pro'],   i:1.25,o:10,   cr:0.125, cw5:0,    cw1:0, def:true},
+ {g:'Google',n:'Gemini 2.5 Pro（>200k）',            k:['gemini-2.5-pro','gemini-2-5-pro'],   i:2.5, o:15,   cr:0.25,  cw5:0,    cw1:0},
  {g:'Google',n:'Gemini 2.5 Flash',                   k:['gemini-2.5-flash','gemini-2-5-flash'],i:0.3, o:2.5,  cr:0.03,  cw5:0,    cw1:0},
  {g:'Google',n:'Gemini 2.5 Flash-Lite',              k:['gemini-2.5-flash-lite'],             i:0.1, o:0.4,  cr:0.01,  cw5:0,    cw1:0},
  {g:'Google',n:'Gemini 2.0 Flash',                   k:['gemini-2.0-flash','gemini-2-0-flash'],i:0.1, o:0.4,  cr:0.025, cw5:0,    cw1:0},
@@ -541,6 +548,141 @@ async function scanSource(src,enc,onRec,onProg,onTick){
   if(onTick)await onTick();
 }
 
+/* ═══════════ 编码自动检测 ═══════════ */
+async function detectEncoding(src){
+  if(typeof src==='string')return 'utf-8';
+  const head=new Uint8Array(await src.slice(0,1<<16).arrayBuffer());
+  if(head[0]===0xEF&&head[1]===0xBB&&head[2]===0xBF)return 'utf-8';
+  if(head[0]===0xFF&&head[1]===0xFE)return 'utf-16le';
+  if(head[0]===0xFE&&head[1]===0xFF)return 'utf-16be';
+  // 掐掉末尾可能被截断的多字节序列，避免误判
+  let end=head.length;
+  for(let k=0;k<4&&end>0;k++){ if((head[end-1]&0x80)===0)break; end--; }
+  try{ new TextDecoder('utf-8',{fatal:true}).decode(head.subarray(0,end)); return 'utf-8'; }
+  catch(e){ /* 非合法 UTF-8 → 视为中文双字节编码 */ }
+  // GBK vs Big5：用解码后的常见字命中率区分
+  const score=enc=>{
+    let s;
+    try{ s=new TextDecoder(enc).decode(head.subarray(0,end)); }catch(_){ return -1; }
+    let hit=0,cjk=0;
+    for(const ch of s){
+      const c=ch.codePointAt(0);
+      if(c>=0x4E00&&c<=0x9FFF){cjk++; if('时间类型用户模型分组输入输出缓存命中写入读金额消费耗额度渠道令牌总计合'.includes(ch))hit++;}
+      else if(c===0xFFFD)cjk+=3;
+    }
+    return cjk?hit/cjk:0;
+  };
+  return score('gbk')>=score('big5')?'gbk':'big5';
+}
+function looksMojibake(cells){
+  const s=cells.join('');
+  if(!s)return false;
+  let bad=0;
+  for(const ch of s){ const c=ch.codePointAt(0); if(c===0xFFFD||(c>=0x00A0&&c<=0x00FF))bad++; }
+  return bad/s.length>0.25;
+}
+
+/* ═══════════ XLSX 读取（ZIP + deflate-raw + SheetML） ═══════════ */
+function unzip(u8){
+  const dv=new DataView(u8.buffer,u8.byteOffset,u8.byteLength);
+  let eo=-1;
+  for(let i=u8.length-22;i>=Math.max(0,u8.length-66000);i--){ if(dv.getUint32(i,true)===0x06054b50){eo=i;break;} }
+  if(eo<0)throw new Error('不是有效的 ZIP/XLSX 文件');
+  const cnt=dv.getUint16(eo+10,true); let p=dv.getUint32(eo+16,true);
+  const out=new Map();
+  for(let k=0;k<cnt;k++){
+    if(dv.getUint32(p,true)!==0x02014b50)break;
+    const method=dv.getUint16(p+10,true), csize=dv.getUint32(p+20,true);
+    const nlen=dv.getUint16(p+28,true), elen=dv.getUint16(p+30,true), clen=dv.getUint16(p+32,true);
+    const lho=dv.getUint32(p+42,true);
+    const name=new TextDecoder('utf-8').decode(u8.subarray(p+46,p+46+nlen));
+    const ln=dv.getUint16(lho+26,true), le=dv.getUint16(lho+28,true);
+    const start=lho+30+ln+le;
+    out.set(name,{method,data:u8.subarray(start,start+csize)});
+    p+=46+nlen+elen+clen;
+  }
+  return out;
+}
+async function zgetText(entry){
+  if(!entry)return '';
+  if(entry.method===0)return new TextDecoder('utf-8').decode(entry.data);
+  if(typeof DecompressionStream!=='function')throw new Error('浏览器不支持解压，请改用 CSV');
+  const st=new Blob([entry.data]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+  return await new Response(st).text();
+}
+const colIdx=r=>{ let n=0; for(const ch of r){ const c=ch.charCodeAt(0); if(c<65||c>90)break; n=n*26+(c-64); } return n-1; };
+function serialToStr(v){
+  const ms=Math.round((v-25569)*86400000), d=new Date(ms), p=n=>String(n).padStart(2,'0');
+  if(!isFinite(ms))return String(v);
+  const t=`${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())}`;
+  return `${d.getUTCFullYear()}/${d.getUTCMonth()+1}/${d.getUTCDate()}${v%1?' '+t:''}`;
+}
+async function xlsxToCsv(file,onProg){
+  const files=unzip(new Uint8Array(await file.arrayBuffer()));
+  // 共享字符串
+  const ssXml=await zgetText(files.get('xl/sharedStrings.xml'));
+  const shared=[];
+  if(ssXml){
+    const re=/<si>([\s\S]*?)<\/si>/g; let m;
+    while((m=re.exec(ssXml))){
+      let s=''; const tr=/<t[^>]*>([\s\S]*?)<\/t>/g; let t;
+      while((t=tr.exec(m[1])))s+=t[1];
+      shared.push(unxml(s));
+    }
+  }
+  // 日期样式
+  const stXml=await zgetText(files.get('xl/styles.xml'));
+  const custom=new Map();
+  for(const m of stXml.matchAll(/<numFmt[^>]*numFmtId="(\d+)"[^>]*formatCode="([^"]*)"/g))custom.set(+m[1],unxml(m[2]));
+  const xfBlock=(stXml.match(/<cellXfs[\s\S]*?<\/cellXfs>/)||[''])[0];
+  const xfFmt=[...xfBlock.matchAll(/<xf[^>]*numFmtId="(\d+)"/g)].map(m=>+m[1]);
+  const isDateFmt=id=>{
+    if((id>=14&&id<=22)||(id>=45&&id<=47))return true;
+    const c=custom.get(id); if(!c)return false;
+    return /[ymdh]/.test(c.replace(/\[[^\]]*\]/g,'').replace(/"[^"]*"/g,''));
+  };
+  const dateStyle=xfFmt.map(isDateFmt);
+  // 第一个工作表
+  let sheetName='xl/worksheets/sheet1.xml';
+  if(!files.has(sheetName)){ const k=[...files.keys()].filter(n=>/^xl\/worksheets\/.*\.xml$/.test(n)).sort(); if(k.length)sheetName=k[0]; }
+  const xml=await zgetText(files.get(sheetName));
+  if(!xml)throw new Error('未找到工作表数据');
+  if(onProg)onProg(0.5);
+  // 解析单元格
+  const lines=[]; let width=0;
+  const rowRe=/<row[^>]*?(?:\/>|>([\s\S]*?)<\/row>)/g;
+  const cellRe=/<c\s+r="([A-Z]+)\d+"([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g;
+  let rm, done=0;
+  while((rm=rowRe.exec(xml))){
+    const body=rm[1]||''; const cells=[];
+    let cm;
+    cellRe.lastIndex=0;
+    while((cm=cellRe.exec(body))){
+      const ci=colIdx(cm[1]), attr=cm[2]||'', inner=cm[3]||'';
+      const t=(attr.match(/\st="([^"]+)"/)||[])[1]||'n';
+      const sIdx=+((attr.match(/\ss="(\d+)"/)||[])[1]??-1);
+      let v='';
+      if(t==='s'){ const iv=(inner.match(/<v>([\s\S]*?)<\/v>/)||[])[1]; v=shared[+iv]??''; }
+      else if(t==='inlineStr'){ let s=''; for(const x of inner.matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g))s+=x[1]; v=unxml(s); }
+      else if(t==='str'||t==='e'){ v=unxml((inner.match(/<v>([\s\S]*?)<\/v>/)||[])[1]||''); }
+      else if(t==='b'){ v=((inner.match(/<v>([\s\S]*?)<\/v>/)||[])[1]==='1')?'TRUE':'FALSE'; }
+      else{
+        const raw=(inner.match(/<v>([\s\S]*?)<\/v>/)||[])[1]||'';
+        v=(raw!==''&&sIdx>=0&&dateStyle[sIdx])?serialToStr(+raw):raw;
+      }
+      while(cells.length<ci)cells.push('');
+      cells[ci]=v;
+    }
+    if(cells.length>width)width=cells.length;
+    lines.push(cells);
+    if((++done&1023)===0&&onProg)onProg(0.5+0.5*rowRe.lastIndex/xml.length);
+  }
+  return lines.map(c=>{ while(c.length<width)c.push(''); return c.map(csvCell).join(','); }).join('\n');
+}
+const unxml=s=>String(s??'').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&apos;/g,"'")
+  .replace(/&#x([0-9a-fA-F]+);/g,(_,h)=>String.fromCodePoint(parseInt(h,16)))
+  .replace(/&#(\d+);/g,(_,d)=>String.fromCodePoint(+d)).replace(/&amp;/g,'&');
+
 /* ═══════════ 最小二乘（正规方程 + 高斯消元） ═══════════ */
 function solveLS(rows,k){
   const A=Array.from({length:k},()=>new Float64Array(k+1));
@@ -579,7 +721,11 @@ const QCAND=[500000,1000000,200000,100000,50000,10000,1000];
 function detectQuant(models,cfg){
   const pool=[];
   for(const [name,m] of models){
-    const O=cfg[name]&&cfg[name].old; if(!O||!O.i)continue;
+    const c=cfg[name]; if(!c)continue;
+    // 必须用「基础单价 × 倍率」后的生效单价，否则量化口径判定会全错
+    const O=c.eff||(c.old&&c.old.i?{i:c.old.i*c.old.r,o:c.old.o*c.old.r,cr:c.old.cr*c.old.r,
+                                     cw5:c.old.cw5*c.old.r,cw1:c.old.cw1*c.old.r}:null);
+    if(!O||!O.i)continue;
     for(const r of m.samples.slice(0,3000))pool.push({r,O});
   }
   if(!pool.length)return {U:0,r:'halfup',score:0,tot:0};
@@ -646,8 +792,28 @@ $('#btnUsePaste').onclick=()=>{
   loadText(t);
 };
 
-function loadFile(f){ S.src=f; S.srcName=f.name; S.srcSize=f.size; return startScan(); }
-function loadText(t){ S.src=t; S.srcName='pasted.csv'; S.srcSize=t.length; return startScan(); }
+async function loadFile(f){
+  S.srcName=f.name; S.srcSize=f.size; S.fromXlsx=false;
+  if(/\.xlsx?$/i.test(f.name)){
+    if(/\.xls$/i.test(f.name)){
+      notice('#fileInfo','e','不支持旧版 .xls','这是 Excel 97-2003 二进制格式。请用 Excel / WPS 另存为 <code>.xlsx</code> 或 <code>CSV</code> 后再导入。');
+      return;
+    }
+    $('#scanProg').style.display=''; $('#scanBar').style.width='0%'; $('#scanTxt').textContent='正在解析 Excel 工作簿…';
+    try{
+      const t0=performance.now();
+      const csv=await xlsxToCsv(f,p=>{ $('#scanBar').style.width=(p*100).toFixed(1)+'%'; });
+      S.src=csv; S.fromXlsx=true;
+      toast(`Excel 已转换（${(performance.now()-t0)/1000|0}s）`);
+    }catch(e){
+      $('#scanProg').style.display='none';
+      notice('#fileInfo','e','Excel 解析失败',esc(e.message)+'<br>可在 Excel / WPS 里「另存为 → CSV UTF-8」后重试。');
+      return;
+    }
+  }else S.src=f;
+  return startScan();
+}
+function loadText(t){ S.src=t; S.srcName='pasted.csv'; S.srcSize=t.length; S.fromXlsx=false; return startScan(); }
 
 /* ═══════════ 分隔符 / 表头识别 ═══════════ */
 function detectDelim(line){
@@ -679,7 +845,9 @@ async function startScan(){
 async function doScan(){
   resetPanels();
   $('#scanProg').style.display=''; $('#scanBar').style.width='0%';
-  S.enc=$('#encSel').value;
+  const encPick=$('#encSel').value;
+  S.enc = encPick==='auto' ? await detectEncoding(S.src) : encPick;
+  S.encAuto = encPick==='auto';
   let n=0, headerDone=false, samplesCap=8000;
   const models=new Map();
 
@@ -721,9 +889,31 @@ async function doScan(){
   $('#scanProg').style.display='none';
 
   if(!S.header){ notice('#fileInfo','e','读取失败','没有识别到表头，请检查文件编码或分隔符。'); return; }
-  if(!n){ notice('#fileInfo','e','没有数据行','文件里只有表头，或字段映射失败。'); return; }
 
-  $('#fileInfo').innerHTML=`<div class="notice g">✅ <div><b>${esc(S.srcName)}</b> 解析完成 — ${fmtInt(n)} 行 · ${(S.srcSize/1048576).toFixed(2)} MB · 耗时 ${(ms/1000).toFixed(2)}s · 分隔符 <code>${S.delim==='\t'?'Tab':S.delim}</code></div></div>`;
+  // —— 失败诊断：把真实表头摊开给用户看 ——
+  if(!n){
+    const moji=looksMojibake(S.header);
+    const miss=COLDEF.filter(c=>c.req&&S.map[c.id]<0).map(c=>c.label);
+    const cells=S.header.map((h,i)=>`<code>${i}: ${esc(h)||'(空)'}</code>`).join(' ');
+    let why,fix;
+    if(moji){
+      why='<b>表头是乱码，说明文件编码判断错了。</b>';
+      fix=`当前按 <code>${S.enc}</code> 解码。请把上方「文件编码」改成 <b>GBK / GB18030</b>（Excel 导出的中文 CSV 最常见）后重新选择文件。`;
+    }else if(miss.length){
+      why=`<b>缺少必需字段：${miss.join('、')}。</b>`;
+      fix='请展开下方「字段映射」手动指定这些列，然后重新选择文件。';
+    }else{
+      why='<b>文件里只有表头，没有数据行。</b>';
+      fix=`若分隔符不对也会这样——当前识别为 <code>${S.delim==='\t'?'Tab':S.delim}</code>，可在上方手动指定。`;
+    }
+    $('#fileInfo').innerHTML=`<div class="notice e" style="display:block">⛔ <b>没有解析出数据行</b>
+      <div style="margin-top:8px">${why}<br>${fix}</div>
+      <div style="margin-top:10px;font-size:12.5px">解析到的表头（${S.header.length} 列，按 <code>${S.enc}</code> 解码）：<br>${cells}</div></div>`;
+    renderMap(); $('#c2').classList.remove('disabled');
+    return;
+  }
+
+  $('#fileInfo').innerHTML=`<div class="notice g">✅ <div><b>${esc(S.srcName)}</b> 解析完成 — ${fmtInt(n)} 行 · ${(S.srcSize/1048576).toFixed(2)} MB · 耗时 ${(ms/1000).toFixed(2)}s · 分隔符 <code>${S.delim==='\t'?'Tab':S.delim}</code>${S.fromXlsx?' · 来源 <b>Excel 工作簿</b>':` · 编码 <code>${S.enc}</code>${S.encAuto?'（自动检测）':''}`}</div></div>`;
   renderMap(); renderOverview(); buildConfigs(); renderPrices();
   $('#c2').classList.remove('disabled');$('#c3').classList.remove('disabled');$('#c4').classList.remove('disabled');
   autoInfer(true);
@@ -777,18 +967,33 @@ function renderOverview(){
 }
 
 /* ═══════════ 配置构建 ═══════════ */
-function guessPreset(model){
-  const s=model.toLowerCase();
-  let best=null,bl=0;
-  for(const p of PRICE_DB) for(const k of p.k) if(s.includes(k)&&k.length>bl){best=p;bl=k.length;}
-  return best;
+/* 名称能匹配上的全部官方价变体（如 Sonnet 5 的优惠价 / 标准价） */
+function guessPresetAll(model){
+  const s=String(model).toLowerCase(), hits=[];
+  for(const p of PRICE_DB){ let L=0; for(const k of p.k) if(k&&s.includes(k)&&k.length>L)L=k.length; if(L)hits.push({p,L}); }
+  if(!hits.length)return [];
+  const mx=Math.max(...hits.map(h=>h.L));
+  return hits.filter(h=>h.L===mx).map(h=>h.p);
+}
+function guessPreset(model){ const a=guessPresetAll(model); return a.find(p=>p.def)||a[0]||null; }
+/* 生效单价 eff 是否恰为官方价 p 的统一倍数；是则返回该倍率 */
+function ratioOf(eff,p,tolRel){
+  if(!p||!p.i||!eff||!eff.i)return null;
+  const k=eff.i/p.i; if(!(k>0.005&&k<1000))return null;
+  const t=tolRel??0.01; let used=1;
+  for(const [a,b] of [[eff.o,p.o],[eff.cr,p.cr],[eff.cw5,p.cw5],[eff.cw1,p.cw1]]){
+    if(b>0){ if(!(Math.abs(a/b-k)/k<t))return null; used++; }
+    else if(a>0)return null;
+  }
+  if(used<3)return null;
+  return Math.round(k*10000)/10000;
 }
 function buildConfigs(){
   for(const m of S.models.keys()){
     if(S.cfg[m])continue;
     const p=guessPreset(m);
     const blank={i:0,o:0,cr:0,cw5:0,cw1:0,r:1};
-    S.cfg[m]={old:{...blank},neo:p?{i:p.i,o:p.o,cr:p.cr,cw5:p.cw5,cw1:p.cw1,r:1}:{...blank},preset:p?p.n:''};
+    S.cfg[m]={old:{...blank},neo:p?{i:p.i,o:p.o,cr:p.cr,cw5:p.cw5,cw1:p.cw1,r:1}:{...blank},preset:p?p.n:'',eff:null};
   }
 }
 
@@ -800,14 +1005,27 @@ function presetOptions(sel){
   return `<option value="">— 选择预设 —</option>`+Object.entries(groups).map(([g,arr])=>
     `<optgroup label="${esc(g)}">${arr.map(([i,p])=>`<option value="${i}"${p.n===sel?' selected':''}>${esc(p.n)}</option>`).join('')}</optgroup>`).join('');
 }
+function effLine(model){
+  const e=S.cfg[model].eff; if(!e)return '';
+  const tot=k=>{const c=S.cfg[model].old;return +(c[k]*(+c.r||1)).toPrecision(12);};
+  const ok=['i','o','cr','cw5','cw1'].every(k=>Math.abs(tot(k)-e[k])<Math.max(1e-9,e[k]*1e-9));
+  return `<div class="muted" style="font-size:11px;font-weight:400;margin-top:3px;line-height:1.4">
+    生效单价 <code>${e.i}/${e.o}/${e.cr}/${e.cw5}/${e.cw1}</code>
+    <span class="pill ${ok?'g':'r'}" style="font-size:10.5px;padding:1px 7px">${ok?'原价 × 倍率 = 生效价 ✓':'与原价×倍率不符'}</span></div>`;
+}
 function priceRow(model,which,c){
-  const lab=which==='old'?'原价（错误）':'正确价';
+  const lab=which==='old'?'原价 = 你平台实际计费':'正确价 = 应该计费';
   const cls=which==='old'?'style="color:var(--red)"':'style="color:var(--green)"';
+  const cfg=S.cfg[model];
   return `<tr data-m="${esc(model)}" data-w="${which}">
-    ${which==='old'?`<td class="pin" rowspan="2"><b>${esc(model)}</b><div class="muted" style="font-size:11.5px;font-weight:400">${fmtInt(S.models.get(model).rows)} 行</div></td>`:''}
+    ${which==='old'?`<td class="pin" rowspan="2"><b>${esc(model)}</b>
+      <div class="muted" style="font-size:11.5px;font-weight:400">${fmtInt(S.models.get(model).rows)} 行${cfg.oldBase?` · 基础价：${esc(cfg.oldBase)}`:''}</div>
+      ${effLine(model)}</td>`:''}
     <td ${cls}><b>${lab}</b></td>
-    ${['i','o','cr','cw5','cw1','r'].map(k=>`<td class="n"><input type="number" step="any" data-k="${k}" value="${c[k]}"></td>`).join('')}
-    ${which==='old'?`<td rowspan="2"><select class="presetSel" style="min-width:210px">${presetOptions(S.cfg[model].preset)}</select>
+    ${['i','o','cr','cw5','cw1'].map(k=>`<td class="n"><input type="number" step="any" data-k="${k}" value="${c[k]}"></td>`).join('')}
+    <td class="n"><input type="number" step="any" data-k="r" data-ratio="1" value="${c.r}"
+      style="${which==='old'?'border-color:var(--accent);font-weight:600':''}" title="${which==='old'?'改这里 → 基础单价按新倍率自动反折':'平台加价倍率'}"></td>
+    ${which==='old'?`<td rowspan="2"><select class="presetSel" style="min-width:210px">${presetOptions(cfg.preset)}</select>
       <div style="margin-top:6px"><button class="btn ghost sm applyPreset">应用到正确价</button></div></td>`:''}
   </tr>`;
 }
@@ -815,11 +1033,25 @@ function renderPrices(){
   const ms=[...S.models.keys()];
   $('#priceArea').innerHTML=`<div class="tw"><table>
     <thead><tr><th class="pin">模型</th><th>档位</th>
-      <th class="n">输入</th><th class="n">输出</th><th class="n">缓存读</th><th class="n">缓存写 5m</th><th class="n">缓存写 1h</th><th class="n">倍率</th><th>预设</th></tr></thead>
+      <th class="n">输入</th><th class="n">输出</th><th class="n">缓存读</th><th class="n">缓存写 5m</th><th class="n">缓存写 1h</th><th class="n">倍率</th><th>官方价预设</th></tr></thead>
     <tbody>${ms.map(m=>priceRow(m,'old',S.cfg[m].old)+priceRow(m,'neo',S.cfg[m].neo)).join('')}</tbody>
   </table></div>`;
-  $$('#priceArea input[type=number]').forEach(inp=>inp.oninput=()=>{
-    const tr=inp.closest('tr'); S.cfg[tr.dataset.m][tr.dataset.w][inp.dataset.k]=parseFloat(inp.value)||0;
+  $$('#priceArea input[type=number]').forEach(inp=>{
+    const tr=inp.closest('tr'), m=tr.dataset.m, w=tr.dataset.w, k=inp.dataset.k;
+    if(w==='old'&&k==='r'){
+      // 手填原价倍率 → 基础单价按 生效价 ÷ 倍率 自动反折
+      inp.onchange=()=>{
+        const v=parseFloat(inp.value);
+        if(!(v>0)){ inp.value=S.cfg[m].old.r; return toast('倍率必须大于 0'); }
+        S.cfg[m].old.r=v;
+        if(rederiveOld(m)){ S.cfg[m].oldBase='按倍率 '+v+' 反折'; S.cfg[m].baseWrong=false;
+          renderPrices(); toast(`${m}：已按倍率 ${v} 重新反折基础单价`); }
+        else renderPrices();
+      };
+      inp.oninput=()=>{};
+    }else{
+      inp.oninput=()=>{ S.cfg[m][w][k]=parseFloat(inp.value)||0; };
+    }
   });
   $$('#priceArea .applyPreset').forEach(b=>b.onclick=()=>{
     const tr=b.closest('tr'), m=tr.dataset.m, sel=tr.querySelector('.presetSel');
@@ -869,11 +1101,19 @@ function inferOne(m){
   return {i:pi,o:po,cr:pcr,cw5:snap(cw5),cw1:snap(cw1),r:1,
           diag:{n3:S3.length,modes,hits5,hits1,cwRows:m.samples.filter(r=>r[3]>0).length}};
 }
+/* 用用户填写的倍率，把「生效单价」还原成「基础单价」 */
+function rederiveOld(model){
+  const c=S.cfg[model]; if(!c||!c.eff)return false;
+  const r=+c.old.r||1;
+  for(const k of ['i','o','cr','cw5','cw1']) c.old[k]=+(c.eff[k]/r).toPrecision(12);
+  return true;
+}
 function autoInfer(silent){
   const report=[];
   for(const [name,m] of S.models){
     const g=inferOne(m);
     if(!g){report.push({name,ok:false});continue;}
+    S.cfg[name].eff={i:g.i,o:g.o,cr:g.cr,cw5:g.cw5,cw1:g.cw1};
     S.cfg[name].old={i:g.i,o:g.o,cr:g.cr,cw5:g.cw5,cw1:g.cw1,r:1};
     S.cfg[name].diag=g.diag;
     // 校验：用推出的价格重算样本，看误差
@@ -887,6 +1127,43 @@ function autoInfer(silent){
     }
     report.push({name,ok:true,g,bad,tot:m.samples.length});
   }
+
+  /* ── 把「生效单价」拆解成「官方基础价 × 倍率」 ──
+     1) 每个模型列出所有名称匹配的官方价变体及其对应倍率
+     2) 按行数加权，选出整个日志里最主流的倍率 k*
+     3) 每个模型优先选能凑出 k* 的那个基础价变体              */
+  const cand=new Map();
+  for(const r of report){
+    if(!r.ok)continue;
+    const eff=S.cfg[r.name].eff, list=[];
+    for(const p of guessPresetAll(r.name)){ const k=ratioOf(eff,p); if(k)list.push({p,k}); }
+    cand.set(r.name,list);
+  }
+  const wt=new Map();
+  for(const [nm,list] of cand){ const rows=S.models.get(nm).rows;
+    for(const {k} of list) wt.set(k,(wt.get(k)||0)+rows); }
+  let kStar=null,bw=-1;
+  for(const [k,v] of wt) if(v>bw||(v===bw&&k<kStar)){kStar=k;bw=v;}
+  S.ratioMode=kStar;
+
+  for(const r of report){
+    if(!r.ok)continue;
+    const c=S.cfg[r.name], list=cand.get(r.name)||[], def=guessPreset(r.name);
+    const pick = list.find(x=>kStar!=null&&Math.abs(x.k-kStar)<1e-9) || list[0] || null;
+    if(pick){
+      c.old={i:pick.p.i,o:pick.p.o,cr:pick.p.cr,cw5:pick.p.cw5,cw1:pick.p.cw1,r:pick.k};
+      c.oldBase=pick.p.n;
+      c.neo={i:def.i,o:def.o,cr:def.cr,cw5:def.cw5,cw1:def.cw1,r:pick.k};
+      c.preset=def.n;
+      c.baseWrong = def!==pick.p;               // 套用了过期/错误的基础价
+      r.ratio={k:pick.k,base:pick.p.n,target:def.n,wrong:c.baseWrong};
+    }else{
+      // 认不出官方价：保持「生效单价 × 1」，正确价先与原价一致，避免误清零
+      c.oldBase=null; c.baseWrong=false;
+      if(!c.neo.i)c.neo={...c.old};
+      r.ratio=null;
+    }
+  }
   renderPrices();
   try{ applyQuantDetect(); }catch(e){ console.warn(e); }
   const okAll=report.filter(r=>r.ok);
@@ -896,20 +1173,52 @@ function autoInfer(silent){
       const pct=r.tot?(100*(r.tot-r.bad)/r.tot):0;
       const badge=r.bad===0?'<span class="pill g">100% 命中</span>':(pct>95?`<span class="pill w">${pct.toFixed(2)}% 命中</span>`:`<span class="pill r">仅 ${pct.toFixed(1)}% 命中</span>`);
       const d=r.g.diag;
-      return `<li><b>${esc(r.name)}</b> → 输入 <code>${r.g.i}</code> · 输出 <code>${r.g.o}</code> · 缓存读 <code>${r.g.cr}</code> · 缓存写 <code>${r.g.cw5}</code>/<code>${r.g.cw1}</code> ${badge}
+      const c=S.cfg[r.name];
+      const rr=r.ratio
+        ? `<div style="font-size:12.5px;margin-top:3px">＝ <b>${esc(r.ratio.base)}</b> <code>${c.old.i}/${c.old.o}/${c.old.cr}/${c.old.cw5}/${c.old.cw1}</code> <b>× 倍率 ${r.ratio.k}</b>
+            ${r.ratio.wrong?`<span class="pill r" style="margin-left:6px">基础价用错</span>`:`<span class="pill g" style="margin-left:6px">基础价正确</span>`}</div>`
+        : `<div style="font-size:12.5px;margin-top:3px" class="muted">未匹配到官方价，倍率暂记为 1，请手动填写</div>`;
+      return `<li><b>${esc(r.name)}</b> 实际生效单价 <code>${r.g.i}/${r.g.o}/${r.g.cr}/${r.g.cw5}/${r.g.cw1}</code> ${badge}${rr}
         <div class="muted" style="font-size:12px">样本 ${fmtInt(r.tot)} 行（其中含缓存写 ${fmtInt(d.cwRows)} 行：5m 档 ${fmtInt(d.hits5)}、1h 档 ${fmtInt(d.hits1)}）</div></li>`;
     }).join('');
+    // —— 倍率与基础价分析 ——
+    const withR=okAll.filter(r=>r.ratio);
+    const ks=[...new Set(withR.map(r=>r.ratio.k))].sort((a,b)=>a-b);
+    const wrong=withR.filter(r=>r.ratio.wrong);
+    let ratioNote='';
+    if(wrong.length){
+      ratioNote+=`<div class="notice e" style="display:block;margin:10px 0 0">⛔ <b>${wrong.length} 个模型套用了过期或错误的基础单价</b>
+        <ul style="margin:7px 0 0;padding-left:19px">${wrong.map(r=>{
+          const c=S.cfg[r.name], f=c.old.i/c.neo.i;
+          return `<li><b>${esc(r.name)}</b>：按「${esc(r.ratio.base)}」计费，应按「${esc(r.ratio.target)}」——倍率 ${r.ratio.k} 不变，单价本身多收 <b>${f.toFixed(4)}</b> 倍</li>`;
+        }).join('')}</ul>
+        <div style="margin-top:7px;font-size:12.5px">倍率已原样保留在「正确价」里，所以下面算出的差额<b>只包含基础单价的错误</b>，不含平台加价。</div></div>`;
+    }
+    if(ks.length){
+      ratioNote+=`<div class="notice ${ks.length===1?'i':'w'}" style="display:block;margin:10px 0 0">📐
+        <b>识别到的平台倍率：${ks.map(k=>`<code>${k}</code>`).join(' / ')}</b>
+        ${ks.length>1?'（各模型不同，已按模型分别填好）':''}
+        <div style="margin-top:6px;font-size:12.5px">倍率已填入「原价」和「正确价」两行。若某个模型的倍率不对，直接改「原价」行的倍率格——基础单价会自动按新倍率重新折算，始终满足 基础价 × 倍率 = 实际生效单价。</div>
+        <div style="margin-top:9px">
+          <button class="btn sec sm" id="btnRatio1">正确价倍率全部归 1（去掉平台加价）</button>
+          ${ks.length>1?`<button class="btn sec sm" id="btnRatioUnify" style="margin-left:8px">正确价倍率统一为 ${S.ratioMode}</button>`:''}
+        </div></div>`;
+    }
     const box=document.createElement('div');
     box.innerHTML=`<div class="notice ${perfect===okAll.length?'g':'w'}" style="display:block">
       <b>🔍 已从日志反推出原始单价</b>
       <ul style="margin:8px 0 0;padding-left:19px">${lines}</ul>
       <div style="margin-top:8px;font-size:12.5px">「命中」= 用反推价格重算样本行，金额与日志完全一致的比例。100% 说明单价与倍率完全确定。</div>
+      ${ratioNote}
     </div>`;
     const old=$('#priceArea').previousElementSibling;
     const host=$('#priceArea');
     const prev=document.getElementById('inferBox'); if(prev)prev.remove();
     box.firstElementChild.id='inferBox';
     host.parentNode.insertBefore(box.firstElementChild,host);
+    const setR=k=>{ for(const m in S.cfg)S.cfg[m].neo.r=k; renderPrices(); toast(`「正确价」倍率已全部设为 ${k}`); };
+    const b1=document.getElementById('btnRatio1');     if(b1)b1.onclick=()=>setR(1);
+    const b2=document.getElementById('btnRatioUnify'); if(b2)b2.onclick=()=>setR(S.ratioMode);
   }
   if(!silent)toast(`已反推 ${okAll.length} 个模型的原价`);
 }
@@ -967,6 +1276,15 @@ $('#btnRun').onclick=async()=>{
           : (S.quant&&S.quant.U>0 ? {U:S.quant.U,r:S.quant.r} : {U:0,r:'halfup'});
   S.quantUsed=Q;
   const qq=v=>qz(v,Q);
+  const tolRel=Math.max(0,(parseFloat($('#tolPm').value)||0)/1000);
+  // 预先把「基础单价 × 倍率」折成生效单价，避免 5×2.2=11.000000000000002 这类浮点噪声
+  const mul=(a,b)=>{ const v=a*b; return isFinite(v)?+v.toPrecision(12):0; };
+  const RES=new Map();
+  for(const m of S.models.keys()){
+    const c=S.cfg[m]; if(!c)continue;
+    const eff=(p)=>({i:mul(p.i,p.r),o:mul(p.o,p.r),cr:mul(p.cr,p.r),cw5:mul(p.cw5,p.r),cw1:mul(p.cw1,p.r)});
+    RES.set(m,{O:eff(c.old),N:eff(c.neo)});
+  }
 
   // 大文件：边算边写盘，输出不驻留内存
   let writer=null;
@@ -1012,14 +1330,15 @@ $('#btnRun').onclick=async()=>{
     const inT=num(f[M.in]),outT=num(f[M.out]);
     const crT=M.cr>=0?num(f[M.cr]):0, cwT=M.cw>=0?num(f[M.cw]):0;
     const rawAmt=String(f[M.amount]??''); const oldAmt=num(rawAmt);
-    const O=cfg.old,N=cfg.neo;
+    const R=RES.get(model)||{O:cfg.old,N:cfg.neo};
+    const O=R.O,N=R.N;   // 已是「基础单价 × 倍率」后的生效单价
 
     // 1) 判定缓存写档位，同时校验「原价」能否复现原金额
     let tier='—', cwNewP=N.cw5, ok=true;
-    const base=(inT*O.i+outT*O.o+crT*O.cr)/1e6*O.r*scale;
-    const tol=Q.U>0?5e-10:Math.max(Math.abs(oldAmt)*2e-5,2e-6);
+    const base=(inT*O.i+outT*O.o+crT*O.cr)/1e6*scale;
+    const tol=Math.max(Math.abs(oldAmt)*tolRel, Q.U>0?0.51/Q.U:2e-6);
     if(cwT>0){
-      const a5=qq(base+cwT*O.cw5/1e6*O.r*scale), a1=qq(base+cwT*O.cw1/1e6*O.r*scale);
+      const a5=qq(base+cwT*O.cw5/1e6*scale), a1=qq(base+cwT*O.cw1/1e6*scale);
       const e5=Math.abs(a5-oldAmt), e1=Math.abs(a1-oldAmt);
       if(S.cwMode==='5m'){ tier='5m'; ok=e5<=tol; }
       else if(S.cwMode==='1h'){ tier='1h'; cwNewP=N.cw1; ok=e1<=tol; }
@@ -1029,7 +1348,7 @@ $('#btnRun').onclick=async()=>{
         ok=false;
         if(fb==='derive'){
           // 反解本行真实缓存写单价，再按新旧输入价等比缩放
-          const denom=cwT/1e6*O.r*scale;
+          const denom=cwT/1e6*scale;
           const derived=denom>0?(oldAmt-base)/denom:0;
           cwNewP=derived*((O.i>0&&isFinite(derived))?(N.i/O.i):1); tier='推导';
         }else if(fb==='keep'){ tier='保持'; }
@@ -1043,7 +1362,7 @@ $('#btnRun').onclick=async()=>{
 
     // 2) 计算新金额（按识别出的额度口径量化）
     const newAmt = (!ok&&fb==='keep') ? oldAmt
-                 : qq((inT*N.i+outT*N.o+crT*N.cr+cwT*cwNewP)/1e6*N.r*scale);
+                 : qq((inT*N.i+outT*N.o+crT*N.cr+cwT*cwNewP)/1e6*scale);
     const dec=fixedDec!==null?fixedDec:((rawAmt.split('.')[1]||'').length||6);
     const newStr=newAmt.toFixed(dec);
     const diff=newAmt-oldAmt;
@@ -1186,13 +1505,21 @@ function buildReport(){
   const T=S.totals, d=T.neo-T.old, pct=T.old?d/T.old*100:0, over=d<0;
   const now=new Date().toLocaleString('zh-CN',{hour12:false});
   const Qd=S.quantUsed;
+  const ef=(o,k)=>{const v=o[k]*(+o.r||1);return isFinite(v)?+v.toPrecision(12):0;};
   const priceRows=T.per.map(p=>{
-    const O=S.cfg[p.model].old,N=S.cfg[p.model].neo;
-    return `<tr><td rowspan="2" class="m">${esc(p.model)}</td><td class="tag r">原价</td>
-      <td class="n">${O.i}</td><td class="n">${O.o}</td><td class="n">${O.cr}</td><td class="n">${O.cw5}</td><td class="n">${O.cw1}</td><td class="n">${O.r}</td></tr>
-      <tr><td class="tag g">正确价</td>
-      <td class="n">${N.i}</td><td class="n">${N.o}</td><td class="n">${N.cr}</td><td class="n">${N.cw5}</td><td class="n">${N.cw1}</td><td class="n">${N.r}</td></tr>`;
+    const c=S.cfg[p.model],O=c.old,N=c.neo;
+    const eff=o=>`${ef(o,'i')}/${ef(o,'o')}/${ef(o,'cr')}/${ef(o,'cw5')}/${ef(o,'cw1')}`;
+    const same=['i','o','cr','cw5','cw1'].every(k=>Math.abs(ef(O,k)-ef(N,k))<1e-9);
+    return `<tr><td rowspan="2" class="m">${esc(p.model)}${same?'':' <span style="color:var(--rd);font-weight:700">●</span>'}</td>
+      <td class="tag r">原价<div style="font-weight:400;font-size:11px;color:var(--txt3)">${esc(c.oldBase||'')}</div></td>
+      <td class="n">${O.i}</td><td class="n">${O.o}</td><td class="n">${O.cr}</td><td class="n">${O.cw5}</td><td class="n">${O.cw1}</td>
+      <td class="n"><b>${O.r}</b></td><td class="n">${eff(O)}</td></tr>
+      <tr><td class="tag g">正确价<div style="font-weight:400;font-size:11px;color:var(--txt3)">${esc(c.preset||'')}</div></td>
+      <td class="n">${N.i}</td><td class="n">${N.o}</td><td class="n">${N.cr}</td><td class="n">${N.cw5}</td><td class="n">${N.cw1}</td>
+      <td class="n"><b>${N.r}</b></td><td class="n">${eff(N)}</td></tr>`;
   }).join('');
+  const wrongList=T.per.filter(p=>{const c=S.cfg[p.model];
+    return !['i','o','cr','cw5','cw1'].every(k=>Math.abs(ef(c.old,k)-ef(c.neo,k))<1e-9);});
   const modelRows=T.per.map(p=>{const dd=p.neo-p.old,pp=p.old?dd/p.old*100:0;return `<tr>
     <td class="m">${esc(p.model)}</td><td class="n">${fmtInt(p.rows)}</td>
     <td class="n">${fmtInt(p.in)}</td><td class="n">${fmtInt(p.out)}</td><td class="n">${fmtInt(p.cr)}</td><td class="n">${fmtInt(p.cw)}</td>
@@ -1280,11 +1607,13 @@ tbody tr:last-child td{border-bottom:none}
   <h2>计费口径</h2>
   <p style="font-size:13.5px;color:var(--txt2);margin-top:0">
     金额 = ( 输入token×输入单价 + 输出token×输出单价 + 缓存读token×缓存读单价 + 缓存写token×缓存写单价 ) ÷ 1,000,000 × 倍率<br>
-    单价单位：美元 / 每百万 token。缓存写按 TTL 分 5 分钟档与 1 小时档，工具按每行原始金额自动判定档位（当前模式：<b>${S.cwMode==='auto'?'自动按行反推':(S.cwMode==='5m'?'全部按 5 分钟':'全部按 1 小时')}</b>）。
+    单价单位：美元 / 每百万 token。表中「基础单价」是官方价，乘以「倍率」（平台/分组加价）才是实际生效单价。
+    <b>原价与正确价的倍率保持一致</b>，因此下方差额只反映基础单价本身的错误，不含平台加价。
+    ${wrongList.length?`<br><span style="color:var(--rd)">● 标记的 ${wrongList.length} 个模型基础单价有误：${wrongList.map(p=>esc(p.model)).join('、')}</span>`:''}<br>缓存写按 TTL 分 5 分钟档与 1 小时档，工具按每行原始金额自动判定档位（当前模式：<b>${S.cwMode==='auto'?'自动按行反推':(S.cwMode==='5m'?'全部按 5 分钟':'全部按 1 小时')}</b>）。
     ${Qd&&Qd.U>0?`<br>额度量化：1 美元 = <b>${fmtInt(Qd.U)}</b> 额度单位，${{halfup:'四舍五入（半值进位）',ceil:'向上取整',floor:'向下取整'}[Qd.r]}——与 NewAPI 内部落库口径一致，纠正后金额即为系统实际会扣除的数值。`:''}
   </p>
   <div class="tw"><table>
-    <thead><tr><th>模型</th><th>档位</th><th class="n">输入</th><th class="n">输出</th><th class="n">缓存读</th><th class="n">缓存写 5m</th><th class="n">缓存写 1h</th><th class="n">倍率</th></tr></thead>
+    <thead><tr><th>模型</th><th>档位 / 基础价来源</th><th class="n">输入</th><th class="n">输出</th><th class="n">缓存读</th><th class="n">缓存写 5m</th><th class="n">缓存写 1h</th><th class="n">倍率</th><th class="n">生效单价（含倍率）</th></tr></thead>
     <tbody>${priceRows}</tbody></table></div>
 </div>
 
