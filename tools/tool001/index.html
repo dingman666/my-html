@@ -1,0 +1,671 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>文本处理工具 · 合并去重 / 分割 / 清洗</title>
+<style>
+  :root{
+    --bg:#f5f5f7;--bg-grad-1:#f5f5f7;--bg-grad-2:#ebebef;
+    --card:rgba(255,255,255,.72);--card-solid:#ffffff;
+    --text:#1d1d1f;--text-2:#6e6e73;--text-3:#8e8e93;
+    --line:rgba(0,0,0,.10);--line-strong:rgba(0,0,0,.16);
+    --accent:#0071e3;--accent-hover:#0077ed;--accent-soft:rgba(0,113,227,.10);
+    --green:#34c759;--orange:#ff9500;--red:#ff3b30;--purple:#af52de;
+    --shadow:0 4px 24px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04);
+    --shadow-lg:0 12px 48px rgba(0,0,0,.14);
+    --radius:20px;--radius-sm:12px;--field:#ffffff;--chip:rgba(0,0,0,.05);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#000000;--bg-grad-1:#1c1c1e;--bg-grad-2:#000000;
+      --card:rgba(28,28,30,.72);--card-solid:#1c1c1e;
+      --text:#f5f5f7;--text-2:#aeaeb2;--text-3:#8e8e93;
+      --line:rgba(255,255,255,.12);--line-strong:rgba(255,255,255,.20);
+      --accent:#0a84ff;--accent-hover:#409cff;--accent-soft:rgba(10,132,255,.16);
+      --green:#30d158;--orange:#ff9f0a;--red:#ff453a;--purple:#bf5af2;
+      --shadow:0 4px 24px rgba(0,0,0,.5),0 1px 2px rgba(0,0,0,.4);
+      --shadow-lg:0 12px 48px rgba(0,0,0,.6);
+      --field:#2c2c2e;--chip:rgba(255,255,255,.08);
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Helvetica Neue","PingFang SC","Microsoft YaHei",sans-serif;
+    color:var(--text);background:radial-gradient(1200px 700px at 80% -10%, var(--accent-soft), transparent 60%),linear-gradient(180deg,var(--bg-grad-1),var(--bg-grad-2));
+    background-attachment:fixed;min-height:100vh;-webkit-font-smoothing:antialiased;line-height:1.5;}
+  .wrap{max-width:1080px;margin:0 auto;padding:36px 20px 80px}
+  header{text-align:center;margin-bottom:22px}
+  header h1{font-size:clamp(24px,4vw,34px);font-weight:700;letter-spacing:-.02em;margin:0 0 6px}
+  header p{color:var(--text-2);font-size:14px;margin:0}
+
+  /* 顶部标签 */
+  .maintabs{display:flex;gap:6px;background:var(--chip);border-radius:14px;padding:5px;margin:0 auto 26px;max-width:560px}
+  .maintab{flex:1;text-align:center;border:none;background:none;cursor:pointer;padding:11px 10px;border-radius:10px;font-size:15px;font-weight:600;color:var(--text-2);font-family:inherit;transition:.15s}
+  .maintab.active{background:var(--card-solid);color:var(--text);box-shadow:var(--shadow)}
+
+  .page{display:none}
+  .page.active{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+  .card{background:var(--card);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);
+    border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px;margin-bottom:20px}
+  .card h2{font-size:13px;font-weight:600;letter-spacing:.02em;text-transform:uppercase;color:var(--text-3);margin:0 0 16px;display:flex;align-items:center;gap:8px}
+  .badge{font-size:11px;font-weight:600;text-transform:none;letter-spacing:0;padding:2px 9px;border-radius:999px;background:var(--chip);color:var(--text-2)}
+  .badge.on{background:var(--green);color:#fff}
+
+  .drop{border:2px dashed var(--line-strong);border-radius:var(--radius);padding:32px 24px;text-align:center;cursor:pointer;transition:.2s ease;background:var(--card)}
+  .drop.small{padding:22px}
+  .drop:hover{border-color:var(--accent);background:var(--accent-soft)}
+  .drop.drag{border-color:var(--accent);background:var(--accent-soft);transform:scale(1.005)}
+  .drop .icon{font-size:36px;line-height:1;margin-bottom:8px}
+  .drop .big{font-size:16px;font-weight:600;margin-bottom:4px}
+  .drop .sub{color:var(--text-2);font-size:13px}
+  .drop input{display:none}
+
+  .files{margin-top:16px;display:flex;flex-direction:column;gap:8px}
+  .file{display:flex;align-items:center;gap:12px;background:var(--chip);border-radius:var(--radius-sm);padding:10px 14px;font-size:14px}
+  .file .fi{font-size:18px}
+  .file .fn{flex:1;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .file .fm{color:var(--text-3);font-size:12px;white-space:nowrap}
+  .file .fx{cursor:pointer;color:var(--text-3);font-size:18px;border:none;background:none;padding:2px 6px;border-radius:6px}
+  .file .fx:hover{color:var(--red);background:var(--chip)}
+
+  .arcinfo{margin-top:16px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;background:var(--accent-soft);border:1px solid var(--line);border-radius:var(--radius-sm);padding:14px 18px}
+  .arcinfo .txt{font-size:15px}
+  .arcinfo .sub{font-size:12px;color:var(--text-2);margin-top:2px}
+  .arcinfo .tools{display:flex;gap:8px}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px}
+  .field label{display:block;font-size:13px;font-weight:600;margin-bottom:8px;color:var(--text-2)}
+  select,input[type=text],input[type=number]{width:100%;font-size:15px;color:var(--text);background:var(--field);border:1px solid var(--line);border-radius:12px;padding:11px 14px;outline:none;transition:.15s;font-family:inherit}
+  select:focus,input:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+  .hint{font-size:12px;color:var(--text-3);margin-top:6px}
+
+  .toggles{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+  .toggle{display:inline-flex;align-items:center;gap:9px;cursor:pointer;user-select:none;background:var(--chip);border-radius:999px;padding:8px 14px;font-size:14px;font-weight:500;transition:.15s}
+  .toggle:hover{background:var(--line)}
+  .toggle input{display:none}
+  .sw{width:38px;height:23px;border-radius:999px;background:var(--line-strong);position:relative;transition:.2s;flex:none}
+  .sw::after{content:"";position:absolute;top:2px;left:2px;width:19px;height:19px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+  .toggle input:checked + .sw{background:var(--green)}
+  .toggle input:checked + .sw::after{transform:translateX(15px)}
+
+  .bigmode{margin-top:16px;background:var(--chip);border-radius:var(--radius-sm);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .bigmode .l{font-size:14px;font-weight:600}
+  .bigmode .s{font-size:12px;color:var(--text-2);margin-top:2px}
+
+  .or-divider{display:flex;align-items:center;gap:12px;margin:18px 0 14px;color:var(--text-3);font-size:13px;font-weight:600}
+  .or-divider::before,.or-divider::after{content:"";flex:1;height:1px;background:var(--line)}
+
+  .actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}
+  .btn{border:none;border-radius:12px;padding:12px 22px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;transition:.15s;display:inline-flex;align-items:center;gap:7px}
+  .btn-primary{background:var(--accent);color:#fff}
+  .btn-primary:hover{background:var(--accent-hover)}
+  .btn-primary:disabled{opacity:.4;cursor:not-allowed}
+  .btn-ghost{background:var(--chip);color:var(--text)}
+  .btn-ghost:hover{background:var(--line)}
+  .btn-sm{padding:8px 14px;font-size:13px;border-radius:10px}
+
+  .progress{display:none;margin-top:20px}
+  .bar{height:8px;border-radius:999px;background:var(--chip);overflow:hidden}
+  .bar .fill{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent-hover));border-radius:999px;transition:width .1s linear}
+  .ptext{font-size:13px;color:var(--text-2);margin-top:8px;text-align:center}
+
+  .result{display:none}
+  .savebar{background:var(--card-solid);border:1px solid var(--green);border-radius:var(--radius-sm);padding:14px 18px;margin-bottom:18px;font-size:14px}
+  .savebar b{font-weight:700}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:14px;margin-bottom:20px}
+  .stat{background:var(--card-solid);border:1px solid var(--line);border-radius:16px;padding:16px 14px;text-align:center}
+  .stat .n{font-size:26px;font-weight:700;letter-spacing:-.02em}
+  .stat .l{font-size:12px;color:var(--text-2);margin-top:3px}
+  .stat.ok .n{color:var(--green)}
+  .stat.warn .n{color:var(--orange)}
+  .stat.dup .n{color:var(--red)}
+  .stat.arc .n{color:var(--purple)}
+
+  #mergePanel{display:none;border:1px solid var(--green);background:linear-gradient(180deg,var(--accent-soft),transparent)}
+  #mergePanel .q{font-size:16px;font-weight:600;margin-bottom:4px}
+  #mergePanel .qs{font-size:13px;color:var(--text-2)}
+
+  .tabs{display:flex;gap:6px;background:var(--chip);border-radius:12px;padding:4px;margin-bottom:16px;flex-wrap:wrap}
+  .subtab{flex:1;min-width:110px;text-align:center;border:none;background:none;cursor:pointer;padding:9px 10px;border-radius:9px;font-size:14px;font-weight:600;color:var(--text-2);font-family:inherit;transition:.15s}
+  .subtab.active{background:var(--card-solid);color:var(--text);box-shadow:var(--shadow)}
+  .subtab .cnt{font-size:12px;opacity:.7;margin-left:4px}
+  .pane{display:none}.pane.active{display:block}
+  .pane-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:12px;flex-wrap:wrap}
+  .pane-head .desc{font-size:13px;color:var(--text-2)}
+  .pane-head .tools{display:flex;gap:8px}
+  .note{font-size:12px;color:var(--orange);margin-bottom:8px;display:none}
+  textarea{width:100%;min-height:300px;resize:vertical;font-family:"SF Mono",ui-monospace,"Menlo","Consolas","Courier New",monospace;font-size:13px;line-height:1.7;color:var(--text);background:var(--field);border:1px solid var(--line);border-radius:14px;padding:16px;outline:none}
+  textarea:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+  .paste{min-height:120px}
+
+  .partlist{margin-top:14px;display:flex;flex-direction:column;gap:8px;max-height:360px;overflow:auto}
+  .part{display:flex;align-items:center;gap:12px;background:var(--chip);border-radius:var(--radius-sm);padding:10px 14px;font-size:14px}
+  .part .pn{flex:1;font-weight:600}
+  .part .pm{color:var(--text-3);font-size:12px}
+
+  .example{font-family:"SF Mono",ui-monospace,monospace;font-size:12px;background:var(--chip);border-radius:10px;padding:10px 12px;margin-top:6px;color:var(--text-2);white-space:pre-wrap;word-break:break-all}
+
+  .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--text);color:var(--bg);padding:12px 22px;border-radius:999px;font-size:14px;font-weight:600;box-shadow:var(--shadow-lg);opacity:0;pointer-events:none;transition:.25s;z-index:99;max-width:90vw;text-align:center}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  footer{text-align:center;color:var(--text-3);font-size:12px;margin-top:28px;line-height:1.7}
+</style>
+  <link rel="icon" href="./icon.png">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>文本处理工具</h1>
+    <p>合并去重 · 存档比对 · 分割 · 清洗　—　流式引擎，支持大文件，全程本地不上传</p>
+  </header>
+
+  <nav class="maintabs">
+    <button class="maintab active" data-page="merge">合并去重</button>
+    <button class="maintab" data-page="split">文本分割</button>
+    <button class="maintab" data-page="clean">文本清洗</button>
+  </nav>
+
+  <!-- ================= 合并去重 ================= -->
+  <section class="page active" id="page-merge">
+    <div class="card">
+      <h2>① 导入新文件</h2>
+      <div class="drop" id="mg-drop">
+        <input type="file" id="mg-file" accept=".txt,text/plain" multiple>
+        <div class="icon">📄</div>
+        <div class="big">点击选择 或 拖拽 TXT 到这里</div>
+        <div class="sub">支持多个 · 单文件可达数 GB · UTF-8</div>
+      </div>
+      <div class="files" id="mg-list"></div>
+      <div class="or-divider"><span>或 直接粘贴内容（与导入文件一起处理）</span></div>
+      <textarea id="mg-paste" class="paste" spellcheck="false" placeholder="每行一条，例如：&#10;alice@example.com:pass123"></textarea>
+      <div class="hint" id="mg-pasteHint">尚未输入</div>
+    </div>
+
+    <div class="card">
+      <h2>② 存档比对 <span class="badge" id="mg-arcBadge">未载入</span></h2>
+      <div class="drop small" id="mg-arcDrop">
+        <input type="file" id="mg-arcFile" accept=".txt,text/plain" multiple>
+        <div class="icon">🗄️</div>
+        <div class="big">导入存档文件</div>
+        <div class="sub">新数据会与存档逐条比对去重；处理后可并入形成新存档</div>
+      </div>
+      <div class="or-divider"><span>或 粘贴存档内容</span></div>
+      <textarea id="mg-arcPaste" class="paste" spellcheck="false" placeholder="也可直接粘贴一段作为存档，与导入存档叠加。"></textarea>
+      <div class="arcinfo" id="mg-arcInfo" style="display:none">
+        <div><div class="txt">当前存档：<b id="mg-arcMeta">—</b></div><div class="sub">存档已存在的行会被剔除</div></div>
+        <div class="tools"><button class="btn btn-ghost btn-sm" id="mg-arcDl">下载存档</button><button class="btn btn-ghost btn-sm" id="mg-arcClear">清空存档</button></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>③ 格式与选项</h2>
+      <div class="grid">
+        <div class="field"><label>行格式（分隔符）</label>
+          <select id="mg-sep">
+            <option value=":" selected>邮箱:密码　（冒号 :）</option>
+            <option value="----">邮箱----密码　（四连字符）</option>
+            <option value="|">邮箱|密码　（竖线）</option>
+            <option value=",">邮箱,密码　（逗号）</option>
+            <option value=";">邮箱;密码　（分号）</option>
+            <option value="\t">邮箱[Tab]密码</option>
+            <option value=" ">邮箱[空格]密码</option>
+            <option value="__custom__">自定义…</option>
+          </select>
+          <input type="text" id="mg-sepCustom" placeholder="自定义分隔符" style="display:none;margin-top:10px">
+          <div class="hint">用来判断“账号 + 分隔符 + 密码”</div>
+        </div>
+        <div class="field"><label>第一段校验</label>
+          <select id="mg-validate"><option value="email" selected>必须是邮箱格式</option><option value="nonempty">只需非空即可</option></select>
+          <div class="hint">不满足 → 单独进「格式异常」</div>
+        </div>
+        <div class="field"><label>去重方式</label>
+          <select id="mg-dedup"><option value="line" selected>整行去重</option><option value="account">按账号去重</option><option value="none">不去重（仅比对存档）</option></select>
+          <div class="hint">存档比对始终生效</div>
+        </div>
+      </div>
+      <div class="toggles">
+        <label class="toggle"><input type="checkbox" id="mg-trim" checked><span class="sw"></span>去除首尾空格</label>
+        <label class="toggle"><input type="checkbox" id="mg-empty" checked><span class="sw"></span>忽略空行</label>
+        <label class="toggle"><input type="checkbox" id="mg-lower" checked><span class="sw"></span>邮箱转小写</label>
+      </div>
+      <div class="bigmode">
+        <div><div class="l">大文件模式：结果直接写入文件夹</div><div class="s" id="mg-bigSub">开启后处理前选输出文件夹，边算边写盘，支持亿级。</div></div>
+        <label class="toggle"><input type="checkbox" id="mg-big"><span class="sw"></span><span id="mg-bigLabel">关闭</span></label>
+      </div>
+      <div class="actions"><button class="btn btn-primary" id="mg-run" disabled>🚀 开始处理</button><button class="btn btn-ghost" id="mg-clear">清空</button></div>
+      <div class="progress" id="mg-progress"><div class="bar"><div class="fill" id="mg-fill"></div></div><div class="ptext" id="mg-text">处理中…</div></div>
+    </div>
+
+    <div class="result" id="mg-result">
+      <div class="savebar" id="mg-savebar" style="display:none"></div>
+      <div class="stats" id="mg-stats"></div>
+      <div class="card" id="mergePanel">
+        <div class="q">本次共有 <b id="mg-fresh2">0</b> 条新增数据，是否并入存档？</div>
+        <div class="qs" id="mg-mergeSub">选择“并入存档”后合并生成新存档，可随时下载。</div>
+        <div class="actions"><button class="btn btn-primary" id="mg-mergeBtn">✅ 并入存档</button><button class="btn btn-primary" id="mg-dlFresh">⬇️ 下载新增数据</button><button class="btn btn-ghost" id="mg-skip">暂不归档</button></div>
+      </div>
+      <div class="card">
+        <div class="tabs">
+          <button class="subtab active" data-p="fresh">新增数据<span class="cnt" id="mg-c-fresh">0</span></button>
+          <button class="subtab" data-p="invalid">格式异常<span class="cnt" id="mg-c-invalid">0</span></button>
+          <button class="subtab" data-p="internal">本批重复<span class="cnt" id="mg-c-internal">0</span></button>
+          <button class="subtab" data-p="archive">存档已有<span class="cnt" id="mg-c-archive">0</span></button>
+        </div>
+        <div class="pane active" id="mg-pane-fresh"><div class="pane-head"><span class="desc">成功数据：合格、去重后、存档中不存在</span><div class="tools"><button class="btn btn-ghost btn-sm" data-copy="fresh">复制预览</button><button class="btn btn-primary btn-sm" data-dl="fresh">下载</button></div></div><div class="note" id="mg-note-fresh"></div><textarea id="mg-ta-fresh" readonly spellcheck="false"></textarea></div>
+        <div class="pane" id="mg-pane-invalid"><div class="pane-head"><span class="desc">不符合格式、被单独提取</span><div class="tools"><button class="btn btn-ghost btn-sm" data-copy="invalid">复制预览</button><button class="btn btn-primary btn-sm" data-dl="invalid">下载</button></div></div><div class="note" id="mg-note-invalid"></div><textarea id="mg-ta-invalid" readonly spellcheck="false"></textarea></div>
+        <div class="pane" id="mg-pane-internal"><div class="pane-head"><span class="desc">本批内部互相重复、被移除</span><div class="tools"><button class="btn btn-ghost btn-sm" data-copy="internal">复制预览</button><button class="btn btn-primary btn-sm" data-dl="internal">下载</button></div></div><div class="note" id="mg-note-internal"></div><textarea id="mg-ta-internal" readonly spellcheck="false"></textarea></div>
+        <div class="pane" id="mg-pane-archive"><div class="pane-head"><span class="desc">与存档重复、被剔除</span><div class="tools"><button class="btn btn-ghost btn-sm" data-copy="archive">复制预览</button><button class="btn btn-primary btn-sm" data-dl="archive">下载</button></div></div><div class="note" id="mg-note-archive"></div><textarea id="mg-ta-archive" readonly spellcheck="false"></textarea></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 文本分割 ================= -->
+  <section class="page" id="page-split">
+    <div class="card">
+      <h2>① 导入 / 输入</h2>
+      <div class="drop" id="sp-drop">
+        <input type="file" id="sp-file" accept=".txt,text/plain" multiple>
+        <div class="icon">✂️</div>
+        <div class="big">点击选择 或 拖拽 TXT</div>
+        <div class="sub">可多文件（会先合并再分割）· 支持大文件</div>
+      </div>
+      <div class="files" id="sp-list"></div>
+      <div class="or-divider"><span>或 直接粘贴内容</span></div>
+      <textarea id="sp-paste" class="paste" spellcheck="false" placeholder="把要分割的文本粘贴到这里，每行一条。"></textarea>
+      <div class="hint" id="sp-pasteHint">尚未输入</div>
+    </div>
+
+    <div class="card">
+      <h2>② 分割方式</h2>
+      <div class="grid">
+        <div class="field"><label>方式</label>
+          <select id="sp-mode"><option value="lines" selected>按行数分割（每份 N 行）</option><option value="parts">按份数分割（平均分成 M 份）</option><option value="size">按大小分割（每份 N MB）</option></select>
+        </div>
+        <div class="field" id="sp-linesWrap"><label>每份行数</label><input type="number" id="sp-lines" value="1000" min="1"><div class="hint">例如 1000 行一个文件</div></div>
+        <div class="field" id="sp-partsWrap" style="display:none"><label>份数</label><input type="number" id="sp-parts" value="5" min="1"><div class="hint">平均分成几份（会先统计总行数）</div></div>
+        <div class="field" id="sp-sizeWrap" style="display:none"><label>每份大小 (MB)</label><input type="number" id="sp-size" value="10" min="0.1" step="0.1"><div class="hint">按字节大小切分</div></div>
+        <div class="field"><label>文件名前缀</label><input type="text" id="sp-name" value="分割" placeholder="分割"><div class="hint">生成 前缀_001.txt、前缀_002.txt…</div></div>
+      </div>
+      <div class="toggles"><label class="toggle"><input type="checkbox" id="sp-empty"><span class="sw"></span>丢弃空行</label></div>
+      <div class="bigmode">
+        <div><div class="l">写入文件夹（推荐）</div><div class="s" id="sp-bigSub">开启后选一个文件夹，各份直接写盘；关闭则在下方逐份下载。</div></div>
+        <label class="toggle"><input type="checkbox" id="sp-big" checked><span class="sw"></span><span id="sp-bigLabel">开启</span></label>
+      </div>
+      <div class="actions"><button class="btn btn-primary" id="sp-run" disabled>✂️ 开始分割</button><button class="btn btn-ghost" id="sp-clear">清空</button></div>
+      <div class="progress" id="sp-progress"><div class="bar"><div class="fill" id="sp-fill"></div></div><div class="ptext" id="sp-text">处理中…</div></div>
+    </div>
+
+    <div class="result" id="sp-result">
+      <div class="savebar" id="sp-savebar" style="display:none"></div>
+      <div class="stats" id="sp-stats"></div>
+      <div class="card" id="sp-partsCard" style="display:none"><h2>各份文件</h2><div class="partlist" id="sp-partlist"></div></div>
+    </div>
+  </section>
+
+  <!-- ================= 文本清洗 ================= -->
+  <section class="page" id="page-clean">
+    <div class="card">
+      <h2>① 导入 / 输入</h2>
+      <div class="drop" id="cl-drop">
+        <input type="file" id="cl-file" accept=".txt,text/plain" multiple>
+        <div class="icon">🧹</div>
+        <div class="big">点击选择 或 拖拽 TXT</div>
+        <div class="sub">可多文件 · 支持大文件</div>
+      </div>
+      <div class="files" id="cl-list"></div>
+      <div class="or-divider"><span>或 直接粘贴内容</span></div>
+      <textarea id="cl-paste" class="paste" spellcheck="false" placeholder="rr32739874@dayplaygame.com:www123 — 1"></textarea>
+      <div class="hint" id="cl-pasteHint">尚未输入</div>
+    </div>
+
+    <div class="card">
+      <h2>② 清洗规则（按顺序应用）</h2>
+
+      <div class="toggles" style="margin-top:0"><label class="toggle"><input type="checkbox" id="cl-trunc" checked><span class="sw"></span>按分隔符截断</label></div>
+      <div class="grid" style="margin-top:14px">
+        <div class="field"><label>截断分隔符</label><input type="text" id="cl-truncDelim" value=" — "><div class="hint">遇到它就截断，例如 “ — ”</div></div>
+        <div class="field"><label>保留哪一侧</label><select id="cl-truncKeep"><option value="before" selected>保留分隔符之前</option><option value="after">保留分隔符之后</option></select></div>
+        <div class="field"><label>截断后去空格</label><select id="cl-truncTrim"><option value="yes" selected>是</option><option value="no">否</option></select></div>
+      </div>
+      <div class="example" id="cl-example">示例：处理中…</div>
+
+      <div class="or-divider"><span>更多规则（可选）</span></div>
+      <div class="grid">
+        <div class="field"><label>查找</label><input type="text" id="cl-find" placeholder="要替换的内容（留空则不替换）"></div>
+        <div class="field"><label>替换为</label><input type="text" id="cl-replace" placeholder="替换结果（可留空=删除）"></div>
+        <div class="field"><label>添加前缀</label><input type="text" id="cl-prefix" placeholder="每行开头加"></div>
+        <div class="field"><label>添加后缀</label><input type="text" id="cl-suffix" placeholder="每行结尾加"></div>
+        <div class="field"><label>关键词过滤</label><select id="cl-filterMode"><option value="none" selected>不过滤</option><option value="keep">只保留包含关键词的行</option><option value="drop">删除包含关键词的行</option></select></div>
+        <div class="field"><label>关键词</label><input type="text" id="cl-keyword" placeholder="配合上面的过滤方式"></div>
+      </div>
+      <div class="toggles">
+        <label class="toggle"><input type="checkbox" id="cl-trim" checked><span class="sw"></span>去首尾空格</label>
+        <label class="toggle"><input type="checkbox" id="cl-empty" checked><span class="sw"></span>删除空行</label>
+        <label class="toggle"><input type="checkbox" id="cl-dedup"><span class="sw"></span>整行去重</label>
+        <label class="toggle"><input type="checkbox" id="cl-regex"><span class="sw"></span>查找用正则</label>
+      </div>
+      <div class="bigmode">
+        <div><div class="l">写入文件夹</div><div class="s" id="cl-bigSub">开启后结果直接写盘（大文件推荐）；关闭则用「下载」保存。</div></div>
+        <label class="toggle"><input type="checkbox" id="cl-big"><span class="sw"></span><span id="cl-bigLabel">关闭</span></label>
+      </div>
+      <div class="actions"><button class="btn btn-primary" id="cl-run" disabled>🧹 开始清洗</button><button class="btn btn-ghost" id="cl-clear">清空</button></div>
+      <div class="progress" id="cl-progress"><div class="bar"><div class="fill" id="cl-fill"></div></div><div class="ptext" id="cl-text">处理中…</div></div>
+    </div>
+
+    <div class="result" id="cl-result">
+      <div class="savebar" id="cl-savebar" style="display:none"></div>
+      <div class="stats" id="cl-stats"></div>
+      <div class="card">
+        <div class="pane-head"><span class="desc">清洗后的结果</span><div class="tools"><button class="btn btn-ghost btn-sm" id="cl-copy">复制预览</button><button class="btn btn-primary btn-sm" id="cl-dl">下载</button></div></div>
+        <div class="note" id="cl-note"></div>
+        <textarea id="cl-ta" readonly spellcheck="false"></textarea>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    全程在浏览器本地完成，文件不会离开电脑。大文件建议开启「写入文件夹」（Chrome / Edge），结果直接写盘、内存占用最低；界面仅预览前 5000 行。
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===================== 共享库 ===================== */
+const $ = s => document.querySelector(s);
+const PREVIEW_MAX = 5000, FLUSH_BYTES = 4*1024*1024;
+const hasFS = typeof window.showDirectoryPicker === "function";
+const tick = () => new Promise(r=>setTimeout(r,0));
+function fmtSize(b){ if(b<1024)return b.toFixed(0)+" B"; if(b<1048576)return (b/1024).toFixed(1)+" KB"; if(b<1073741824)return (b/1048576).toFixed(1)+" MB"; return (b/1073741824).toFixed(2)+" GB"; }
+let toTimer; function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toTimer); toTimer=setTimeout(()=>t.classList.remove("show"),3000); }
+function download(blob,name){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(()=>URL.revokeObjectURL(a.href),8000); toast("已下载 "+name); }
+function bindDrop(dropEl,inputEl,onFiles){ dropEl.addEventListener("click",()=>inputEl.click()); dropEl.addEventListener("dragover",e=>{e.preventDefault();dropEl.classList.add("drag");}); dropEl.addEventListener("dragleave",()=>dropEl.classList.remove("drag")); dropEl.addEventListener("drop",e=>{e.preventDefault();dropEl.classList.remove("drag");onFiles(e.dataTransfer.files);}); inputEl.addEventListener("change",e=>{onFiles(e.target.files);inputEl.value="";}); }
+const pickTxt = list => [...list].filter(f=>/\.txt$/i.test(f.name)||f.type==="text/plain");
+function progressCtl(box,fill,text){ return { show(t){box.style.display="block";this.set(0,t);}, set(p,t){fill.style.width=Math.min(100,Math.max(0,p)).toFixed(1)+"%";if(t)text.textContent=t;}, hide(){box.style.display="none";} }; }
+
+function hashKey(str){ let h1=0x811c9dc5|0,h2=0xdeadbeef|0; for(let i=0;i<str.length;i++){const c=str.charCodeAt(i); h1=Math.imul(h1^c,0x01000193); h2=Math.imul(h2^c,0x85ebca77); h2^=h2>>>13;} return [h1>>>0,h2>>>0]; }
+function HashSet(){ this.cap=1<<16; this.mask=this.cap-1; this.data=new Uint32Array(this.cap*2); this.size=0; this.hasZero=false; this.limit=(this.cap*0.72)|0; }
+HashSet.prototype.presize=function(e){ let cap=1<<16,need=Math.ceil(e/0.72); while(cap<need&&cap<(1<<30))cap<<=1; if(cap>this.cap){this.cap=cap;this.mask=cap-1;this.data=new Uint32Array(cap*2);this.limit=(cap*0.72)|0;} };
+HashSet.prototype._slot=function(a,b){ let i=(Math.imul(a,0x9e3779b1)^Math.imul(b,0x85ebca77))>>>0; i&=this.mask; const d=this.data; while(true){const j=i*2,x=d[j],y=d[j+1]; if(x===0&&y===0)return i; if(x===a&&y===b)return i; i=(i+1)&this.mask;} };
+HashSet.prototype.has=function(a,b){ if(a===0&&b===0)return this.hasZero; const i=this._slot(a,b),j=i*2; return this.data[j]===a&&this.data[j+1]===b; };
+HashSet.prototype.add=function(a,b){ if(a===0&&b===0){if(this.hasZero)return false;this.hasZero=true;this.size++;return true;} const i=this._slot(a,b),j=i*2; if(this.data[j]===a&&this.data[j+1]===b)return false; this.data[j]=a;this.data[j+1]=b;this.size++; if(this.size>this.limit)this._grow(); return true; };
+HashSet.prototype._grow=function(){ const old=this.data; this.cap<<=1;this.mask=this.cap-1;this.data=new Uint32Array(this.cap*2);this.limit=(this.cap*0.72)|0; for(let k=0;k<old.length;k+=2){const a=old[k],b=old[k+1]; if(a!==0||b!==0){const i=this._slot(a,b);this.data[i*2]=a;this.data[i*2+1]=b;}} };
+
+function Sink(filename){ this.filename=filename; this.count=0; this.preview=[]; this.buf=""; this.mode="mem"; this.chunks=[]; this.dir=null; this.writable=null; this.fileHandle=null; }
+Sink.prototype.setFS=function(dir){ this.mode="fs"; this.dir=dir; this.chunks=null; };
+Sink.prototype._ensure=async function(){ if(this.mode==="fs"&&!this.writable){ this.fileHandle=await this.dir.getFileHandle(this.filename,{create:true}); this.writable=await this.fileHandle.createWritable(); } };
+Sink.prototype.add=function(line){ if(this.preview.length<PREVIEW_MAX)this.preview.push(line); this.count++; this.buf+=line+"\n"; return this.buf.length>=FLUSH_BYTES; };
+Sink.prototype.flush=async function(){ if(!this.buf)return; if(this.mode==="fs"){await this._ensure();await this.writable.write(this.buf);} else {this.chunks.push(this.buf);} this.buf=""; };
+Sink.prototype.close=async function(){ await this.flush(); if(this.writable)await this.writable.close(); };
+Sink.prototype.blobParts=async function(){ if(this.mode==="fs"&&this.fileHandle){return [await this.fileHandle.getFile()];} return this.chunks?this.chunks.slice():[]; };
+
+async function streamSource(source,onLine,addBytes){
+  if(source.file && typeof source.file.stream==="function"){
+    const reader=source.file.stream().getReader(); const dec=new TextDecoder("utf-8"); let carry="";
+    while(true){ const {done,value}=await reader.read(); if(done)break; addBytes(value.byteLength);
+      const text=carry+dec.decode(value,{stream:true}); let start=0,nl;
+      while((nl=text.indexOf("\n",start))!==-1){ let end=nl; if(end>start&&text.charCodeAt(end-1)===13)end--; const r=onLine(text.slice(start,end)); if(r){ if(typeof r.flush==="function")await r.flush(); else await r; } start=nl+1; }
+      carry=text.slice(start); await tick();
+    }
+    carry+=dec.decode();
+    if(carry.length){ let end=carry.length; if(carry.charCodeAt(end-1)===13)end--; const r=onLine(carry.slice(0,end)); if(r){ if(typeof r.flush==="function")await r.flush(); else await r; } }
+  } else {
+    const t=source.file? await source.file.text() : source.text; let start=0,nl,cnt=0;
+    while(true){ nl=t.indexOf("\n",start); const end=nl===-1?t.length:nl; let e=end; if(e>start&&t.charCodeAt(e-1)===13)e--;
+      if(start<t.length||nl!==-1){ const r=onLine(t.slice(start,e)); if(r){ if(typeof r.flush==="function")await r.flush(); else await r; } addBytes((end-start)+1); }
+      if(nl===-1)break; start=nl+1; if((++cnt%40000)===0)await tick();
+    }
+  }
+}
+
+/* 通用：文件列表渲染 + 粘贴行数 */
+function renderFileList(box,files,onChange){ box.innerHTML=""; files.forEach((f,i)=>{ const el=document.createElement("div"); el.className="file"; el.innerHTML='<span class="fi">📄</span><span class="fn"></span><span class="fm">'+fmtSize(f.size)+'</span><button class="fx">✕</button>'; el.querySelector(".fn").textContent=f.name; el.querySelector(".fx").onclick=()=>{files.splice(i,1);onChange();}; box.appendChild(el); }); }
+function countPasteLines(v){ v=v.replace(/[\r\n]+$/,""); if(v.trim()==="")return 0; let n=1; for(let i=0;i<v.length;i++)if(v.charCodeAt(i)===10)n++; return n; }
+
+/* ===================== 顶部标签切换 ===================== */
+document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll(".maintab").forEach(x=>x.classList.toggle("active",x===b));
+  document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id==="page-"+b.dataset.page));
+}));
+
+/* ===================== 模块一：合并去重 ===================== */
+(function(){
+  const files=[], arcSources=[]; let lastRun=null, running=false;
+  const paste=$("#mg-paste"), arcPaste=$("#mg-arcPaste");
+  const prog=progressCtl($("#mg-progress"),$("#mg-fill"),$("#mg-text"));
+  const big=$("#mg-big");
+
+  bindDrop($("#mg-drop"),$("#mg-file"),list=>{ const a=pickTxt(list); if(!a.length){toast("请选择 .txt");return;} files.push(...a); render(); });
+  function render(){ renderFileList($("#mg-list"),files,render); updateRun(); }
+  function updateRun(){ const has=files.length||paste.value.trim(); $("#mg-run").disabled=!has; const n=countPasteLines(paste.value); $("#mg-pasteHint").textContent=n?`已输入约 ${n.toLocaleString()} 行`:"尚未输入"; }
+  paste.addEventListener("input",updateRun);
+  $("#mg-clear").onclick=()=>{ files.length=0; render(); paste.value=""; updateRun(); $("#mg-result").style.display="none"; toast("已清空"); };
+
+  bindDrop($("#mg-arcDrop"),$("#mg-arcFile"),list=>{ const a=pickTxt(list); if(!a.length){toast("请选择 .txt");return;} a.forEach(f=>arcSources.push({file:f})); renderArc(); toast(`已加入 ${a.length} 个存档文件`); });
+  arcPaste.addEventListener("input",renderArc);
+  function arcActive(){ const l=arcSources.slice(); if(arcPaste.value.trim())l.push({text:arcPaste.value}); return l; }
+  function arcBytes(){ let b=0; for(const s of arcSources)b+=s.file.size; if(arcPaste.value.trim())b+=new Blob([arcPaste.value]).size; return b; }
+  function renderArc(){ const l=arcActive(),on=l.length>0; $("#mg-arcInfo").style.display=on?"flex":"none"; $("#mg-arcBadge").textContent=on?"已载入":"未载入"; $("#mg-arcBadge").classList.toggle("on",on); if(on){ const parts=[]; if(arcSources.length)parts.push(arcSources.length+" 个文件"); if(arcPaste.value.trim())parts.push("粘贴内容"); $("#mg-arcMeta").textContent=`${parts.join(" + ")} · 约 ${fmtSize(arcBytes())}`; } }
+  $("#mg-arcClear").onclick=()=>{ arcSources.length=0; arcPaste.value=""; renderArc(); toast("已清空存档"); };
+  $("#mg-arcDl").onclick=()=>{ const l=arcActive(); if(!l.length){toast("没有存档");return;} const parts=[]; l.forEach((s,i)=>{if(i)parts.push("\n");parts.push(s.file||s.text);}); download(new Blob(parts,{type:"text/plain;charset=utf-8"}),"存档.txt"); };
+
+  const sepSel=$("#mg-sep"),sepCustom=$("#mg-sepCustom");
+  sepSel.onchange=()=>{ sepCustom.style.display=sepSel.value==="__custom__"?"block":"none"; };
+  function getSep(){ if(sepSel.value==="__custom__")return sepCustom.value||":"; if(sepSel.value==="\\t")return "\t"; return sepSel.value; }
+  const EMAIL_RE=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  big.onchange=()=>{ $("#mg-bigLabel").textContent=big.checked?"开启":"关闭"; if(big.checked&&!hasFS)toast("浏览器不支持写盘，将用内存模式"); };
+  if(!hasFS)$("#mg-bigSub").textContent="当前浏览器不支持直接写盘（建议 Chrome/Edge）；开启后用内存+下载，超大数据受限。";
+
+  $("#mg-run").onclick=()=>{ if(!running)run(); };
+  let procBytes=0,totalBytes=1,phase="";
+  function rep(){ prog.set(procBytes/totalBytes*100, `${phase}　${fmtSize(procBytes)} / ${fmtSize(totalBytes)}`); }
+
+  async function run(){
+    if(!files.length&&!paste.value.trim()){toast("请先导入或粘贴");return;}
+    running=true; $("#mg-run").disabled=true; $("#mergePanel").style.display="none"; $("#mg-savebar").style.display="none";
+    let dir=null,useFS=false;
+    if(big.checked&&hasFS){ try{dir=await window.showDirectoryPicker({mode:"readwrite"});useFS=true;}catch(e){running=false;$("#mg-run").disabled=false;toast("已取消：未选文件夹");return;} }
+    const sep=getSep(),vMode=$("#mg-validate").value,dMode=$("#mg-dedup").value,trim=$("#mg-trim").checked,skipEmpty=$("#mg-empty").checked,lower=$("#mg-lower").checked;
+    function keyOf(n){ if(dMode==="account"){const i=n.indexOf(sep);return (i>0?n.slice(0,i):n).trim().toLowerCase();} return n; }
+    function normArc(raw){ let line=trim?raw.trim():raw; if(lower){const i=line.indexOf(sep); if(i>0&&i<line.length-sep.length){const acc=trim?line.slice(0,i).trim():line.slice(0,i); line=acc.toLowerCase()+sep+line.slice(i+sep.length);}} return line; }
+    prog.show("准备中…"); await tick();
+    const arcList=arcActive();
+    const newBytes=files.reduce((a,f)=>a+f.size,0)+(paste.value.trim()?new Blob([paste.value]).size:0);
+    const aB=arcBytes(); totalBytes=newBytes+aB||1; procBytes=0;
+    const archiveSet=new HashSet(),seenSet=new HashSet();
+    if(aB)archiveSet.presize(Math.ceil(aB/24)); seenSet.presize(Math.ceil(newBytes/24));
+
+    if(arcList.length){ phase="建立存档索引…"; for(const s of arcList){ await streamSource(s,raw=>{ if(!(skipEmpty&&raw.trim()==="")){const h=hashKey(keyOf(normArc(raw)));archiveSet.add(h[0],h[1]);} return null; },n=>{procBytes+=n;rep();}); } }
+    const archiveLoaded=arcList.length>0;
+
+    phase="处理新数据…";
+    const fresh=new Sink("新增数据.txt"),invalid=new Sink("格式异常.txt"),internal=new Sink("本批重复.txt"),arcDup=new Sink("存档已有.txt");
+    if(useFS)[fresh,invalid,internal,arcDup].forEach(s=>s.setFS(dir));
+    function onLine(raw){
+      let line=trim?raw.trim():raw; if(skipEmpty&&line.trim()==="")return null;
+      const idx=line.indexOf(sep); let ok=idx>0&&idx<line.length-sep.length; let account=ok?(trim?line.slice(0,idx).trim():line.slice(0,idx)):"";
+      if(ok)ok=vMode==="email"?EMAIL_RE.test(account):account.length>0;
+      if(!ok)return invalid.add(line)?invalid:null;
+      const normLine=lower?account.toLowerCase()+sep+line.slice(idx+sep.length):line;
+      const h=hashKey(keyOf(normLine));
+      if(dMode!=="none"){ if(!seenSet.add(h[0],h[1]))return internal.add(normLine)?internal:null; }
+      if(archiveLoaded&&archiveSet.has(h[0],h[1]))return arcDup.add(normLine)?arcDup:null;
+      return fresh.add(normLine)?fresh:null;
+    }
+    const srcs=files.map(f=>({file:f})); if(paste.value.trim())srcs.push({text:paste.value});
+    for(const s of srcs){ await streamSource(s,onLine,n=>{procBytes+=n;rep();}); }
+    prog.set(100,"写入中…"); await tick();
+    await Promise.all([fresh.close(),invalid.close(),internal.close(),arcDup.close()]);
+    lastRun={fresh,invalid,internal,archive:arcDup,dir:useFS?dir:null,sources:arcList.slice()};
+    renderResults(useFS,dir);
+    prog.hide(); running=false; $("#mg-run").disabled=false; $("#mg-result").scrollIntoView({behavior:"smooth",block:"start"});
+    toast(`完成：新增 ${fresh.count.toLocaleString()}｜异常 ${invalid.count.toLocaleString()}｜本批去重 ${internal.count.toLocaleString()}｜存档去重 ${arcDup.count.toLocaleString()}`);
+  }
+
+  function fillPane(key,sink){ const ta=$("#mg-ta-"+key),note=$("#mg-note-"+key); ta.value=sink.preview.join("\n"); if(sink.count>sink.preview.length){note.style.display="block";note.textContent=`共 ${sink.count.toLocaleString()} 行，仅预览前 ${sink.preview.length.toLocaleString()} 行；完整请下载或到文件夹查看。`;}else note.style.display="none"; }
+  function renderResults(useFS,dir){
+    const r=lastRun; fillPane("fresh",r.fresh);fillPane("invalid",r.invalid);fillPane("internal",r.internal);fillPane("archive",r.archive);
+    $("#mg-c-fresh").textContent=r.fresh.count.toLocaleString(); $("#mg-c-invalid").textContent=r.invalid.count.toLocaleString(); $("#mg-c-internal").textContent=r.internal.count.toLocaleString(); $("#mg-c-archive").textContent=r.archive.count.toLocaleString();
+    const valid=r.fresh.count+r.internal.count+r.archive.count; const sources=files.length+(paste.value.trim()?1:0);
+    $("#mg-stats").innerHTML=`<div class="stat"><div class="n">${sources}</div><div class="l">数据来源</div></div><div class="stat"><div class="n">${valid.toLocaleString()}</div><div class="l">合格行数</div></div><div class="stat ok"><div class="n">${r.fresh.count.toLocaleString()}</div><div class="l">新增数据</div></div><div class="stat warn"><div class="n">${r.invalid.count.toLocaleString()}</div><div class="l">格式异常</div></div><div class="stat dup"><div class="n">${r.internal.count.toLocaleString()}</div><div class="l">本批去重</div></div><div class="stat arc"><div class="n">${r.archive.count.toLocaleString()}</div><div class="l">存档去重</div></div>`;
+    if(useFS){ $("#mg-savebar").style.display="block"; $("#mg-savebar").innerHTML=`✅ 完整结果已写入文件夹 <b>${dir.name}</b>：新增数据.txt / 格式异常.txt / 本批重复.txt / 存档已有.txt（空类别不生成）。`; } else $("#mg-savebar").style.display="none";
+    setPane("fresh"); $("#mg-result").style.display="block";
+    $("#mg-fresh2").textContent=r.fresh.count.toLocaleString();
+    $("#mg-mergeSub").textContent=r.sources.length?`选择“并入存档”后合并进当前存档，生成新存档${useFS?"（写入文件夹）":"（下载）"}。`:`尚未载入存档；将用这批新增创建新存档。`;
+    const mb=$("#mg-mergeBtn"); mb.disabled=false; mb.textContent="✅ 并入存档"; $("#mergePanel").style.display=r.fresh.count>0?"block":"none";
+  }
+  function setPane(name){ document.querySelectorAll("#page-merge .subtab").forEach(t=>t.classList.toggle("active",t.dataset.p===name)); document.querySelectorAll("#page-merge .pane").forEach(p=>p.classList.toggle("active",p.id==="mg-pane-"+name)); }
+  document.querySelectorAll("#page-merge .subtab").forEach(t=>t.addEventListener("click",()=>setPane(t.dataset.p)));
+
+  $("#mg-mergeBtn").onclick=async ()=>{
+    if(!lastRun||lastRun.fresh.count===0){toast("没有可归档数据");return;}
+    const mb=$("#mg-mergeBtn"); mb.disabled=true; mb.textContent="合并中…";
+    try{ const parts=[]; lastRun.sources.forEach(s=>{parts.push(s.file||s.text);parts.push("\n");}); (await lastRun.fresh.blobParts()).forEach(p=>parts.push(p)); const blob=new Blob(parts,{type:"text/plain;charset=utf-8"});
+      if(lastRun.dir){ const fh=await lastRun.dir.getFileHandle("新存档.txt",{create:true}); const w=await fh.createWritable(); await w.write(blob); await w.close(); arcSources.length=0; arcPaste.value=""; arcSources.push({file:await fh.getFile()}); renderArc(); toast("已写入 新存档.txt 并设为当前存档"); }
+      else { download(blob,"新存档.txt"); arcSources.length=0; arcPaste.value=""; arcSources.push({file:blob}); renderArc(); toast("已生成 新存档.txt 并设为当前存档"); }
+      mb.textContent="✅ 已并入存档"; $("#mg-arcInfo").scrollIntoView({behavior:"smooth",block:"center"});
+    }catch(e){ mb.disabled=false; mb.textContent="✅ 并入存档"; toast("归档失败："+(e.message||e)); }
+  };
+  $("#mg-dlFresh").onclick=()=>dlSink(lastRun&&lastRun.fresh,"新增数据.txt");
+  $("#mg-skip").onclick=()=>{ $("#mergePanel").style.display="none"; toast("已跳过归档"); };
+  document.querySelectorAll("#page-merge [data-copy]").forEach(b=>b.onclick=async ()=>{ const s=lastRun&&lastRun[b.dataset.copy]; if(!s||!s.count){toast("没有内容");return;} try{await navigator.clipboard.writeText(s.preview.join("\n"));toast(s.count>s.preview.length?`已复制预览前 ${s.preview.length.toLocaleString()} 行`:`已复制 ${s.count.toLocaleString()} 行`);}catch{toast("复制失败，请下载");} });
+  const nameMap={fresh:"新增数据.txt",invalid:"格式异常.txt",internal:"本批重复.txt",archive:"存档已有.txt"};
+  document.querySelectorAll("#page-merge [data-dl]").forEach(b=>b.onclick=()=>dlSink(lastRun&&lastRun[b.dataset.dl],nameMap[b.dataset.dl]));
+  async function dlSink(s,name){ if(!s||!s.count){toast("没有内容");return;} download(new Blob(await s.blobParts(),{type:"text/plain;charset=utf-8"}),name); }
+
+  renderArc(); updateRun();
+})();
+
+/* ===================== 模块二：文本分割 ===================== */
+(function(){
+  const files=[]; let running=false;
+  const paste=$("#sp-paste");
+  const prog=progressCtl($("#sp-progress"),$("#sp-fill"),$("#sp-text"));
+  bindDrop($("#sp-drop"),$("#sp-file"),list=>{ const a=pickTxt(list); if(!a.length){toast("请选择 .txt");return;} files.push(...a); render(); });
+  function render(){ renderFileList($("#sp-list"),files,render); updateRun(); }
+  function updateRun(){ $("#sp-run").disabled=!(files.length||paste.value.trim()); const n=countPasteLines(paste.value); $("#sp-pasteHint").textContent=n?`已输入约 ${n.toLocaleString()} 行`:"尚未输入"; }
+  paste.addEventListener("input",updateRun);
+  $("#sp-clear").onclick=()=>{ files.length=0; render(); paste.value=""; updateRun(); $("#sp-result").style.display="none"; toast("已清空"); };
+  $("#sp-mode").onchange=()=>{ const m=$("#sp-mode").value; $("#sp-linesWrap").style.display=m==="lines"?"block":"none"; $("#sp-partsWrap").style.display=m==="parts"?"block":"none"; $("#sp-sizeWrap").style.display=m==="size"?"block":"none"; };
+  $("#sp-big").onchange=()=>{ $("#sp-bigLabel").textContent=$("#sp-big").checked?"开启":"关闭"; if($("#sp-big").checked&&!hasFS)toast("浏览器不支持写盘，将逐份下载"); };
+  if(!hasFS)$("#sp-bigSub").textContent="当前浏览器不支持写盘；将在下方逐份下载（建议 Chrome/Edge 以直接写文件夹）。";
+
+  function sources(){ const s=files.map(f=>({file:f})); if(paste.value.trim())s.push({text:paste.value}); return s; }
+  function totalBytes(){ let b=files.reduce((a,f)=>a+f.size,0); if(paste.value.trim())b+=new Blob([paste.value]).size; return b||1; }
+
+  $("#sp-run").onclick=()=>{ if(!running)run(); };
+  async function run(){
+    const srcs=sources(); if(!srcs.length){toast("请先导入或粘贴");return;}
+    running=true; $("#sp-run").disabled=true; $("#sp-result").style.display="none"; $("#sp-partsCard").style.display="none";
+    const mode=$("#sp-mode").value, skipEmpty=$("#sp-empty").checked, base=($("#sp-name").value.trim()||"分割");
+    const useFS=$("#sp-big").checked&&hasFS; let dir=null;
+    if(useFS){ try{dir=await window.showDirectoryPicker({mode:"readwrite"});}catch(e){running=false;$("#sp-run").disabled=false;toast("已取消：未选文件夹");return;} }
+    prog.show("准备中…"); await tick();
+    let per=Infinity, sizeLimit=Infinity, totalLines=0;
+    if(mode==="lines"){ per=Math.max(1,parseInt($("#sp-lines").value)||1000); }
+    else if(mode==="parts"){ prog.set(0,"统计总行数…"); for(const s of srcs){ await streamSource(s,l=>{ if(!(skipEmpty&&l.trim()==="")) totalLines++; return null; },()=>{}); } const parts=Math.max(1,parseInt($("#sp-parts").value)||2); per=Math.max(1,Math.ceil(totalLines/parts)); }
+    else if(mode==="size"){ sizeLimit=Math.max(1,(parseFloat($("#sp-size").value)||10)*1024*1024); }
+    const pad=n=>String(n).padStart(3,"0");
+    const st={part:1,count:0,bytes:0,writer:null,parts:[]};
+    const mkWriter=idx=>{ const w=new Sink(`${base}_${pad(idx)}.txt`); if(useFS)w.setFS(dir); return w; };
+    st.writer=mkWriter(1);
+    let procBytes=0; const tot=totalBytes();
+    const rep=()=>prog.set(procBytes/tot*100,`分割中…　${fmtSize(procBytes)} / ${fmtSize(tot)}`);
+    async function rotate(){ const old=st.writer; if(!useFS)st.parts.push(old); await old.close(); st.part++; st.count=0; st.bytes=0; st.writer=mkWriter(st.part); }
+    function onLine(line){ if(skipEmpty&&line.trim()==="")return null; const nf=st.writer.add(line); st.count++; st.bytes+=line.length+1; const full=mode==="size"?st.bytes>=sizeLimit:st.count>=per; if(full)return rotate(); if(nf)return st.writer; return null; }
+    phase:{ for(const s of srcs){ await streamSource(s,onLine,n=>{procBytes+=n;rep();}); } }
+    if(st.writer.count>0){ if(!useFS)st.parts.push(st.writer); await st.writer.close(); }
+    const partCount=useFS?st.part-(st.writer.count>0?0:1):st.parts.length;
+    const totalOut=useFS?null:st.parts.reduce((a,w)=>a+w.count,0);
+    prog.hide(); running=false; $("#sp-run").disabled=false;
+    renderResult(useFS,dir,st,partCount,base,pad);
+    toast(`分割完成：${(useFS?st.part-(st.writer.count>0?0:1):st.parts.length)} 份`);
+  }
+  function renderResult(useFS,dir,st,partCount,base,pad){
+    const nParts=useFS?partCount:st.parts.length;
+    const totalOut=useFS?null:st.parts.reduce((a,w)=>a+w.count,0);
+    $("#sp-stats").innerHTML=`<div class="stat"><div class="n">${nParts}</div><div class="l">份数</div></div>`+(totalOut!==null?`<div class="stat ok"><div class="n">${totalOut.toLocaleString()}</div><div class="l">总行数</div></div>`:"");
+    if(useFS){ $("#sp-savebar").style.display="block"; $("#sp-savebar").innerHTML=`✅ 已写入文件夹 <b>${dir.name}</b>：${base}_001.txt … ${base}_${pad(nParts)}.txt`; $("#sp-partsCard").style.display="none"; }
+    else { $("#sp-savebar").style.display="none"; const box=$("#sp-partlist"); box.innerHTML=""; st.parts.forEach((w,i)=>{ const el=document.createElement("div"); el.className="part"; el.innerHTML=`<span class="pn"></span><span class="pm">${w.count.toLocaleString()} 行</span><button class="btn btn-primary btn-sm">下载</button>`; el.querySelector(".pn").textContent=w.filename; el.querySelector("button").onclick=async ()=>download(new Blob(await w.blobParts(),{type:"text/plain;charset=utf-8"}),w.filename); box.appendChild(el); }); $("#sp-partsCard").style.display="block"; }
+    $("#sp-result").style.display="block"; $("#sp-result").scrollIntoView({behavior:"smooth",block:"start"});
+  }
+  updateRun();
+})();
+
+/* ===================== 模块三：文本清洗 ===================== */
+(function(){
+  const files=[]; let running=false;
+  const paste=$("#cl-paste");
+  const prog=progressCtl($("#cl-progress"),$("#cl-fill"),$("#cl-text"));
+  bindDrop($("#cl-drop"),$("#cl-file"),list=>{ const a=pickTxt(list); if(!a.length){toast("请选择 .txt");return;} files.push(...a); render(); });
+  function render(){ renderFileList($("#cl-list"),files,render); updateRun(); }
+  function updateRun(){ $("#cl-run").disabled=!(files.length||paste.value.trim()); const n=countPasteLines(paste.value); $("#cl-pasteHint").textContent=n?`已输入约 ${n.toLocaleString()} 行`:"尚未输入"; }
+  paste.addEventListener("input",()=>{updateRun();updateExample();});
+  $("#cl-clear").onclick=()=>{ files.length=0; render(); paste.value=""; updateRun(); updateExample(); $("#cl-result").style.display="none"; toast("已清空"); };
+  ["cl-trunc","cl-truncDelim","cl-truncKeep","cl-truncTrim","cl-find","cl-replace","cl-prefix","cl-suffix","cl-trim","cl-regex","cl-filterMode","cl-keyword"].forEach(id=>{ const el=$("#"+id); el.addEventListener("input",updateExample); el.addEventListener("change",updateExample); });
+  $("#cl-big").onchange=()=>{ $("#cl-bigLabel").textContent=$("#cl-big").checked?"开启":"关闭"; if($("#cl-big").checked&&!hasFS)toast("浏览器不支持写盘，将用下载"); };
+  if(!hasFS)$("#cl-bigSub").textContent="当前浏览器不支持写盘；将用「下载」保存（建议 Chrome/Edge）。";
+
+  function buildTransform(){
+    const trunc=$("#cl-trunc").checked, delim=$("#cl-truncDelim").value, keep=$("#cl-truncKeep").value, tTrim=$("#cl-truncTrim").value==="yes";
+    const findS=$("#cl-find").value, repS=$("#cl-replace").value, useRe=$("#cl-regex").checked;
+    const prefix=$("#cl-prefix").value, suffix=$("#cl-suffix").value;
+    const trim=$("#cl-trim").checked, dropEmpty=$("#cl-empty").checked;
+    const fMode=$("#cl-filterMode").value, kw=$("#cl-keyword").value;
+    let re=null; if(findS&&useRe){ try{re=new RegExp(findS,"g");}catch(e){re=null;} }
+    return function(raw){
+      let line=raw;
+      if(trim)line=line.trim();
+      if(trunc&&delim){ const i=line.indexOf(delim); if(i!==-1){ line=keep==="before"?line.slice(0,i):line.slice(i+delim.length); if(tTrim)line=line.trim(); } }
+      if(findS){ line = re ? line.replace(re,repS) : line.split(findS).join(repS); }
+      if(prefix||suffix)line=prefix+line+suffix;
+      if(fMode!=="none"&&kw){ const has=line.indexOf(kw)!==-1; if(fMode==="keep"&&!has)return null; if(fMode==="drop"&&has)return null; }
+      if(dropEmpty&&line.trim()==="")return null;
+      return line;
+    };
+  }
+  function updateExample(){
+    const src=(paste.value.split(/\r?\n/).find(x=>x.trim()!=="")) || "rr32739874@dayplaygame.com:www123 — 1";
+    const t=buildTransform(); const out=t(src);
+    $("#cl-example").textContent = `示例输入：${src}\n清洗结果：${out===null?"（此行会被删除）":out}`;
+  }
+
+  function sources(){ const s=files.map(f=>({file:f})); if(paste.value.trim())s.push({text:paste.value}); return s; }
+  function totalBytes(){ let b=files.reduce((a,f)=>a+f.size,0); if(paste.value.trim())b+=new Blob([paste.value]).size; return b||1; }
+
+  $("#cl-run").onclick=()=>{ if(!running)run(); };
+  async function run(){
+    const srcs=sources(); if(!srcs.length){toast("请先导入或粘贴");return;}
+    running=true; $("#cl-run").disabled=true; $("#cl-result").style.display="none"; $("#cl-savebar").style.display="none";
+    const useFS=$("#cl-big").checked&&hasFS; let dir=null;
+    if(useFS){ try{dir=await window.showDirectoryPicker({mode:"readwrite"});}catch(e){running=false;$("#cl-run").disabled=false;toast("已取消：未选文件夹");return;} }
+    const transform=buildTransform();
+    const dedup=$("#cl-dedup").checked; const seen=dedup?new HashSet():null;
+    const out=new Sink("清洗结果.txt"); if(useFS)out.setFS(dir);
+    if(dedup)seen.presize(Math.ceil(totalBytes()/24));
+    prog.show("清洗中…"); let procBytes=0; const tot=totalBytes();
+    const rep=()=>prog.set(procBytes/tot*100,`清洗中…　${fmtSize(procBytes)} / ${fmtSize(tot)}`);
+    let inN=0,removed=0;
+    function onLine(raw){ inN++; const line=transform(raw); if(line===null){removed++;return null;} if(seen){const h=hashKey(line); if(!seen.add(h[0],h[1])){removed++;return null;}} return out.add(line)?out:null; }
+    for(const s of srcs){ await streamSource(s,onLine,n=>{procBytes+=n;rep();}); }
+    prog.set(100,"写入中…"); await tick(); await out.close();
+    prog.hide(); running=false; $("#cl-run").disabled=false;
+    // 渲染
+    const ta=$("#cl-ta"),note=$("#cl-note"); ta.value=out.preview.join("\n");
+    if(out.count>out.preview.length){note.style.display="block";note.textContent=`共 ${out.count.toLocaleString()} 行，仅预览前 ${out.preview.length.toLocaleString()} 行；完整请下载或到文件夹查看。`;}else note.style.display="none";
+    $("#cl-stats").innerHTML=`<div class="stat"><div class="n">${inN.toLocaleString()}</div><div class="l">输入行数</div></div><div class="stat ok"><div class="n">${out.count.toLocaleString()}</div><div class="l">输出行数</div></div><div class="stat dup"><div class="n">${removed.toLocaleString()}</div><div class="l">删除/去重</div></div>`;
+    if(useFS){ $("#cl-savebar").style.display="block"; $("#cl-savebar").innerHTML=`✅ 已写入文件夹 <b>${dir.name}</b>：清洗结果.txt`; }
+    lastOut=out; $("#cl-result").style.display="block"; $("#cl-result").scrollIntoView({behavior:"smooth",block:"start"});
+    toast(`清洗完成：输出 ${out.count.toLocaleString()} 行，删除 ${removed.toLocaleString()} 行`);
+  }
+  let lastOut=null;
+  $("#cl-copy").onclick=async ()=>{ if(!lastOut||!lastOut.count){toast("没有内容");return;} try{await navigator.clipboard.writeText(lastOut.preview.join("\n"));toast(lastOut.count>lastOut.preview.length?`已复制预览前 ${lastOut.preview.length.toLocaleString()} 行`:`已复制 ${lastOut.count.toLocaleString()} 行`);}catch{toast("复制失败，请下载");} };
+  $("#cl-dl").onclick=async ()=>{ if(!lastOut||!lastOut.count){toast("没有内容");return;} download(new Blob(await lastOut.blobParts(),{type:"text/plain;charset=utf-8"}),"清洗结果.txt"); };
+
+  updateRun(); updateExample();
+})();
+</script>
+</body>
+</html>
