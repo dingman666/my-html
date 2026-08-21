@@ -103,6 +103,12 @@
       "name": "NewAPI 价格纠正器",
       "path": "tools/newapi/",
       "icon": "tools/newapi/icon.png"
+    },
+    {
+      "id": "tool001",
+      "name": "文本处理工具 · 合并去重 / 分割 / 清洗",
+      "path": "tools/tool001/",
+      "icon": "tools/tool001/icon.png"
     }
   ]
 }
