@@ -14,6 +14,7 @@
     --accent-hover: #0077ed;
     --danger: #ff3b30;
     --danger-hover: #ff5147;
+    --success: #34c759;
     --control-bg: #ebebf0;
     --input-bg: #f5f5f7;
     --divider: rgba(0, 0, 0, 0.08);
@@ -31,6 +32,7 @@
       --accent-hover: #3395ff;
       --danger: #ff453a;
       --danger-hover: #ff6961;
+      --success: #30d158;
       --control-bg: #2c2c2e;
       --input-bg: #2c2c2e;
       --divider: rgba(255, 255, 255, 0.1);
@@ -390,6 +392,64 @@
     min-height: 15px;
   }
   .decode-status.failed { color: var(--danger); font-size: 13px; }
+
+  .seen-indicator {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    width: fit-content;
+    margin-top: 12px;
+    padding: 6px 13px;
+    border-radius: 980px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .seen-indicator .seen-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .seen-indicator.seen { background: rgba(52, 199, 89, 0.12); color: #248a3d; }
+  .seen-indicator.seen .seen-dot { background: var(--success); }
+  .seen-indicator.unseen { background: rgba(255, 59, 48, 0.1); color: #d70015; }
+  .seen-indicator.unseen .seen-dot { background: var(--danger); }
+  .seen-indicator.danger {
+    background: var(--danger);
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 0 0 3px rgba(255, 59, 48, 0.22);
+    animation: seen-danger-pulse 1.6s ease-in-out infinite;
+  }
+  .seen-indicator.danger .seen-dot { background: #fff; }
+  @keyframes seen-danger-pulse {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(255, 59, 48, 0.22); }
+    50% { box-shadow: 0 0 0 6px rgba(255, 59, 48, 0.12); }
+  }
+  @media (prefers-color-scheme: dark) {
+    .seen-indicator.seen { background: rgba(48, 209, 88, 0.16); color: #30d158; }
+    .seen-indicator.unseen { background: rgba(255, 69, 58, 0.18); color: #ff6961; }
+    .seen-indicator.danger { background: var(--danger); box-shadow: 0 0 0 3px rgba(255, 69, 58, 0.28); }
+  }
+
+  .addr-diff {
+    margin-top: 8px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: var(--input-bg);
+    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.9;
+    overflow-x: auto;
+  }
+  .addr-diff-line { display: flex; gap: 8px; white-space: nowrap; width: max-content; }
+  .addr-diff-label { color: var(--text-secondary); flex-shrink: 0; }
+  .addr-diff-char {
+    background: rgba(255, 59, 48, 0.22);
+    color: var(--danger);
+    font-weight: 700;
+    border-radius: 3px;
+  }
 
   /* ===== 常用信息 ===== */
   .fav-layout {
@@ -811,6 +871,11 @@
         <span class="count" id="charCount">0 字符</span>
       </div>
       <textarea id="textInput" placeholder="输入任意文字、网址或联系方式…" autofocus></textarea>
+      <div class="seen-indicator" id="encodeSeenIndicator" style="display:none">
+        <span class="seen-dot"></span>
+        <span id="encodeSeenText"></span>
+      </div>
+      <div class="addr-diff" id="encodeAddrDiff" style="display:none"></div>
 
       <div class="option-group">
         <div class="option-title">
@@ -906,6 +971,11 @@
       </div>
       <textarea id="resultText" readonly placeholder="识别出的文字将显示在这里"></textarea>
       <p class="decode-status" id="decodeStatus"></p>
+      <div class="seen-indicator" id="decodeSeenIndicator" style="display:none">
+        <span class="seen-dot"></span>
+        <span id="decodeSeenText"></span>
+      </div>
+      <div class="addr-diff" id="decodeAddrDiff" style="display:none"></div>
       <div class="actions" style="margin-top: 16px">
         <button class="btn btn-primary" id="copyTextBtn" disabled>拷贝文字</button>
         <button class="btn btn-secondary" id="openLinkBtn" style="display:none">打开链接</button>
@@ -1074,6 +1144,210 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return { count: count, size: size };
   }
 
+  /* ================= 出现预警：之前是否用过这段文字 ================= */
+
+  var HISTORY_STORAGE_KEY = 'qr_text_history_v1';
+  var HISTORY_MAX_ENTRIES = 500;
+
+  function loadHistory() {
+    try {
+      var raw = localStorage.getItem(HISTORY_STORAGE_KEY);
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') return parsed;
+      }
+    } catch (e) { /* 数据损坏，回退到空历史 */ }
+    return {};
+  }
+
+  function saveHistory(hist) {
+    try { localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(hist)); }
+    catch (e) { /* 存储不可用时静默失败，不影响主流程 */ }
+  }
+
+  function isTextInFavorites(text) {
+    var t = text.trim();
+    var data = loadFavData();
+    return data.items.some(function (it) { return it.text === t; });
+  }
+
+  // ---- 区块链地址识别：不针对某一条链，而是用通用形态特征覆盖所有链 ----
+  // 具名规则只用于生成更友好的提示文案，不影响判断逻辑本身；
+  // 任何不在列表里的链，只要形态像地址（不含空白、长度适中、字母数字混合），都会走下面的通用兜底。
+  var NAMED_ADDRESS_PATTERNS = [
+    { name: 'EVM 地址（ETH / BSC / Polygon 等）', re: /^0x[0-9a-fA-F]{40}$/ },
+    { name: 'Aptos / Sui 地址', re: /^0x[0-9a-fA-F]{64}$/ },
+    { name: 'Tron 地址', re: /^T[1-9A-HJ-NP-Za-km-z]{33}$/ },
+    { name: 'Bitcoin 地址', re: /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/ },
+    { name: 'Bitcoin / Litecoin 地址（Bech32）', re: /^(bc1|ltc1|tb1)[a-z0-9]{25,70}$/i },
+    { name: 'Litecoin 地址', re: /^[LM][a-km-zA-HJ-NP-Z1-9]{26,33}$/ },
+    { name: 'Dogecoin 地址', re: /^D[5-9A-HJ-NP-U][1-9A-HJ-NP-Za-km-z]{32}$/ },
+    { name: 'Ripple(XRP) 地址', re: /^r[1-9A-HJ-NP-Za-km-z]{24,34}$/ },
+    { name: 'Cosmos 生态地址', re: /^[a-z]{2,12}1[a-z0-9]{38,58}$/ },
+    { name: 'Cardano 地址', re: /^addr1[a-z0-9]{50,110}$/ },
+    { name: 'Stellar(XLM) 地址', re: /^G[A-Z2-7]{55}$/ },
+    { name: 'TON 地址', re: /^[EU]Q[A-Za-z0-9_-]{46}$/ },
+    { name: 'Solana / Polkadot 等 Base58 地址', re: /^[1-9A-HJ-NP-Za-km-z]{32,48}$/ }
+  ];
+
+  // 通用地址/密钥形态：不含空白、长度在常见地址范围内、字母数字混合（排除普通单词或长数字串）
+  function isAddressLike(text) {
+    var t = (text || '').trim();
+    if (!t || /\s/.test(t)) return false;
+    if (t.length < 25 || t.length > 120) return false;
+    if (!/^[A-Za-z0-9_:.-]+$/.test(t)) return false;
+    if (!(/[0-9]/.test(t) && /[A-Za-z]/.test(t))) return false;
+    return true;
+  }
+
+  function addressLabel(text) {
+    var t = text.trim();
+    for (var i = 0; i < NAMED_ADDRESS_PATTERNS.length; i++) {
+      if (NAMED_ADDRESS_PATTERNS[i].re.test(t)) return NAMED_ADDRESS_PATTERNS[i].name;
+    }
+    return '疑似区块链地址/密钥';
+  }
+
+  // 逐字符比较等长字符串，返回不同的位置下标数组
+  function charDiffPositions(a, b) {
+    var positions = [];
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] !== b[i]) positions.push(i);
+    }
+    return positions;
+  }
+
+  function collectKnownTexts() {
+    var seen = {};
+    var out = [];
+    var hist = loadHistory();
+    Object.keys(hist).forEach(function (t) {
+      seen[t] = true;
+      out.push({ text: t, fromFavorite: false });
+    });
+    var data = loadFavData();
+    data.items.forEach(function (it) {
+      if (seen[it.text]) {
+        out.forEach(function (o) { if (o.text === it.text) o.fromFavorite = true; });
+      } else {
+        seen[it.text] = true;
+        out.push({ text: it.text, fromFavorite: true });
+      }
+    });
+    return out;
+  }
+
+  // 在已知文本中找出与目标地址高度相似但不完全相同的一条（同长度、字符差异很小）
+  // 差异阈值按长度的 15% 估算：对随机生成的地址/密钥来说，两条独立字符串偶然落入这个阈值的概率极低，
+  // 能命中基本可以确定是"故意构造的仿冒地址"或"剪贴板被篡改"，而不是巧合。
+  function findSimilarAddress(text) {
+    var t = text.trim();
+    var candidates = collectKnownTexts();
+    var best = null;
+    for (var i = 0; i < candidates.length; i++) {
+      var k = candidates[i].text;
+      if (k === t || k.length !== t.length || !isAddressLike(k)) continue;
+      var diff = charDiffPositions(t, k);
+      if (!diff.length) continue;
+      var threshold = Math.max(1, Math.ceil(t.length * 0.15));
+      if (diff.length > threshold) continue;
+      if (!best || diff.length < best.diffPositions.length) {
+        best = { text: k, diffPositions: diff, fromFavorite: candidates[i].fromFavorite };
+      }
+    }
+    return best;
+  }
+
+  // 生成 / 识别 成功时调用，记录一次"出现"；疑似被篡改的地址不写入历史，
+  // 避免用几次之后反而被误判成"常用地址"、警告消失
+  function recordTextOccurrence(text) {
+    var t = (text || '').trim();
+    if (!t) return;
+    var info = getOccurrenceInfo(t);
+    if (info && info.similar && !info.seen) return;
+    var hist = loadHistory();
+    hist[t] = (hist[t] || 0) + 1;
+    var keys = Object.keys(hist);
+    if (keys.length > HISTORY_MAX_ENTRIES) {
+      keys.sort(function (a, b) { return hist[a] - hist[b]; });
+      keys.slice(0, keys.length - HISTORY_MAX_ENTRIES).forEach(function (k) { delete hist[k]; });
+    }
+    saveHistory(hist);
+  }
+
+  function getOccurrenceInfo(text) {
+    var t = (text || '').trim();
+    if (!t) return null;
+    var historyCount = loadHistory()[t] || 0;
+    var inFavorites = isTextInFavorites(t);
+    var seen = historyCount > 0 || inFavorites;
+    var info = { text: t, seen: seen, historyCount: historyCount, inFavorites: inFavorites, similar: null };
+    if (!seen && isAddressLike(t)) info.similar = findSimilarAddress(t);
+    return info;
+  }
+
+  function renderAddressDiff(diffEl, current, known, positions) {
+    diffEl.style.display = 'block';
+    diffEl.innerHTML = '';
+    var posSet = {};
+    positions.forEach(function (p) { posSet[p] = true; });
+
+    function buildLine(label, str) {
+      var line = document.createElement('div');
+      line.className = 'addr-diff-line';
+      var labelSpan = document.createElement('span');
+      labelSpan.className = 'addr-diff-label';
+      labelSpan.textContent = label;
+      line.appendChild(labelSpan);
+      var codeSpan = document.createElement('span');
+      for (var i = 0; i < str.length; i++) {
+        var ch = document.createElement('span');
+        ch.textContent = str[i];
+        if (posSet[i]) ch.className = 'addr-diff-char';
+        codeSpan.appendChild(ch);
+      }
+      line.appendChild(codeSpan);
+      return line;
+    }
+
+    diffEl.appendChild(buildLine('已知：', known));
+    diffEl.appendChild(buildLine('当前：', current));
+  }
+
+  // 根据预先取得的 info 渲染指示条；info 为 null 时隐藏。diffEl 可省略（不需要地址逐字对比时）。
+  function renderSeenIndicator(indicatorEl, textEl, info, diffEl) {
+    if (!info) {
+      indicatorEl.style.display = 'none';
+      if (diffEl) { diffEl.style.display = 'none'; diffEl.innerHTML = ''; }
+      return;
+    }
+    indicatorEl.style.display = 'flex';
+    if (info.seen) {
+      indicatorEl.className = 'seen-indicator seen';
+      var parts = [];
+      if (info.inFavorites) parts.push('已收藏');
+      if (info.historyCount > 0) parts.push('用过 ' + info.historyCount + ' 次');
+      textEl.textContent = '✓ 之前出现过' + (parts.length ? '（' + parts.join(' · ') + '）' : '');
+      if (diffEl) { diffEl.style.display = 'none'; diffEl.innerHTML = ''; }
+    } else if (info.similar) {
+      indicatorEl.className = 'seen-indicator danger';
+      textEl.textContent = '⚠ 与' + (info.similar.fromFavorite ? '收藏的' : '之前用过的') + ' ' + addressLabel(info.text) +
+        ' 高度相似但不完全一致（' + info.similar.diffPositions.length + ' 处不同），疑似被篡改，请勿直接转账！';
+      if (diffEl) renderAddressDiff(diffEl, info.text, info.similar.text, info.similar.diffPositions);
+    } else {
+      indicatorEl.className = 'seen-indicator unseen';
+      textEl.textContent = '⚠ 全新内容，之前未出现过';
+      if (diffEl) { diffEl.style.display = 'none'; diffEl.innerHTML = ''; }
+    }
+  }
+
+  // 直接根据当前文字实时刷新指示条（用于输入过程中的即时检查），返回计算出的 info 供调用方复用
+  function updateSeenIndicator(indicatorEl, textEl, text, diffEl) {
+    var info = getOccurrenceInfo(text);
+    renderSeenIndicator(indicatorEl, textEl, info, diffEl);
+    return info;
+  }
+
   /* ================= 文字 → 二维码 ================= */
 
   var textInput = document.getElementById('textInput');
@@ -1093,6 +1367,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   var copyBtn = document.getElementById('copyBtn');
   var addFavFromEncodeBtn = document.getElementById('addFavFromEncodeBtn');
   var clearBtn = document.getElementById('clearBtn');
+  var encodeSeenIndicator = document.getElementById('encodeSeenIndicator');
+  var encodeSeenText = document.getElementById('encodeSeenText');
+  var encodeAddrDiff = document.getElementById('encodeAddrDiff');
+  var lastRecordedEncodeText = null;
 
   var ecLevel = 'M';
   var ecNames = { L: '低 · 可遮挡约 7%', M: '中 · 可遮挡约 15%', Q: '较高 · 可遮挡约 25%', H: '高 · 可遮挡约 30%' };
@@ -1111,8 +1389,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     charCount.textContent = text.length + ' 字符';
     clearBtn.disabled = text.length === 0;
     addFavFromEncodeBtn.disabled = text.trim().length === 0;
+    // 先检查"是否出现过"再决定是否记录本次，这样指示条反映的是"此前"的状态，不会被本次操作自己影响
+    updateSeenIndicator(encodeSeenIndicator, encodeSeenText, text, encodeAddrDiff);
 
     if (!text.trim()) {
+      lastRecordedEncodeText = null;
       hasQR = false;
       qrFrame.style.display = 'none';
       errorMsg.style.display = 'none';
@@ -1133,6 +1414,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       qrFrame.style.background = bgColor.value;
       qrMeta.textContent = result.size + ' × ' + result.size + ' px · ' + result.count + ' × ' + result.count + ' 模块 · 容错 ' + ecLevel;
       setEncodeButtons(true);
+
+      // 只要成功生成过二维码就记录"出现过"，不要求必须下载/收藏；
+      // 用 lastRecordedEncodeText 去重，避免同一段文字只是调整颜色/尺寸就被重复计数
+      if (text !== lastRecordedEncodeText) {
+        recordTextOccurrence(text);
+        lastRecordedEncodeText = text;
+      }
     } catch (e) {
       hasQR = false;
       qrFrame.style.display = 'none';
@@ -1235,6 +1523,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   var resultText = document.getElementById('resultText');
   var decodeStatus = document.getElementById('decodeStatus');
   var decodeCount = document.getElementById('decodeCount');
+  var decodeSeenIndicator = document.getElementById('decodeSeenIndicator');
+  var decodeSeenText = document.getElementById('decodeSeenText');
+  var decodeAddrDiff = document.getElementById('decodeAddrDiff');
   var copyTextBtn = document.getElementById('copyTextBtn');
   var openLinkBtn = document.getElementById('openLinkBtn');
   var toEncodeBtn = document.getElementById('toEncodeBtn');
@@ -1277,10 +1568,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
     if (result && result.data !== '') {
       decodedText = bytesToText(result);
+      // 先取"识别前"是否出现过，再记录本次识别，避免把这次扫描本身算作"之前出现过"
+      var seenInfo = getOccurrenceInfo(decodedText);
+      recordTextOccurrence(decodedText);
       resultText.value = decodedText;
       decodeCount.textContent = decodedText.length + ' 字符';
       decodeStatus.className = 'decode-status';
       decodeStatus.textContent = '识别成功';
+      renderSeenIndicator(decodeSeenIndicator, decodeSeenText, seenInfo, decodeAddrDiff);
       copyTextBtn.disabled = false;
       toEncodeBtn.disabled = false;
       addFavFromDecodeBtn.disabled = false;
@@ -1291,6 +1586,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       decodeCount.textContent = '';
       decodeStatus.className = 'decode-status failed';
       decodeStatus.textContent = '未能识别到二维码，请换一张更清晰、更完整的图片试试。';
+      renderSeenIndicator(decodeSeenIndicator, decodeSeenText, null, decodeAddrDiff);
       copyTextBtn.disabled = true;
       toEncodeBtn.disabled = true;
       addFavFromDecodeBtn.disabled = true;
@@ -1330,6 +1626,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     decodeCount.textContent = '';
     decodeStatus.className = 'decode-status';
     decodeStatus.textContent = '';
+    renderSeenIndicator(decodeSeenIndicator, decodeSeenText, null, decodeAddrDiff);
     copyTextBtn.disabled = true;
     toEncodeBtn.disabled = true;
     addFavFromDecodeBtn.disabled = true;
@@ -1937,6 +2234,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     saveFavData(data);
     closeItemModal();
     if (currentMode === 'favorites') renderFavorites();
+    // 收藏状态变化会影响"出现预警"的判断，刷新对应面板上的指示条
+    if (currentMode === 'encode') updateSeenIndicator(encodeSeenIndicator, encodeSeenText, textInput.value, encodeAddrDiff);
+    else if (currentMode === 'decode' && decodedText) updateSeenIndicator(decodeSeenIndicator, decodeSeenText, decodedText, decodeAddrDiff);
   });
 
   /* ---- 分组 弹窗（新建 / 重命名 / 删除） ---- */
