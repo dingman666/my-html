@@ -208,6 +208,15 @@
   .pw-item .pv{flex:1;font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;word-break:break-all;line-height:1.5}
   .pw-item .pv .d{color:var(--accent)}.pw-item .pv .s{color:var(--red)}.pw-item .pv .sep{color:var(--text-3)}.pw-item .pv .u{color:var(--purple)}
   .pw-item .btn-sm{padding:5px 11px;font-size:12px;flex:none}
+  .pw-item .pv{cursor:pointer}
+  .pw-item.copied{background:rgba(52,199,89,.12)}
+  .pw-item.copied .ix{color:var(--green)}
+  .pw-item .ok{display:none;color:var(--green);font-size:12px;font-weight:600;flex:none}
+  .pw-item.copied .ok{display:inline}
+  .pw-item.copied .btn-sm{opacity:.55}
+  .pw-item .ix{width:auto;min-width:40px;font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-weight:600}
+  .pw-idx{flex:none;font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:14px;font-weight:700;color:var(--text-3);background:var(--chip);border-radius:8px;padding:3px 9px;margin-right:14px;align-self:flex-start;margin-top:6px}
+  .pw-numbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
   .pw-check input[type=text]{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace}
   .pw-tips{font-size:13px;color:var(--text-2);line-height:1.8;margin:0;padding-left:18px}
   .pw-tips li b{color:var(--text)}
@@ -646,6 +655,7 @@
     <div class="card">
       <h2>① 生成结果 <span class="badge on" id="pw-cryptoBadge">加密级随机源</span><span class="badge" id="pw-modeBadge">随机字符</span></h2>
       <div class="pw-hero" id="pw-hero" title="点击复制">
+        <span class="pw-idx" id="pw-heroIdx" style="display:none">1</span>
         <div class="pw-display" id="pw-display"></div>
       </div>
       <div class="pw-hero-tools">
@@ -792,7 +802,12 @@
     </div>
 
     <div class="card" id="pw-batchCard" style="display:none">
-      <div class="pane-head"><span class="desc">批量结果 <b id="pw-batchCount">0</b> 条</span><div class="tools"><button class="btn btn-ghost btn-sm" id="pw-copyAll">复制全部</button><button class="btn btn-primary btn-sm" id="pw-dlAll">下载 TXT</button></div></div>
+      <div class="pane-head"><span class="desc">批量结果 <b id="pw-batchCount">0</b> 条 · 已复制 <b id="pw-copiedCount">0</b> 条</span><div class="tools"><button class="btn btn-ghost btn-sm" id="pw-copyAll">复制全部</button><button class="btn btn-ghost btn-sm" id="pw-copyRest">复制未复制的</button><button class="btn btn-primary btn-sm" id="pw-dlAll">下载 TXT</button></div></div>
+      <div class="pw-numbar">
+        <label class="toggle"><input type="checkbox" id="pw-numOn" checked><span class="sw"></span>序号</label>
+        <select id="pw-numFmt" style="width:auto"><option value="dot" selected>1. 密码</option><option value="paren">1) 密码</option><option value="bracket">[1] 密码</option><option value="pad">001 密码</option><option value="tab">1⇥密码（Tab，可直接贴进表格）</option><option value="colon">1:密码</option></select>
+        <span class="hint" style="margin:0">序号同时用于显示、复制全部与下载；单条「复制」只复制密码本身，复制过的行会打 ✓ 标记</span>
+      </div>
       <div class="pw-batch" id="pw-batch"></div>
       <textarea id="pw-batchTa" readonly spellcheck="false" style="display:none"></textarea>
     </div>
@@ -1667,22 +1682,41 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
     }
     renderBatch();
   }
+  /* 序号：显示、批量复制、下载共用一套格式 */
+  function numTag(n){ if(!$("#pw-numOn").checked)return ""; const fmt=$("#pw-numFmt").value, w=String(batch.length).length; return fmt==="paren"?n+") ":fmt==="bracket"?"["+n+"] ":fmt==="pad"?String(n).padStart(w,"0")+" ":fmt==="tab"?n+"\t":fmt==="colon"?n+":":n+". "; }
+  function numbered(list){ return list.map(x=>numTag(x.i+1)+x.pw).join("\n"); }
+  const withIndex=arr=>arr.map((b,i)=>({pw:b.pw,i}));
+  let copied=new Set();
+  function markCopied(i){ copied.add(i); const el=$("#pw-batch").children[i]; if(el)el.classList.add("copied"); $("#pw-copiedCount").textContent=copied.size.toLocaleString(); }
   function renderBatch(){
-    const card=$("#pw-batchCard"), box=$("#pw-batch"), ta=$("#pw-batchTa");
-    if(batch.length<=1){ card.style.display="none"; box.innerHTML=""; ta.value=""; return; }
+    const card=$("#pw-batchCard"), box=$("#pw-batch"), ta=$("#pw-batchTa"), hi=$("#pw-heroIdx");
+    copied=new Set(); $("#pw-copiedCount").textContent="0";
+    if(batch.length<=1){ card.style.display="none"; box.innerHTML=""; ta.value=""; hi.style.display="none"; return; }
+    hi.style.display=$("#pw-numOn").checked?"inline-block":"none"; hi.textContent=numTag(1).trim()||"1";
     card.style.display="block"; $("#pw-batchCount").textContent=batch.length.toLocaleString();
-    if(batch.length>300){ box.style.display="none"; box.innerHTML=""; ta.style.display="block"; ta.value=batch.map(b=>b.pw).join("\n"); return; }
+    if(batch.length>300){ box.style.display="none"; box.innerHTML=""; ta.style.display="block"; ta.value=numbered(withIndex(batch)); return; }
     ta.style.display="none"; box.style.display="flex"; box.innerHTML="";
     const frag=document.createDocumentFragment();
-    batch.forEach((b,i)=>{ const el=document.createElement("div"); el.className="pw-item"; el.innerHTML=`<span class="ix">${i+1}</span><span class="pv">${colorize(b.pw,b.seps)}</span><button class="btn btn-ghost btn-sm">复制</button>`; el.querySelector("button").onclick=()=>copyText(b.pw,"已复制第 "+(i+1)+" 条"); frag.appendChild(el); });
+    batch.forEach((b,i)=>{ const el=document.createElement("div"); el.className="pw-item"; el.innerHTML=`<span class="ix"></span><span class="pv" title="点击复制">${colorize(b.pw,b.seps)}</span><span class="ok">✓ 已复制</span><button class="btn btn-ghost btn-sm">复制</button>`;
+      el.querySelector(".ix").textContent=numTag(i+1).trim()||String(i+1);
+      const doCopy=async ()=>{ if(await copyText(b.pw,"已复制第 "+(i+1)+" 条"))markCopied(i); };
+      el.querySelector("button").onclick=doCopy; el.querySelector(".pv").onclick=doCopy;
+      frag.appendChild(el); });
     box.appendChild(frag);
   }
+  function refreshNumbers(){ // 只刷新序号文字，不重新生成
+    if(batch.length<=1)return; const hi=$("#pw-heroIdx"); hi.style.display=$("#pw-numOn").checked?"inline-block":"none"; hi.textContent=numTag(1).trim()||"1";
+    if(batch.length>300){ $("#pw-batchTa").value=numbered(withIndex(batch)); return; }
+    [...$("#pw-batch").children].forEach((el,i)=>{ el.querySelector(".ix").textContent=numTag(i+1).trim()||String(i+1); });
+  }
+  $("#pw-numOn").addEventListener("change",refreshNumbers); $("#pw-numFmt").addEventListener("change",refreshNumbers);
   async function copyText(text,msg){ try{ await navigator.clipboard.writeText(text); toast(msg||"已复制"); return true; }catch{ try{ const ta=document.createElement("textarea"); ta.value=text; ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta); ta.select(); const ok=document.execCommand("copy"); document.body.removeChild(ta); if(ok){toast(msg||"已复制");return true;} }catch{} toast("复制失败，请手动选择复制"); return false; } }
   async function copyCurrent(){ if(!current){toast("还没有可复制的密码");return;} if(await copyText(current.pw,"已复制到剪贴板")){ const h=$("#pw-hero"); h.classList.add("flash"); setTimeout(()=>h.classList.remove("flash"),600); } }
   $("#pw-copy").onclick=copyCurrent; $("#pw-hero").onclick=copyCurrent;
   $("#pw-regen").onclick=generate; $("#pw-gen").onclick=generate;
-  $("#pw-copyAll").onclick=()=>{ if(!batch.length){toast("没有内容");return;} copyText(batch.map(b=>b.pw).join("\n"),`已复制 ${batch.length} 条`); };
-  $("#pw-dlAll").onclick=()=>{ if(!batch.length){toast("没有内容");return;} download(new Blob([batch.map(b=>b.pw).join("\n")+"\n"],{type:"text/plain;charset=utf-8"}),"随机密码.txt"); };
+  $("#pw-copyAll").onclick=async ()=>{ if(!batch.length){toast("没有内容");return;} if(await copyText(numbered(withIndex(batch)),`已复制全部 ${batch.length} 条`+($("#pw-numOn").checked?"（带序号）":""))) batch.forEach((_,i)=>markCopied(i)); };
+  $("#pw-copyRest").onclick=async ()=>{ const rest=withIndex(batch).filter(x=>!copied.has(x.i)); if(!rest.length){toast("没有未复制的条目");return;} if(await copyText(numbered(rest),`已复制剩余 ${rest.length} 条`)) rest.forEach(x=>markCopied(x.i)); };
+  $("#pw-dlAll").onclick=()=>{ if(!batch.length){toast("没有内容");return;} download(new Blob([numbered(withIndex(batch))+"\n"],{type:"text/plain;charset=utf-8"}),"随机密码.txt"); };
   $("#pw-reset").onclick=()=>{
     const set=(id,v)=>{ const el=$("#"+id); if(el.type==="checkbox")el.checked=v; else el.value=v; };
     set("pw-len",16);set("pw-lenNum",16);set("pw-upper",true);set("pw-lower",true);set("pw-digit",true);set("pw-symbol",true);set("pw-customOn",false);set("pw-symbols",DEFAULT_SYMBOLS);set("pw-custom","");set("pw-exclude","");
@@ -1703,7 +1737,7 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
   const chk=$("#pw-checkIn");
   chk.addEventListener("input",()=>{ const r=estimate(chk.value); const box=$("#pw-checkBox"); if(!r){box.style.display="none";return;} box.style.display="block"; paintStrength($("#pw-checkMeter"),$("#pw-checkLabel"),$("#pw-checkEntropy"),$("#pw-checkCrack"),r.bits,`${[...chk.value].length} 字符`); $("#pw-checkNotes").innerHTML=r.notes.length?r.notes.map(n=>"⚠️ "+esc(n)).join("<br>"):"✅ 未发现明显的模式问题（估算仅供参考，无法识别与你个人相关的信息）"; });
 
-  window.__pwTest={genRandom,cfgRandom,genPhrase,cfgPhrase,genPin,cfgPin,genPattern,parsePattern,estimate,rint};
+  window.__pwTest={numbered,withIndex,getBatch:()=>batch,setBatch:b=>{batch=b;},genRandom,cfgRandom,genPhrase,cfgPhrase,genPin,cfgPin,genPattern,parsePattern,estimate,rint};
   generate();
 })();
 </script>
