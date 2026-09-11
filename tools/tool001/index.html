@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>文本处理工具 · 合并去重 / 分割 / 清洗</title>
+<title>文本处理工具 · 合并去重 / 分割 / 清洗 / 随机密码</title>
 <style>
   :root{
     --bg:#f5f5f7;--bg-grad-1:#f5f5f7;--bg-grad-2:#ebebef;
@@ -40,7 +40,7 @@
   header p{color:var(--text-2);font-size:14px;margin:0}
 
   /* 顶部标签 */
-  .maintabs{display:flex;gap:6px;background:var(--chip);border-radius:14px;padding:5px;margin:0 auto 26px;max-width:560px}
+  .maintabs{display:flex;gap:6px;background:var(--chip);border-radius:14px;padding:5px;margin:0 auto 26px;max-width:860px;flex-wrap:wrap}
   .maintab{flex:1;text-align:center;border:none;background:none;cursor:pointer;padding:11px 10px;border-radius:10px;font-size:15px;font-weight:600;color:var(--text-2);font-family:inherit;transition:.15s}
   .maintab.active{background:var(--card-solid);color:var(--text);box-shadow:var(--shadow)}
 
@@ -141,15 +141,78 @@
   textarea:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
   .paste{min-height:120px}
 
-  .partlist{margin-top:14px;display:flex;flex-direction:column;gap:8px;max-height:360px;overflow:auto}
+  .parttools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .partlist{display:flex;flex-direction:column;gap:8px;max-height:360px;overflow:auto}
   .part{display:flex;align-items:center;gap:12px;background:var(--chip);border-radius:var(--radius-sm);padding:10px 14px;font-size:14px}
-  .part .pn{flex:1;font-weight:600}
-  .part .pm{color:var(--text-3);font-size:12px}
+  .part .pcb{width:18px;height:18px;accent-color:var(--accent);flex:none;cursor:pointer;margin:0}
+  .part .pn{flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .part .pm{color:var(--text-3);font-size:12px;white-space:nowrap}
+  .zipbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
 
   .example{font-family:"SF Mono",ui-monospace,monospace;font-size:12px;background:var(--chip);border-radius:10px;padding:10px 12px;margin-top:6px;color:var(--text-2);white-space:pre-wrap;word-break:break-all}
 
+  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .twocol .collabel{font-weight:600;font-size:14px;margin-bottom:10px}
+  .bigbox{min-height:240px}
+  @media(max-width:760px){.twocol{grid-template-columns:1fr}}
+
   .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--text);color:var(--bg);padding:12px 22px;border-radius:999px;font-size:14px;font-weight:600;box-shadow:var(--shadow-lg);opacity:0;pointer-events:none;transition:.25s;z-index:99;max-width:90vw;text-align:center}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  /* ===== 随机密码 ===== */
+  .pw-hero{position:relative;background:var(--field);border:1px solid var(--line);border-radius:16px;padding:22px 24px;cursor:pointer;transition:.15s;min-height:92px;display:flex;align-items:center}
+  .pw-hero:hover{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+  .pw-hero.flash{border-color:var(--green);box-shadow:0 0 0 4px rgba(52,199,89,.18)}
+  .pw-display{font-family:"SF Mono",ui-monospace,"Menlo","Consolas","Courier New",monospace;font-size:clamp(17px,2.6vw,26px);font-weight:600;letter-spacing:.02em;line-height:1.55;word-break:break-all;user-select:all;flex:1;min-width:0}
+  .pw-display.small{font-size:clamp(14px,2vw,18px);font-weight:500}
+  .pw-display .d{color:var(--accent)}
+  .pw-display .s{color:var(--red)}
+  .pw-display .sep{color:var(--text-3)}
+  .pw-display .u{color:var(--purple)}
+  .pw-display .err{color:var(--red);font-family:inherit;font-size:15px;font-weight:500}
+  .pw-hero-tools{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;align-items:center}
+  .pw-hero-tools .spacer{flex:1}
+  .btn .ico{width:16px;height:16px;display:inline-block;vertical-align:-3px}
+  .pw-strength{margin-top:18px}
+  .pw-meter{display:flex;gap:5px;height:8px}
+  .pw-meter i{flex:1;border-radius:999px;background:var(--chip);transition:background .25s}
+  .pw-meter.l1 i:nth-child(-n+1){background:var(--red)}
+  .pw-meter.l2 i:nth-child(-n+2){background:var(--orange)}
+  .pw-meter.l3 i:nth-child(-n+3){background:#ffcc00}
+  .pw-meter.l4 i:nth-child(-n+4){background:var(--green)}
+  .pw-meter.l5 i:nth-child(-n+5){background:var(--green)}
+  .pw-strow{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:10px;font-size:14px;flex-wrap:wrap}
+  .pw-strow b{font-weight:700}
+  .pw-strow .l1{color:var(--red)}.pw-strow .l2{color:var(--orange)}.pw-strow .l3{color:#d9a400}.pw-strow .l4,.pw-strow .l5{color:var(--green)}
+  .pw-crack{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:12px}
+  .pw-crack .c{background:var(--chip);border-radius:12px;padding:10px 14px;font-size:13px;color:var(--text-2)}
+  .pw-crack .c b{display:block;color:var(--text);font-size:15px;margin-top:2px;font-weight:600}
+  .pw-lenrow{display:flex;align-items:center;gap:14px}
+  .pw-lenrow input[type=number]{width:92px;flex:none;text-align:center}
+  input[type=range].slider{-webkit-appearance:none;appearance:none;flex:1;height:4px;border-radius:999px;background:linear-gradient(90deg,var(--accent) var(--pct,50%),var(--line-strong) var(--pct,50%));outline:none;margin:0;border:0;padding:0}
+  input[type=range].slider::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:#fff;border:0;box-shadow:0 1px 4px rgba(0,0,0,.35),0 0 0 .5px rgba(0,0,0,.08);cursor:pointer;transition:transform .1s}
+  input[type=range].slider::-webkit-slider-thumb:active{transform:scale(1.08)}
+  input[type=range].slider::-moz-range-thumb{width:26px;height:26px;border-radius:50%;background:#fff;border:0;box-shadow:0 1px 4px rgba(0,0,0,.35);cursor:pointer}
+  input[type=range].slider:focus{box-shadow:none}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .chip{border:none;background:var(--chip);color:var(--text-2);font-family:inherit;font-size:13px;font-weight:600;padding:6px 12px;border-radius:999px;cursor:pointer;transition:.15s}
+  .chip:hover{background:var(--line);color:var(--text)}
+  .chip.on{background:var(--accent);color:#fff}
+  .pw-sub{font-size:13px;font-weight:600;color:var(--text-2);margin:18px 0 8px}
+  .pw-sub:first-child{margin-top:0}
+  .pw-legend{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px 16px;font-size:13px;color:var(--text-2);margin-top:10px;line-height:1.6}
+  .pw-legend .k{display:inline-block;font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-weight:700;background:var(--chip);color:var(--text);border-radius:6px;padding:1px 7px;margin-right:6px;min-width:26px;text-align:center}
+  .pw-err{color:var(--red)}
+  .pw-batch{display:flex;flex-direction:column;gap:6px;max-height:520px;overflow:auto;padding-right:2px}
+  .pw-item{display:flex;align-items:center;gap:10px;background:var(--chip);border-radius:var(--radius-sm);padding:8px 8px 8px 14px;font-size:13px}
+  .pw-item .ix{color:var(--text-3);font-size:12px;width:40px;flex:none;text-align:right;font-variant-numeric:tabular-nums}
+  .pw-item .pv{flex:1;font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;word-break:break-all;line-height:1.5}
+  .pw-item .pv .d{color:var(--accent)}.pw-item .pv .s{color:var(--red)}.pw-item .pv .sep{color:var(--text-3)}.pw-item .pv .u{color:var(--purple)}
+  .pw-item .btn-sm{padding:5px 11px;font-size:12px;flex:none}
+  .pw-check input[type=text]{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace}
+  .pw-tips{font-size:13px;color:var(--text-2);line-height:1.8;margin:0;padding-left:18px}
+  .pw-tips li b{color:var(--text)}
+  .pw-inline{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .pw-inline .field{flex:1;min-width:180px}
   footer{text-align:center;color:var(--text-3);font-size:12px;margin-top:28px;line-height:1.7}
 </style>
   <link rel="icon" href="./icon.png">
@@ -158,13 +221,17 @@
 <div class="wrap">
   <header>
     <h1>文本处理工具</h1>
-    <p>合并去重 · 存档比对 · 分割 · 清洗　—　流式引擎，支持大文件，全程本地不上传</p>
+    <p>合并去重 · 存档比对 · 分割 · 清洗 · 随机密码　—　流式引擎，支持大文件，全程本地不上传</p>
   </header>
 
   <nav class="maintabs">
     <button class="maintab active" data-page="merge">合并去重</button>
+    <button class="maintab" data-page="convert">分隔符转换</button>
+    <button class="maintab" data-page="dedup">文本去重</button>
     <button class="maintab" data-page="split">文本分割</button>
     <button class="maintab" data-page="clean">文本清洗</button>
+    <button class="maintab" data-page="extract">提取匹配</button>
+    <button class="maintab" data-page="pw">随机密码</button>
   </nav>
 
   <!-- ================= 合并去重 ================= -->
@@ -222,7 +289,7 @@
         </div>
         <div class="field"><label>去重方式</label>
           <select id="mg-dedup"><option value="line" selected>整行去重</option><option value="account">按账号去重</option><option value="none">不去重（仅比对存档）</option></select>
-          <div class="hint">存档比对始终生效</div>
+          <div class="hint">保留第一次出现、删除后面的；存档比对始终生效</div>
         </div>
       </div>
       <div class="toggles">
@@ -241,6 +308,7 @@
     <div class="result" id="mg-result">
       <div class="savebar" id="mg-savebar" style="display:none"></div>
       <div class="stats" id="mg-stats"></div>
+      <div class="zipbar"><button class="btn btn-ghost" id="mg-zipAll">📦 打包全部结果(ZIP)</button></div>
       <div class="card" id="mergePanel">
         <div class="q">本次共有 <b id="mg-fresh2">0</b> 条新增数据，是否并入存档？</div>
         <div class="qs" id="mg-mergeSub">选择“并入存档”后合并生成新存档，可随时下载。</div>
@@ -300,7 +368,17 @@
     <div class="result" id="sp-result">
       <div class="savebar" id="sp-savebar" style="display:none"></div>
       <div class="stats" id="sp-stats"></div>
-      <div class="card" id="sp-partsCard" style="display:none"><h2>各份文件</h2><div class="partlist" id="sp-partlist"></div></div>
+      <div class="card" id="sp-partsCard" style="display:none">
+        <h2>各份文件</h2>
+        <div class="parttools">
+          <label class="toggle"><input type="checkbox" id="sp-selall"><span class="sw"></span>全选</label>
+          <button class="btn btn-ghost btn-sm" id="sp-copySel">复制所选</button>
+          <button class="btn btn-ghost btn-sm" id="sp-dlSel">下载所选</button>
+          <button class="btn btn-primary btn-sm" id="sp-zipSel">📦 打包所选(ZIP)</button>
+          <button class="btn btn-primary btn-sm" id="sp-zipAll">📦 打包全部(ZIP)</button>
+        </div>
+        <div class="partlist" id="sp-partlist"></div>
+      </div>
     </div>
   </section>
 
@@ -365,6 +443,380 @@
     </div>
   </section>
 
+  <!-- ================= 文本去重 ================= -->
+  <section class="page" id="page-dedup">
+    <div class="card">
+      <h2>① 导入 / 输入</h2>
+      <div class="drop" id="de-drop">
+        <input type="file" id="de-file" accept=".txt,text/plain" multiple>
+        <div class="icon">♻️</div>
+        <div class="big">点击选择 或 拖拽 TXT</div>
+        <div class="sub">可多文件（合并后一起去重）· 支持大文件</div>
+      </div>
+      <div class="files" id="de-list"></div>
+      <div class="or-divider"><span>或 直接粘贴内容</span></div>
+      <textarea id="de-paste" class="paste" spellcheck="false" placeholder="每行一条，重复的行会被去掉（保留第一次出现的）。"></textarea>
+      <div class="hint" id="de-pasteHint">尚未输入</div>
+    </div>
+
+    <div class="card">
+      <h2>② 去重规则</h2>
+      <div class="grid">
+        <div class="field"><label>去重依据</label>
+          <select id="de-mode"><option value="line" selected>整行相同才算重复</option><option value="field">按分隔符前段（账号）判重</option></select>
+          <div class="hint">整行=完全一样才去；账号=同一账号只留一条</div>
+        </div>
+        <div class="field" id="de-delimWrap" style="display:none"><label>分隔符</label><input type="text" id="de-delim" value=":"><div class="hint">取该分隔符之前的内容作为判重依据</div></div>
+      </div>
+      <div class="toggles">
+        <label class="toggle"><input type="checkbox" id="de-trim" checked><span class="sw"></span>去首尾空格</label>
+        <label class="toggle"><input type="checkbox" id="de-case"><span class="sw"></span>比较时忽略大小写</label>
+        <label class="toggle"><input type="checkbox" id="de-empty" checked><span class="sw"></span>忽略空行</label>
+      </div>
+      <div class="hint" style="margin-top:14px;line-height:1.7">✅ 去重策略：<b>保留第一次出现的行，删除之后出现的重复行</b>（严格按导入/粘贴顺序，确定性——绝不删前面的、绝不随机）。被删掉的重复行会完整列在「重复项」里供核对。</div>
+      <div class="bigmode">
+        <div><div class="l">写入文件夹</div><div class="s" id="de-bigSub">开启后结果直接写盘（大文件推荐）；关闭则用「下载」。</div></div>
+        <label class="toggle"><input type="checkbox" id="de-big"><span class="sw"></span><span id="de-bigLabel">关闭</span></label>
+      </div>
+      <div class="actions"><button class="btn btn-primary" id="de-run" disabled>♻️ 开始去重</button><button class="btn btn-ghost" id="de-clear">清空</button></div>
+      <div class="progress" id="de-progress"><div class="bar"><div class="fill" id="de-fill"></div></div><div class="ptext" id="de-text">处理中…</div></div>
+    </div>
+
+    <div class="result" id="de-result">
+      <div class="savebar" id="de-savebar" style="display:none"></div>
+      <div class="stats" id="de-stats"></div>
+      <div class="zipbar"><button class="btn btn-ghost" id="de-zipAll">📦 打包全部结果(ZIP)</button></div>
+      <div class="card">
+        <div class="tabs">
+          <button class="subtab active" data-p="kept">去重结果<span class="cnt" id="de-c-kept">0</span></button>
+          <button class="subtab" data-p="dups">重复项<span class="cnt" id="de-c-dups">0</span></button>
+        </div>
+        <div class="pane active" id="de-pane-kept"><div class="pane-head"><span class="desc">保留下来的行（每个唯一项的第一次出现，顺序不变）</span><div class="tools"><button class="btn btn-ghost btn-sm" data-decopy="kept">复制预览</button><button class="btn btn-primary btn-sm" data-dedl="kept">下载</button></div></div><div class="note" id="de-note-kept"></div><textarea id="de-ta-kept" readonly spellcheck="false"></textarea></div>
+        <div class="pane" id="de-pane-dups"><div class="pane-head"><span class="desc">被删掉的重复行（后出现的那些）</span><div class="tools"><button class="btn btn-ghost btn-sm" data-decopy="dups">复制预览</button><button class="btn btn-primary btn-sm" data-dedl="dups">下载</button></div></div><div class="note" id="de-note-dups"></div><textarea id="de-ta-dups" readonly spellcheck="false"></textarea></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 分隔符转换 ================= -->
+  <section class="page" id="page-convert">
+    <div class="card">
+      <h2>① 导入 / 输入</h2>
+      <div class="drop" id="cv-drop">
+        <input type="file" id="cv-file" accept=".txt,text/plain" multiple>
+        <div class="icon">🔗</div>
+        <div class="big">点击选择 或 拖拽 TXT</div>
+        <div class="sub">可多文件 · 也可直接粘贴 · 支持大文件</div>
+      </div>
+      <div class="files" id="cv-list"></div>
+      <div class="or-divider"><span>或 直接粘贴内容</span></div>
+      <textarea id="cv-paste" class="paste" spellcheck="false" placeholder="emmie-fleur@mx10.ttcn.ne.jp&#9;emmie0918 emmie0918&#10;emmie-fleur@mx10.ttcn.ne.jp&#9;emmie0918"></textarea>
+      <div class="hint" id="cv-pasteHint">尚未输入</div>
+    </div>
+
+    <div class="card">
+      <h2>② 分隔符设置</h2>
+      <div class="grid">
+        <div class="field"><label>源分隔符（原本用什么隔开）</label>
+          <select id="cv-src">
+            <option value="ws" selected>任意空白（空格 / Tab，含连续多个）</option>
+            <option value="\t">Tab 制表符</option>
+            <option value=" ">空格</option>
+            <option value=":">冒号 :</option>
+            <option value="----">四连字符 ----</option>
+            <option value="|">竖线 |</option>
+            <option value=",">逗号 ,</option>
+            <option value=";">分号 ;</option>
+            <option value="__custom__">自定义…</option>
+          </select>
+          <input type="text" id="cv-srcCustom" placeholder="自定义源分隔符" style="display:none;margin-top:10px">
+        </div>
+        <div class="field"><label>目标分隔符（中间换成什么）</label>
+          <select id="cv-tgt">
+            <option value=":" selected>冒号 :　→ 邮箱:密码</option>
+            <option value="----">四连字符 ----</option>
+            <option value="|">竖线 |</option>
+            <option value=",">逗号 ,</option>
+            <option value=";">分号 ;</option>
+            <option value="\t">Tab 制表符</option>
+            <option value=" ">空格</option>
+            <option value="__custom__">自定义…</option>
+          </select>
+          <input type="text" id="cv-tgtCustom" placeholder="自定义目标分隔符" style="display:none;margin-top:10px">
+        </div>
+        <div class="field"><label>合并范围</label>
+          <select id="cv-scope">
+            <option value="accountRest" selected>账号 + 其余全部（换掉第一个分隔符，后面原样保留）</option>
+            <option value="first2">只取前两段（账号 + 第一段，多余丢弃）</option>
+            <option value="all">全部字段都用目标分隔符连接</option>
+          </select>
+          <div class="hint">你的例子里第一行有重复密码，可用这里区分要不要</div>
+        </div>
+      </div>
+      <div class="toggles">
+        <label class="toggle"><input type="checkbox" id="cv-trim" checked><span class="sw"></span>去首尾空格</label>
+        <label class="toggle"><input type="checkbox" id="cv-empty" checked><span class="sw"></span>忽略空行</label>
+        <label class="toggle"><input type="checkbox" id="cv-dedup"><span class="sw"></span>整行去重（保留第一次）</label>
+      </div>
+      <div class="example" id="cv-example">示例：处理中…</div>
+      <div class="bigmode">
+        <div><div class="l">写入文件夹</div><div class="s" id="cv-bigSub">大文件推荐；关闭则用「下载」。</div></div>
+        <label class="toggle"><input type="checkbox" id="cv-big"><span class="sw"></span><span id="cv-bigLabel">关闭</span></label>
+      </div>
+      <div class="actions"><button class="btn btn-primary" id="cv-run" disabled>🔗 开始合并</button><button class="btn btn-ghost" id="cv-clear">清空</button></div>
+      <div class="progress" id="cv-progress"><div class="bar"><div class="fill" id="cv-fill"></div></div><div class="ptext" id="cv-text">处理中…</div></div>
+    </div>
+
+    <div class="result" id="cv-result">
+      <div class="savebar" id="cv-savebar" style="display:none"></div>
+      <div class="stats" id="cv-stats"></div>
+      <div class="card">
+        <div class="pane-head"><span class="desc">合并后的结果</span><div class="tools"><button class="btn btn-ghost btn-sm" id="cv-copy">复制预览</button><button class="btn btn-primary btn-sm" id="cv-dl">下载</button></div></div>
+        <div class="note" id="cv-note"></div>
+        <textarea id="cv-ta" readonly spellcheck="false"></textarea>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 提取匹配 ================= -->
+  <section class="page" id="page-extract">
+    <div class="card">
+      <h2>① 数据源（左） 与 邮箱名单（右）</h2>
+      <div class="twocol">
+        <div class="col">
+          <div class="collabel">📚 左：数据源（从这里提取整行）</div>
+          <div class="drop small" id="ex-drop">
+            <input type="file" id="ex-file" accept=".txt,text/plain" multiple>
+            <div class="icon">📄</div>
+            <div class="big">导入数据源文件</div>
+            <div class="sub">大表建议用文件；也可直接在下方粘贴</div>
+          </div>
+          <div class="files" id="ex-list"></div>
+          <textarea id="ex-left" class="paste bigbox" spellcheck="false" placeholder="在此粘贴数据源，每行一条，例如：&#10;alice@x.com:pw1&#10;bob@x.com:pw2&#10;alice@x.com:pw9"></textarea>
+        </div>
+        <div class="col">
+          <div class="collabel">✉️ 右：邮箱名单（粘贴要找的邮箱）</div>
+          <textarea id="ex-right" class="paste bigbox" spellcheck="false" style="min-height:322px" placeholder="每行一个邮箱：&#10;alice@x.com&#10;carol@x.com"></textarea>
+          <div class="hint" id="ex-rightHint">尚未输入</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>② 匹配设置</h2>
+      <div class="grid">
+        <div class="field"><label>匹配依据（左行怎么取邮箱）</label>
+          <select id="ex-mode">
+            <option value="email" selected>自动识别整行里的邮箱</option>
+            <option value="field">取左行第一段（按分隔符）</option>
+            <option value="line">整行完全相等</option>
+          </select>
+          <div class="hint">默认自动识别邮箱，适配 邮箱:密码 / 邮箱[Tab]密码 等各种格式</div>
+        </div>
+        <div class="field" id="ex-delimWrap" style="display:none"><label>分隔符</label><input type="text" id="ex-delim" value=":"><div class="hint">取该分隔符之前的内容当邮箱</div></div>
+      </div>
+      <div class="toggles">
+        <label class="toggle"><input type="checkbox" id="ex-case" checked><span class="sw"></span>忽略大小写</label>
+        <label class="toggle"><input type="checkbox" id="ex-first"><span class="sw"></span>每个邮箱只取第一条匹配</label>
+      </div>
+      <div class="bigmode">
+        <div><div class="l">写入文件夹</div><div class="s" id="ex-bigSub">大数据源推荐；关闭则用「下载」。</div></div>
+        <label class="toggle"><input type="checkbox" id="ex-big"><span class="sw"></span><span id="ex-bigLabel">关闭</span></label>
+      </div>
+      <div class="actions"><button class="btn btn-primary" id="ex-run" disabled>🔎 提取匹配</button><button class="btn btn-ghost" id="ex-clear">清空</button></div>
+      <div class="progress" id="ex-progress"><div class="bar"><div class="fill" id="ex-fill"></div></div><div class="ptext" id="ex-text">处理中…</div></div>
+    </div>
+
+    <div class="result" id="ex-result">
+      <div class="savebar" id="ex-savebar" style="display:none"></div>
+      <div class="stats" id="ex-stats"></div>
+      <div class="zipbar"><button class="btn btn-ghost" id="ex-zipAll">📦 打包全部结果(ZIP)</button></div>
+      <div class="card">
+        <div class="tabs">
+          <button class="subtab active" data-p="hit">匹配结果<span class="cnt" id="ex-c-hit">0</span></button>
+          <button class="subtab" data-p="miss">未找到的邮箱<span class="cnt" id="ex-c-miss">0</span></button>
+        </div>
+        <div class="pane active" id="ex-pane-hit"><div class="pane-head"><span class="desc">从数据源里提取出的、命中名单的整行（保持数据源顺序）</span><div class="tools"><button class="btn btn-ghost btn-sm" data-excopy="hit">复制预览</button><button class="btn btn-primary btn-sm" data-exdl="hit">下载</button></div></div><div class="note" id="ex-note-hit"></div><textarea id="ex-ta-hit" readonly spellcheck="false"></textarea></div>
+        <div class="pane" id="ex-pane-miss"><div class="pane-head"><span class="desc">名单里在数据源中没找到的邮箱</span><div class="tools"><button class="btn btn-ghost btn-sm" data-excopy="miss">复制预览</button><button class="btn btn-primary btn-sm" data-exdl="miss">下载</button></div></div><div class="note" id="ex-note-miss"></div><textarea id="ex-ta-miss" readonly spellcheck="false"></textarea></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 随机密码 ================= -->
+  <section class="page" id="page-pw">
+    <div class="card">
+      <h2>① 生成结果 <span class="badge on" id="pw-cryptoBadge">加密级随机源</span><span class="badge" id="pw-modeBadge">随机字符</span></h2>
+      <div class="pw-hero" id="pw-hero" title="点击复制">
+        <div class="pw-display" id="pw-display"></div>
+      </div>
+      <div class="pw-hero-tools">
+        <button class="btn btn-primary" id="pw-copy"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制密码</button>
+        <button class="btn btn-ghost" id="pw-regen"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>重新生成</button>
+        <span class="spacer"></span>
+        <span class="hint" style="margin:0">快捷键：<b>空格</b> 重新生成 · <b>C</b> 复制</span>
+      </div>
+      <div class="pw-strength">
+        <div class="pw-meter" id="pw-meter"><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="pw-strow"><span>强度：<b id="pw-strLabel">—</b></span><span class="hint" style="margin:0" id="pw-entropy">熵 — bit</span></div>
+        <div class="pw-crack" id="pw-crack"></div>
+      </div>
+    </div>
+
+    <div class="card" id="pw-settings">
+      <h2>② 生成方式</h2>
+      <div class="tabs" id="pw-modes">
+        <button class="subtab active" data-m="random">随机字符</button>
+        <button class="subtab" data-m="phrase">密码短语</button>
+        <button class="subtab" data-m="pin">PIN 码</button>
+        <button class="subtab" data-m="pattern">模板组合</button>
+      </div>
+
+      <!-- 随机字符 -->
+      <div class="pane active" id="pw-pane-random">
+        <div class="field"><label>长度：<b id="pw-lenShow">16</b> 位</label>
+          <div class="pw-lenrow"><input type="range" class="slider" id="pw-len" min="4" max="128" value="16"><input type="number" id="pw-lenNum" min="4" max="128" value="16"></div>
+          <div class="chips" id="pw-lenChips"><button class="chip" data-len="8">8</button><button class="chip" data-len="12">12</button><button class="chip on" data-len="16">16</button><button class="chip" data-len="20">20</button><button class="chip" data-len="24">24</button><button class="chip" data-len="32">32</button><button class="chip" data-len="48">48</button><button class="chip" data-len="64">64</button></div>
+        </div>
+        <div class="pw-sub">字符类型</div>
+        <div class="toggles" style="margin-top:0">
+          <label class="toggle"><input type="checkbox" id="pw-upper" checked><span class="sw"></span>大写 ABC</label>
+          <label class="toggle"><input type="checkbox" id="pw-lower" checked><span class="sw"></span>小写 abc</label>
+          <label class="toggle"><input type="checkbox" id="pw-digit" checked><span class="sw"></span>数字 123</label>
+          <label class="toggle"><input type="checkbox" id="pw-symbol" checked><span class="sw"></span>符号 !@#</label>
+          <label class="toggle"><input type="checkbox" id="pw-customOn"><span class="sw"></span>自定义字符</label>
+        </div>
+        <div class="grid" style="margin-top:14px">
+          <div class="field"><label>符号集（可编辑）</label><input type="text" id="pw-symbols" value="!@#$%^&amp;*()-_=+[]{};:,.&lt;&gt;?/~" spellcheck="false"><div class="hint">只用这里列出的符号；例如只留 <b>!@#$</b> 以适配限制严格的网站</div></div>
+          <div class="field"><label>自定义字符（追加到字符池）</label><input type="text" id="pw-custom" placeholder="例如 äöü 或 ★☆" spellcheck="false"><div class="hint">关闭其它类型即可"仅用自定义字符"</div></div>
+          <div class="field"><label>排除字符</label><input type="text" id="pw-exclude" placeholder="例如 {}[]" spellcheck="false"><div class="hint">这些字符绝不出现</div></div>
+        </div>
+        <div class="pw-sub">组合约束</div>
+        <div class="toggles" style="margin-top:0">
+          <label class="toggle"><input type="checkbox" id="pw-eachOne" checked><span class="sw"></span>每种已选类型至少 1 个</label>
+          <label class="toggle"><input type="checkbox" id="pw-ambig"><span class="sw"></span>排除易混淆字符 0O1lI|`'"</label>
+          <label class="toggle"><input type="checkbox" id="pw-noAdj"><span class="sw"></span>不允许相邻重复</label>
+          <label class="toggle"><input type="checkbox" id="pw-noRep"><span class="sw"></span>所有字符不重复</label>
+          <label class="toggle"><input type="checkbox" id="pw-startLetter"><span class="sw"></span>首字符必须是字母</label>
+          <label class="toggle"><input type="checkbox" id="pw-endAlnum"><span class="sw"></span>末字符不是符号</label>
+        </div>
+        <div class="grid" style="margin-top:14px">
+          <div class="field"><label>最少数字个数</label><input type="number" id="pw-minDigit" min="0" max="128" value="0"><div class="hint">0 = 不限制（仍受"至少 1 个"影响）</div></div>
+          <div class="field"><label>最少符号个数</label><input type="number" id="pw-minSym" min="0" max="128" value="0"></div>
+          <div class="field"><label>分组显示：每 N 位插一个分隔符</label><input type="number" id="pw-group" min="0" max="64" value="0"><div class="hint">0 = 不分组；分隔符不计入长度，且会自动从字符池中排除</div></div>
+          <div class="field"><label>分组分隔符</label><input type="text" id="pw-groupSep" value="-" maxlength="3"></div>
+        </div>
+      </div>
+
+      <!-- 密码短语 -->
+      <div class="pane" id="pw-pane-phrase">
+        <div class="field"><label>单词数：<b id="pw-wordsShow">5</b> 个</label>
+          <div class="pw-lenrow"><input type="range" class="slider" id="pw-words" min="2" max="16" value="5"><input type="number" id="pw-wordsNum" min="2" max="16" value="5"></div>
+          <div class="chips" id="pw-wordChips"><button class="chip" data-w="3">3</button><button class="chip" data-w="4">4</button><button class="chip on" data-w="5">5</button><button class="chip" data-w="6">6</button><button class="chip" data-w="7">7</button><button class="chip" data-w="8">8</button><button class="chip" data-w="10">10</button></div>
+        </div>
+        <div class="grid" style="margin-top:14px">
+          <div class="field"><label>单词之间</label>
+            <select id="pw-phSep"><option value="-" selected>连字符 -</option><option value=" ">空格</option><option value="_">下划线 _</option><option value=".">点 .</option><option value=",">逗号 ,</option><option value="">不分隔（直接拼接）</option><option value="__digit__">随机数字 0-9</option><option value="__symbol__">随机符号</option><option value="__custom__">自定义…</option></select>
+            <input type="text" id="pw-phSepCustom" placeholder="自定义分隔符" style="display:none;margin-top:10px" maxlength="5">
+          </div>
+          <div class="field"><label>大小写</label>
+            <select id="pw-phCase"><option value="lower">全部小写</option><option value="cap" selected>每词首字母大写</option><option value="upper">全部大写</option><option value="randWord">每词随机（小写/首大/全大）</option><option value="randChar">每个字母随机大小写</option><option value="alt">交替（小写-大写-小写…）</option></select>
+          </div>
+          <div class="field"><label>词表</label>
+            <select id="pw-phList"><option value="eff" selected>EFF 短词表（1296 词，3–5 字母）</option><option value="short">仅 3–4 字母词（514 词，更短）</option><option value="long">仅 5 字母词（782 词）</option></select>
+            <div class="hint">EFF 词表专为密码短语设计：好记、好拼、无歧义</div>
+          </div>
+        </div>
+        <div class="toggles">
+          <label class="toggle"><input type="checkbox" id="pw-phNum" checked><span class="sw"></span>附加一段数字</label>
+          <label class="toggle"><input type="checkbox" id="pw-phSym"><span class="sw"></span>附加一个符号</label>
+          <label class="toggle"><input type="checkbox" id="pw-phNoDup" checked><span class="sw"></span>单词不重复</label>
+        </div>
+        <div class="grid" style="margin-top:14px">
+          <div class="field"><label>数字位数</label><input type="number" id="pw-phNumLen" min="1" max="8" value="2"></div>
+          <div class="field"><label>数字 / 符号放在</label><select id="pw-phExtraPos"><option value="end" selected>末尾</option><option value="start">开头</option><option value="random">随机某个单词后</option></select></div>
+        </div>
+      </div>
+
+      <!-- PIN -->
+      <div class="pane" id="pw-pane-pin">
+        <div class="field"><label>位数：<b id="pw-pinShow">6</b> 位</label>
+          <div class="pw-lenrow"><input type="range" class="slider" id="pw-pin" min="3" max="32" value="6"><input type="number" id="pw-pinNum" min="3" max="32" value="6"></div>
+          <div class="chips" id="pw-pinChips"><button class="chip" data-p="4">4</button><button class="chip on" data-p="6">6</button><button class="chip" data-p="8">8</button><button class="chip" data-p="10">10</button><button class="chip" data-p="12">12</button><button class="chip" data-p="16">16</button></div>
+        </div>
+        <div class="toggles">
+          <label class="toggle"><input type="checkbox" id="pw-pinNoAdj" checked><span class="sw"></span>不允许相邻重复（如 11）</label>
+          <label class="toggle"><input type="checkbox" id="pw-pinNoSeq" checked><span class="sw"></span>不允许连续序列（如 123、987）</label>
+          <label class="toggle"><input type="checkbox" id="pw-pinNoZero"><span class="sw"></span>不以 0 开头</label>
+          <label class="toggle"><input type="checkbox" id="pw-pinNoRep"><span class="sw"></span>所有数字不重复（≤10 位）</label>
+          <label class="toggle"><input type="checkbox" id="pw-pinNoDate"><span class="sw"></span>避开像日期/年份的组合</label>
+        </div>
+        <div class="hint" style="margin-top:12px">PIN 的强度受限于设备的错误次数限制，而不是熵；4 位 PIN 只有 1 万种可能，请配合锁定策略使用。</div>
+      </div>
+
+      <!-- 模板 -->
+      <div class="pane" id="pw-pane-pattern">
+        <div class="field"><label>模板（想到什么组合就写什么）</label><input type="text" id="pw-pattern" value="Aaaa-dddd-Aaaa-dddd" spellcheck="false"><div class="hint" id="pw-patternHint">按下方符号书写；其它字符原样保留</div></div>
+        <div class="pw-sub">常用组合（点击套用）</div>
+        <div class="chips" id="pw-patChips" style="margin-top:0">
+          <button class="chip" data-pat="Aaaa-dddd-Aaaa-dddd">字母段-数字段</button>
+          <button class="chip" data-pat="Cvcvcvcvdd">可发音 + 2 位数字</button>
+          <button class="chip" data-pat="Cvcvcv-Cvcvcv-dd">可发音双段</button>
+          <button class="chip" data-pat="W-W-W-dd">3 词 + 数字</button>
+          <button class="chip" data-pat="Wdd!Wdd">词数字符号交错</button>
+          <button class="chip" data-pat="WwW[!@#$%]dddd">词+符号+4 数字</button>
+          <button class="chip" data-pat="Lx{15}">字母开头 16 位</button>
+          <button class="chip" data-pat="A{4}-A{4}-A{4}-A{4}">序列号风格</button>
+          <button class="chip" data-pat="h{32}">32 位十六进制</button>
+          <button class="chip" data-pat="h{8}-h{4}-4h{3}-[89ab]h{3}-h{12}">UUID v4</button>
+          <button class="chip" data-pat="b{43}=">Base64 风格 (256bit)</button>
+          <button class="chip" data-pat="\sk-b{48}">API Key 风格</button>
+          <button class="chip" data-pat="d{4} d{4} d{4} d{4}">16 位数字分组</button>
+          <button class="chip" data-pat="[A-Z]{2}[0-9]{6}">2 字母 6 数字</button>
+        </div>
+        <div class="pw-sub">模板符号</div>
+        <div class="pw-legend">
+          <div><span class="k">A</span>大写字母</div><div><span class="k">a</span>小写字母</div><div><span class="k">L</span>任意字母</div>
+          <div><span class="k">d</span>数字</div><div><span class="k">s</span>符号（用上方符号集）</div><div><span class="k">x</span>任意字符（大小写+数字+符号）</div>
+          <div><span class="k">n</span>字母或数字</div><div><span class="k">h</span>/<span class="k">H</span>十六进制 小/大写</div><div><span class="k">b</span>Base64 字符</div>
+          <div><span class="k">v</span>/<span class="k">V</span>元音 小/大写</div><div><span class="k">c</span>/<span class="k">C</span>辅音 小/大写</div><div><span class="k">w</span>/<span class="k">W</span>单词 小写/首大写</div>
+          <div><span class="k">U</span>单词全大写</div><div><span class="k">[…]</span>从括号内字符任选一个，支持 a-z 范围</div><div><span class="k">{n}</span>把前一项重复 n 次</div>
+          <div><span class="k">\</span>转义：<span class="k">\A</span> 输出字母 A 本身</div><div>其它字符</div>
+        </div>
+      </div>
+
+      <div class="or-divider"><span>批量生成</span></div>
+      <div class="pw-inline">
+        <div class="field"><label>一次生成数量</label><input type="number" id="pw-count" min="1" max="5000" value="1"><div class="hint">1 = 只显示上方一条；最多 5000 条，可复制全部或下载</div></div>
+        <div class="chips" style="margin-top:0"><button class="chip" data-cnt="1">1</button><button class="chip" data-cnt="10">10</button><button class="chip" data-cnt="50">50</button><button class="chip" data-cnt="100">100</button><button class="chip" data-cnt="1000">1000</button></div>
+      </div>
+      <div class="actions"><button class="btn btn-primary" id="pw-gen">🎲 生成</button><button class="btn btn-ghost" id="pw-reset">恢复默认</button></div>
+    </div>
+
+    <div class="card" id="pw-batchCard" style="display:none">
+      <div class="pane-head"><span class="desc">批量结果 <b id="pw-batchCount">0</b> 条</span><div class="tools"><button class="btn btn-ghost btn-sm" id="pw-copyAll">复制全部</button><button class="btn btn-primary btn-sm" id="pw-dlAll">下载 TXT</button></div></div>
+      <div class="pw-batch" id="pw-batch"></div>
+      <textarea id="pw-batchTa" readonly spellcheck="false" style="display:none"></textarea>
+    </div>
+
+    <div class="card pw-check">
+      <h2>③ 检测任意密码强度 <span class="badge">本地估算</span></h2>
+      <input type="text" id="pw-checkIn" placeholder="在这里输入或粘贴一个密码，看看它有多强（不会被保存或上传）" spellcheck="false" autocomplete="off">
+      <div class="pw-strength" id="pw-checkBox" style="display:none">
+        <div class="pw-meter" id="pw-checkMeter"><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="pw-strow"><span>强度：<b id="pw-checkLabel">—</b></span><span class="hint" style="margin:0" id="pw-checkEntropy"></span></div>
+        <div class="pw-crack" id="pw-checkCrack"></div>
+        <div class="hint" id="pw-checkNotes" style="margin-top:10px;line-height:1.7"></div>
+      </div>
+      <div class="or-divider"><span>安全建议</span></div>
+      <ul class="pw-tips">
+        <li><b>长度优先</b>：每多 1 位随机字符约 +6.5 bit；16 位以上的随机密码在离线攻击下也足够安全。</li>
+        <li><b>一站一密</b>：不同网站绝不复用；用密码管理器保存，本页只负责生成。</li>
+        <li><b>密码短语</b>更适合要手动输入或记忆的场景（如电脑登录、主密码），5 个词 ≈ 52 bit，6 个词 ≈ 62 bit。</li>
+        <li><b>不要"个性化"</b>：把生日、姓名、常用词拼进去不会更安全，只会更容易被猜。</li>
+        <li>本页全部使用浏览器的 <b>crypto.getRandomValues</b>（操作系统级随机源）并做了去偏处理，生成内容不保存、不上传。</li>
+      </ul>
+    </div>
+  </section>
+
   <footer>
     全程在浏览器本地完成，文件不会离开电脑。大文件建议开启「写入文件夹」（Chrome / Edge），结果直接写盘、内存占用最低；界面仅预览前 5000 行。
   </footer>
@@ -380,18 +832,63 @@ const hasFS = typeof window.showDirectoryPicker === "function";
 const tick = () => new Promise(r=>setTimeout(r,0));
 function fmtSize(b){ if(b<1024)return b.toFixed(0)+" B"; if(b<1048576)return (b/1024).toFixed(1)+" KB"; if(b<1073741824)return (b/1048576).toFixed(1)+" MB"; return (b/1073741824).toFixed(2)+" GB"; }
 let toTimer; function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toTimer); toTimer=setTimeout(()=>t.classList.remove("show"),3000); }
+function escHTML(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function safeFileName(s){ return String(s).replace(/[\\/:*?"<>|\x00-\x1f]/g,"").replace(/^\.+/,"").trim().slice(0,80); }
 function download(blob,name){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(()=>URL.revokeObjectURL(a.href),8000); toast("已下载 "+name); }
-function bindDrop(dropEl,inputEl,onFiles){ dropEl.addEventListener("click",()=>inputEl.click()); dropEl.addEventListener("dragover",e=>{e.preventDefault();dropEl.classList.add("drag");}); dropEl.addEventListener("dragleave",()=>dropEl.classList.remove("drag")); dropEl.addEventListener("drop",e=>{e.preventDefault();dropEl.classList.remove("drag");onFiles(e.dataTransfer.files);}); inputEl.addEventListener("change",e=>{onFiles(e.target.files);inputEl.value="";}); }
+
+/* ---- 纯 JS ZIP（store 存储法，无压缩，无外部库） ---- */
+const CRC_TABLE=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);t[n]=c>>>0;}return t;})();
+function crc32(u8){ let c=0xFFFFFFFF; for(let i=0;i<u8.length;i++)c=CRC_TABLE[(c^u8[i])&0xFF]^(c>>>8); return (c^0xFFFFFFFF)>>>0; }
+async function sinkToBytes(sink){ const blob=new Blob(await sink.blobParts()); return new Uint8Array(await blob.arrayBuffer()); }
+function buildZip(entries){
+  const enc=new TextEncoder(),chunks=[],central=[]; let offset=0;
+  for(const e of entries){
+    const nameB=enc.encode(e.name),crc=crc32(e.bytes),sz=e.bytes.length;
+    const lh=new Uint8Array(30),lv=new DataView(lh.buffer);
+    lv.setUint32(0,0x04034b50,true);lv.setUint16(4,20,true);lv.setUint16(6,0x0800,true);lv.setUint16(8,0,true);
+    lv.setUint16(10,0,true);lv.setUint16(12,0x21,true);lv.setUint32(14,crc,true);lv.setUint32(18,sz,true);lv.setUint32(22,sz,true);
+    lv.setUint16(26,nameB.length,true);lv.setUint16(28,0,true);
+    chunks.push(lh,nameB,e.bytes);
+    const cd=new Uint8Array(46),cv=new DataView(cd.buffer);
+    cv.setUint32(0,0x02014b50,true);cv.setUint16(4,20,true);cv.setUint16(6,20,true);cv.setUint16(8,0x0800,true);cv.setUint16(10,0,true);
+    cv.setUint16(12,0,true);cv.setUint16(14,0x21,true);cv.setUint32(16,crc,true);cv.setUint32(20,sz,true);cv.setUint32(24,sz,true);
+    cv.setUint16(28,nameB.length,true);cv.setUint16(30,0,true);cv.setUint16(32,0,true);cv.setUint16(34,0,true);cv.setUint16(36,0,true);
+    cv.setUint32(38,0,true);cv.setUint32(42,offset,true);
+    central.push(cd,nameB); offset+=30+nameB.length+sz;
+  }
+  const cdStart=offset; let cdSize=0; for(const c of central){chunks.push(c);cdSize+=c.length;}
+  const eo=new Uint8Array(22),ev=new DataView(eo.buffer);
+  ev.setUint32(0,0x06054b50,true);ev.setUint16(4,0,true);ev.setUint16(6,0,true);
+  ev.setUint16(8,entries.length,true);ev.setUint16(10,entries.length,true);ev.setUint32(12,cdSize,true);ev.setUint32(16,cdStart,true);ev.setUint16(20,0,true);
+  chunks.push(eo);
+  return new Blob(chunks,{type:"application/zip"});
+}
+async function zipDownload(items,zipName){
+  const entries=[];
+  for(const it of items){ if(it.sink&&it.sink.count>0) entries.push({name:it.name,bytes:await sinkToBytes(it.sink)}); }
+  if(!entries.length){ toast("没有可打包的内容"); return; }
+  const total=entries.reduce((a,e)=>a+e.bytes.length,0);
+  if(total>4000000000||entries.some(e=>e.bytes.length>4000000000)){ toast("总量超过 4GB，ZIP 不支持，请逐份下载或用「写入文件夹」"); return; }
+  toast("正在打包…"); await tick();
+  download(buildZip(entries),zipName);
+}
+async function copySinkFull(sink){
+  if(!sink||!sink.count){ toast("没有内容"); return; }
+  const blob=new Blob(await sink.blobParts());
+  if(blob.size>25*1024*1024){ try{await navigator.clipboard.writeText(sink.preview.join("\n"));toast(`内容较大，已复制预览前 ${sink.preview.length.toLocaleString()} 行`);}catch{toast("复制失败，请下载");} return; }
+  try{ await navigator.clipboard.writeText(await blob.text()); toast(`已复制 ${sink.count.toLocaleString()} 行`); }catch{toast("复制失败，请下载");}
+}
+function bindDrop(dropEl,inputEl,onFiles){ dropEl.addEventListener("click",e=>{ if(e.target===inputEl)return; inputEl.click(); }); dropEl.addEventListener("dragover",e=>{e.preventDefault();dropEl.classList.add("drag");}); dropEl.addEventListener("dragleave",()=>dropEl.classList.remove("drag")); dropEl.addEventListener("drop",e=>{e.preventDefault();dropEl.classList.remove("drag");onFiles(e.dataTransfer.files);}); inputEl.addEventListener("change",e=>{onFiles(e.target.files);inputEl.value="";}); }
 const pickTxt = list => [...list].filter(f=>/\.txt$/i.test(f.name)||f.type==="text/plain");
 function progressCtl(box,fill,text){ return { show(t){box.style.display="block";this.set(0,t);}, set(p,t){fill.style.width=Math.min(100,Math.max(0,p)).toFixed(1)+"%";if(t)text.textContent=t;}, hide(){box.style.display="none";} }; }
 
 function hashKey(str){ let h1=0x811c9dc5|0,h2=0xdeadbeef|0; for(let i=0;i<str.length;i++){const c=str.charCodeAt(i); h1=Math.imul(h1^c,0x01000193); h2=Math.imul(h2^c,0x85ebca77); h2^=h2>>>13;} return [h1>>>0,h2>>>0]; }
 function HashSet(){ this.cap=1<<16; this.mask=this.cap-1; this.data=new Uint32Array(this.cap*2); this.size=0; this.hasZero=false; this.limit=(this.cap*0.72)|0; }
-HashSet.prototype.presize=function(e){ let cap=1<<16,need=Math.ceil(e/0.72); while(cap<need&&cap<(1<<30))cap<<=1; if(cap>this.cap){this.cap=cap;this.mask=cap-1;this.data=new Uint32Array(cap*2);this.limit=(cap*0.72)|0;} };
+HashSet.prototype.presize=function(e){ let cap=1<<16,need=Math.ceil(e/0.72); while(cap<need&&cap<(1<<29))cap*=2; while(cap>this.cap){ try{ this.data=new Uint32Array(cap*2); this.cap=cap;this.mask=cap-1;this.limit=(cap*0.72)|0; break; }catch(err){ cap=cap/2; } } };
 HashSet.prototype._slot=function(a,b){ let i=(Math.imul(a,0x9e3779b1)^Math.imul(b,0x85ebca77))>>>0; i&=this.mask; const d=this.data; while(true){const j=i*2,x=d[j],y=d[j+1]; if(x===0&&y===0)return i; if(x===a&&y===b)return i; i=(i+1)&this.mask;} };
 HashSet.prototype.has=function(a,b){ if(a===0&&b===0)return this.hasZero; const i=this._slot(a,b),j=i*2; return this.data[j]===a&&this.data[j+1]===b; };
 HashSet.prototype.add=function(a,b){ if(a===0&&b===0){if(this.hasZero)return false;this.hasZero=true;this.size++;return true;} const i=this._slot(a,b),j=i*2; if(this.data[j]===a&&this.data[j+1]===b)return false; this.data[j]=a;this.data[j+1]=b;this.size++; if(this.size>this.limit)this._grow(); return true; };
-HashSet.prototype._grow=function(){ const old=this.data; this.cap<<=1;this.mask=this.cap-1;this.data=new Uint32Array(this.cap*2);this.limit=(this.cap*0.72)|0; for(let k=0;k<old.length;k+=2){const a=old[k],b=old[k+1]; if(a!==0||b!==0){const i=this._slot(a,b);this.data[i*2]=a;this.data[i*2+1]=b;}} };
+HashSet.prototype._grow=function(){ const old=this.data; if(this.cap>=(1<<29)) throw new Error("去重索引已达上限（约 3.8 亿条唯一记录），请分批处理"); let nd; try{ nd=new Uint32Array(this.cap*4); }catch(e){ throw new Error("内存不足：去重索引无法继续扩容，请分批处理或减少数据量"); } this.cap*=2;this.mask=this.cap-1;this.data=nd;this.limit=(this.cap*0.72)|0; for(let k=0;k<old.length;k+=2){const a=old[k],b=old[k+1]; if(a!==0||b!==0){const i=this._slot(a,b);this.data[i*2]=a;this.data[i*2+1]=b;}} };
 
 function Sink(filename){ this.filename=filename; this.count=0; this.preview=[]; this.buf=""; this.mode="mem"; this.chunks=[]; this.dir=null; this.writable=null; this.fileHandle=null; }
 Sink.prototype.setFS=function(dir){ this.mode="fs"; this.dir=dir; this.chunks=null; };
@@ -458,7 +955,7 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
   big.onchange=()=>{ $("#mg-bigLabel").textContent=big.checked?"开启":"关闭"; if(big.checked&&!hasFS)toast("浏览器不支持写盘，将用内存模式"); };
   if(!hasFS)$("#mg-bigSub").textContent="当前浏览器不支持直接写盘（建议 Chrome/Edge）；开启后用内存+下载，超大数据受限。";
 
-  $("#mg-run").onclick=()=>{ if(!running)run(); };
+  $("#mg-run").onclick=()=>{ if(running)return; run().catch(e=>{ running=false; $("#mg-run").disabled=false; prog.hide(); console.error(e); toast("处理失败："+(e&&e.message||e)); }); };
   let procBytes=0,totalBytes=1,phase="";
   function rep(){ prog.set(procBytes/totalBytes*100, `${phase}　${fmtSize(procBytes)} / ${fmtSize(totalBytes)}`); }
 
@@ -510,7 +1007,7 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
     $("#mg-c-fresh").textContent=r.fresh.count.toLocaleString(); $("#mg-c-invalid").textContent=r.invalid.count.toLocaleString(); $("#mg-c-internal").textContent=r.internal.count.toLocaleString(); $("#mg-c-archive").textContent=r.archive.count.toLocaleString();
     const valid=r.fresh.count+r.internal.count+r.archive.count; const sources=files.length+(paste.value.trim()?1:0);
     $("#mg-stats").innerHTML=`<div class="stat"><div class="n">${sources}</div><div class="l">数据来源</div></div><div class="stat"><div class="n">${valid.toLocaleString()}</div><div class="l">合格行数</div></div><div class="stat ok"><div class="n">${r.fresh.count.toLocaleString()}</div><div class="l">新增数据</div></div><div class="stat warn"><div class="n">${r.invalid.count.toLocaleString()}</div><div class="l">格式异常</div></div><div class="stat dup"><div class="n">${r.internal.count.toLocaleString()}</div><div class="l">本批去重</div></div><div class="stat arc"><div class="n">${r.archive.count.toLocaleString()}</div><div class="l">存档去重</div></div>`;
-    if(useFS){ $("#mg-savebar").style.display="block"; $("#mg-savebar").innerHTML=`✅ 完整结果已写入文件夹 <b>${dir.name}</b>：新增数据.txt / 格式异常.txt / 本批重复.txt / 存档已有.txt（空类别不生成）。`; } else $("#mg-savebar").style.display="none";
+    if(useFS){ $("#mg-savebar").style.display="block"; $("#mg-savebar").innerHTML=`✅ 完整结果已写入文件夹 <b>${escHTML(dir.name)}</b>：新增数据.txt / 格式异常.txt / 本批重复.txt / 存档已有.txt（空类别不生成）。`; } else $("#mg-savebar").style.display="none";
     setPane("fresh"); $("#mg-result").style.display="block";
     $("#mg-fresh2").textContent=r.fresh.count.toLocaleString();
     $("#mg-mergeSub").textContent=r.sources.length?`选择“并入存档”后合并进当前存档，生成新存档${useFS?"（写入文件夹）":"（下载）"}。`:`尚未载入存档；将用这批新增创建新存档。`;
@@ -534,6 +1031,7 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
   const nameMap={fresh:"新增数据.txt",invalid:"格式异常.txt",internal:"本批重复.txt",archive:"存档已有.txt"};
   document.querySelectorAll("#page-merge [data-dl]").forEach(b=>b.onclick=()=>dlSink(lastRun&&lastRun[b.dataset.dl],nameMap[b.dataset.dl]));
   async function dlSink(s,name){ if(!s||!s.count){toast("没有内容");return;} download(new Blob(await s.blobParts(),{type:"text/plain;charset=utf-8"}),name); }
+  $("#mg-zipAll").onclick=async ()=>{ if(!lastRun){toast("请先处理");return;} await zipDownload([{name:"新增数据.txt",sink:lastRun.fresh},{name:"格式异常.txt",sink:lastRun.invalid},{name:"本批重复.txt",sink:lastRun.internal},{name:"存档已有.txt",sink:lastRun.archive}],"合并去重结果.zip"); };
 
   renderArc(); updateRun();
 })();
@@ -555,11 +1053,11 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
   function sources(){ const s=files.map(f=>({file:f})); if(paste.value.trim())s.push({text:paste.value}); return s; }
   function totalBytes(){ let b=files.reduce((a,f)=>a+f.size,0); if(paste.value.trim())b+=new Blob([paste.value]).size; return b||1; }
 
-  $("#sp-run").onclick=()=>{ if(!running)run(); };
+  $("#sp-run").onclick=()=>{ if(running)return; run().catch(e=>{ running=false; $("#sp-run").disabled=false; prog.hide(); console.error(e); toast("处理失败："+(e&&e.message||e)); }); };
   async function run(){
     const srcs=sources(); if(!srcs.length){toast("请先导入或粘贴");return;}
     running=true; $("#sp-run").disabled=true; $("#sp-result").style.display="none"; $("#sp-partsCard").style.display="none";
-    const mode=$("#sp-mode").value, skipEmpty=$("#sp-empty").checked, base=($("#sp-name").value.trim()||"分割");
+    const mode=$("#sp-mode").value, skipEmpty=$("#sp-empty").checked, base=(safeFileName($("#sp-name").value)||"分割");
     const useFS=$("#sp-big").checked&&hasFS; let dir=null;
     if(useFS){ try{dir=await window.showDirectoryPicker({mode:"readwrite"});}catch(e){running=false;$("#sp-run").disabled=false;toast("已取消：未选文件夹");return;} }
     prog.show("准备中…"); await tick();
@@ -573,24 +1071,39 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
     st.writer=mkWriter(1);
     let procBytes=0; const tot=totalBytes();
     const rep=()=>prog.set(procBytes/tot*100,`分割中…　${fmtSize(procBytes)} / ${fmtSize(tot)}`);
-    async function rotate(){ const old=st.writer; if(!useFS)st.parts.push(old); await old.close(); st.part++; st.count=0; st.bytes=0; st.writer=mkWriter(st.part); }
+    async function rotate(){ const old=st.writer; st.parts.push(old); await old.close(); st.part++; st.count=0; st.bytes=0; st.writer=mkWriter(st.part); }
     function onLine(line){ if(skipEmpty&&line.trim()==="")return null; const nf=st.writer.add(line); st.count++; st.bytes+=line.length+1; const full=mode==="size"?st.bytes>=sizeLimit:st.count>=per; if(full)return rotate(); if(nf)return st.writer; return null; }
-    phase:{ for(const s of srcs){ await streamSource(s,onLine,n=>{procBytes+=n;rep();}); } }
-    if(st.writer.count>0){ if(!useFS)st.parts.push(st.writer); await st.writer.close(); }
-    const partCount=useFS?st.part-(st.writer.count>0?0:1):st.parts.length;
-    const totalOut=useFS?null:st.parts.reduce((a,w)=>a+w.count,0);
+    for(const s of srcs){ await streamSource(s,onLine,n=>{procBytes+=n;rep();}); }
+    if(st.writer.count>0)st.parts.push(st.writer);
+    await st.writer.close();
     prog.hide(); running=false; $("#sp-run").disabled=false;
-    renderResult(useFS,dir,st,partCount,base,pad);
-    toast(`分割完成：${(useFS?st.part-(st.writer.count>0?0:1):st.parts.length)} 份`);
+    renderResult(useFS,dir,st,base,pad);
+    toast(`分割完成：${st.parts.length} 份`);
   }
-  function renderResult(useFS,dir,st,partCount,base,pad){
-    const nParts=useFS?partCount:st.parts.length;
-    const totalOut=useFS?null:st.parts.reduce((a,w)=>a+w.count,0);
-    $("#sp-stats").innerHTML=`<div class="stat"><div class="n">${nParts}</div><div class="l">份数</div></div>`+(totalOut!==null?`<div class="stat ok"><div class="n">${totalOut.toLocaleString()}</div><div class="l">总行数</div></div>`:"");
-    if(useFS){ $("#sp-savebar").style.display="block"; $("#sp-savebar").innerHTML=`✅ 已写入文件夹 <b>${dir.name}</b>：${base}_001.txt … ${base}_${pad(nParts)}.txt`; $("#sp-partsCard").style.display="none"; }
-    else { $("#sp-savebar").style.display="none"; const box=$("#sp-partlist"); box.innerHTML=""; st.parts.forEach((w,i)=>{ const el=document.createElement("div"); el.className="part"; el.innerHTML=`<span class="pn"></span><span class="pm">${w.count.toLocaleString()} 行</span><button class="btn btn-primary btn-sm">下载</button>`; el.querySelector(".pn").textContent=w.filename; el.querySelector("button").onclick=async ()=>download(new Blob(await w.blobParts(),{type:"text/plain;charset=utf-8"}),w.filename); box.appendChild(el); }); $("#sp-partsCard").style.display="block"; }
+  let curParts=[];
+  function selParts(){ return [...$("#sp-partlist").querySelectorAll(".pcb:checked")].map(cb=>curParts[+cb.dataset.i]); }
+  function renderResult(useFS,dir,st,base,pad){
+    curParts=st.parts.slice();
+    const nParts=curParts.length, totalOut=curParts.reduce((a,w)=>a+w.count,0);
+    $("#sp-stats").innerHTML=`<div class="stat"><div class="n">${nParts}</div><div class="l">份数</div></div><div class="stat ok"><div class="n">${totalOut.toLocaleString()}</div><div class="l">总行数</div></div>`;
+    if(useFS){ $("#sp-savebar").style.display="block"; $("#sp-savebar").innerHTML=`✅ 已写入文件夹 <b>${escHTML(dir.name)}</b>：${escHTML(base)}_001.txt … ${escHTML(base)}_${pad(nParts)}.txt（下方也可单独 / 多选 / 打包下载）`; }
+    else $("#sp-savebar").style.display="none";
+    const box=$("#sp-partlist"); box.innerHTML="";
+    curParts.forEach((w,i)=>{ const el=document.createElement("div"); el.className="part";
+      el.innerHTML=`<input type="checkbox" class="pcb" data-i="${i}"><span class="pn"></span><span class="pm">${w.count.toLocaleString()} 行</span><button class="btn btn-ghost btn-sm pcopy">复制</button><button class="btn btn-primary btn-sm pdl">下载</button>`;
+      el.querySelector(".pn").textContent=w.filename;
+      el.querySelector(".pcopy").onclick=()=>copySinkFull(w);
+      el.querySelector(".pdl").onclick=async ()=>download(new Blob(await w.blobParts(),{type:"text/plain;charset=utf-8"}),w.filename);
+      box.appendChild(el);
+    });
+    $("#sp-selall").checked=false; $("#sp-partsCard").style.display="block";
     $("#sp-result").style.display="block"; $("#sp-result").scrollIntoView({behavior:"smooth",block:"start"});
   }
+  $("#sp-selall").onchange=()=>{ const on=$("#sp-selall").checked; $("#sp-partlist").querySelectorAll(".pcb").forEach(cb=>cb.checked=on); };
+  $("#sp-copySel").onclick=async ()=>{ const sel=selParts(); if(!sel.length){toast("请先勾选要复制的份");return;} let total=0; const blobs=[]; for(const w of sel){ const b=new Blob(await w.blobParts()); blobs.push(b); total+=b.size; } if(total>25*1024*1024){ toast("所选内容较大，建议用「下载所选」或「打包」"); return; } const text=(await Promise.all(blobs.map(b=>b.text()))).join(""); try{ await navigator.clipboard.writeText(text); toast(`已复制所选 ${sel.length} 份`); }catch{ toast("复制失败，请下载"); } };
+  $("#sp-dlSel").onclick=async ()=>{ const sel=selParts(); if(!sel.length){toast("请先勾选要下载的份");return;} for(const w of sel){ download(new Blob(await w.blobParts(),{type:"text/plain;charset=utf-8"}),w.filename); await new Promise(r=>setTimeout(r,350)); } };
+  $("#sp-zipSel").onclick=async ()=>{ const sel=selParts(); if(!sel.length){toast("请先勾选要打包的份");return;} const base=(safeFileName($("#sp-name").value)||"分割"); await zipDownload(sel.map(w=>({name:w.filename,sink:w})),base+"_所选.zip"); };
+  $("#sp-zipAll").onclick=async ()=>{ if(!curParts.length){toast("没有可打包的份");return;} const base=(safeFileName($("#sp-name").value)||"分割"); await zipDownload(curParts.map(w=>({name:w.filename,sink:w})),base+".zip"); };
   updateRun();
 })();
 
@@ -635,7 +1148,7 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
   function sources(){ const s=files.map(f=>({file:f})); if(paste.value.trim())s.push({text:paste.value}); return s; }
   function totalBytes(){ let b=files.reduce((a,f)=>a+f.size,0); if(paste.value.trim())b+=new Blob([paste.value]).size; return b||1; }
 
-  $("#cl-run").onclick=()=>{ if(!running)run(); };
+  $("#cl-run").onclick=()=>{ if(running)return; run().catch(e=>{ running=false; $("#cl-run").disabled=false; prog.hide(); console.error(e); toast("处理失败："+(e&&e.message||e)); }); };
   async function run(){
     const srcs=sources(); if(!srcs.length){toast("请先导入或粘贴");return;}
     running=true; $("#cl-run").disabled=true; $("#cl-result").style.display="none"; $("#cl-savebar").style.display="none";
@@ -656,7 +1169,7 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
     const ta=$("#cl-ta"),note=$("#cl-note"); ta.value=out.preview.join("\n");
     if(out.count>out.preview.length){note.style.display="block";note.textContent=`共 ${out.count.toLocaleString()} 行，仅预览前 ${out.preview.length.toLocaleString()} 行；完整请下载或到文件夹查看。`;}else note.style.display="none";
     $("#cl-stats").innerHTML=`<div class="stat"><div class="n">${inN.toLocaleString()}</div><div class="l">输入行数</div></div><div class="stat ok"><div class="n">${out.count.toLocaleString()}</div><div class="l">输出行数</div></div><div class="stat dup"><div class="n">${removed.toLocaleString()}</div><div class="l">删除/去重</div></div>`;
-    if(useFS){ $("#cl-savebar").style.display="block"; $("#cl-savebar").innerHTML=`✅ 已写入文件夹 <b>${dir.name}</b>：清洗结果.txt`; }
+    if(useFS){ $("#cl-savebar").style.display="block"; $("#cl-savebar").innerHTML=`✅ 已写入文件夹 <b>${escHTML(dir.name)}</b>：清洗结果.txt`; }
     lastOut=out; $("#cl-result").style.display="block"; $("#cl-result").scrollIntoView({behavior:"smooth",block:"start"});
     toast(`清洗完成：输出 ${out.count.toLocaleString()} 行，删除 ${removed.toLocaleString()} 行`);
   }
@@ -665,6 +1178,533 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
   $("#cl-dl").onclick=async ()=>{ if(!lastOut||!lastOut.count){toast("没有内容");return;} download(new Blob(await lastOut.blobParts(),{type:"text/plain;charset=utf-8"}),"清洗结果.txt"); };
 
   updateRun(); updateExample();
+})();
+
+/* ===================== 模块四：文本去重 ===================== */
+(function(){
+  const files=[]; let running=false, lastKept=null, lastDups=null;
+  const paste=$("#de-paste");
+  const prog=progressCtl($("#de-progress"),$("#de-fill"),$("#de-text"));
+  bindDrop($("#de-drop"),$("#de-file"),list=>{ const a=pickTxt(list); if(!a.length){toast("请选择 .txt");return;} files.push(...a); render(); });
+  function render(){ renderFileList($("#de-list"),files,render); updateRun(); }
+  function updateRun(){ $("#de-run").disabled=!(files.length||paste.value.trim()); const n=countPasteLines(paste.value); $("#de-pasteHint").textContent=n?`已输入约 ${n.toLocaleString()} 行`:"尚未输入"; }
+  paste.addEventListener("input",updateRun);
+  $("#de-clear").onclick=()=>{ files.length=0; render(); paste.value=""; updateRun(); $("#de-result").style.display="none"; toast("已清空"); };
+  $("#de-mode").onchange=()=>{ $("#de-delimWrap").style.display=$("#de-mode").value==="field"?"block":"none"; };
+  $("#de-big").onchange=()=>{ $("#de-bigLabel").textContent=$("#de-big").checked?"开启":"关闭"; if($("#de-big").checked&&!hasFS)toast("浏览器不支持写盘，将用下载"); };
+  if(!hasFS)$("#de-bigSub").textContent="当前浏览器不支持写盘；将用「下载」保存（建议 Chrome/Edge）。";
+  function sources(){ const s=files.map(f=>({file:f})); if(paste.value.trim())s.push({text:paste.value}); return s; }
+  function totalBytes(){ let b=files.reduce((a,f)=>a+f.size,0); if(paste.value.trim())b+=new Blob([paste.value]).size; return b||1; }
+
+  $("#de-run").onclick=()=>{ if(running)return; run().catch(e=>{ running=false; $("#de-run").disabled=false; prog.hide(); console.error(e); toast("处理失败："+(e&&e.message||e)); }); };
+  async function run(){
+    const srcs=sources(); if(!srcs.length){toast("请先导入或粘贴");return;}
+    running=true; $("#de-run").disabled=true; $("#de-result").style.display="none"; $("#de-savebar").style.display="none";
+    const useFS=$("#de-big").checked&&hasFS; let dir=null;
+    if(useFS){ try{dir=await window.showDirectoryPicker({mode:"readwrite"});}catch(e){running=false;$("#de-run").disabled=false;toast("已取消：未选文件夹");return;} }
+    const mode=$("#de-mode").value, delim=$("#de-delim").value||":", trim=$("#de-trim").checked, ignoreCase=$("#de-case").checked, skipEmpty=$("#de-empty").checked;
+    const seen=new HashSet(); seen.presize(Math.ceil(totalBytes()/24));
+    const kept=new Sink("去重结果.txt"), dups=new Sink("重复项.txt"); if(useFS){kept.setFS(dir);dups.setFS(dir);}
+    prog.show("去重中…"); let procBytes=0; const tot=totalBytes();
+    const rep=()=>prog.set(procBytes/tot*100,`去重中…　${fmtSize(procBytes)} / ${fmtSize(tot)}`);
+    let inN=0;
+    function onLine(raw){
+      inN++;
+      let line=trim?raw.trim():raw;
+      if(skipEmpty&&line.trim()==="")return null;
+      let keyStr = mode==="field" ? (()=>{ const i=line.indexOf(delim); return i>0?line.slice(0,i):line; })() : line;
+      if(trim)keyStr=keyStr.trim();
+      if(ignoreCase)keyStr=keyStr.toLowerCase();
+      const h=hashKey(keyStr);
+      if(seen.add(h[0],h[1]))return kept.add(line)?kept:null;   // 首次出现 → 保留
+      return dups.add(line)?dups:null;                          // 之后重复 → 删除并记录
+    }
+    for(const s of srcs){ await streamSource(s,onLine,n=>{procBytes+=n;rep();}); }
+    prog.set(100,"写入中…"); await tick(); await Promise.all([kept.close(),dups.close()]);
+    lastKept=kept; lastDups=dups;
+    fillPane("kept",kept); fillPane("dups",dups);
+    $("#de-c-kept").textContent=kept.count.toLocaleString(); $("#de-c-dups").textContent=dups.count.toLocaleString();
+    $("#de-stats").innerHTML=`<div class="stat"><div class="n">${inN.toLocaleString()}</div><div class="l">输入行数</div></div><div class="stat ok"><div class="n">${kept.count.toLocaleString()}</div><div class="l">去重结果</div></div><div class="stat dup"><div class="n">${dups.count.toLocaleString()}</div><div class="l">删除重复</div></div>`;
+    if(useFS){ $("#de-savebar").style.display="block"; $("#de-savebar").innerHTML=`✅ 已写入文件夹 <b>${escHTML(dir.name)}</b>：去重结果.txt / 重复项.txt`; }
+    setPane("kept"); $("#de-result").style.display="block";
+    prog.hide(); running=false; $("#de-run").disabled=false; $("#de-result").scrollIntoView({behavior:"smooth",block:"start"});
+    toast(`去重完成：保留 ${kept.count.toLocaleString()} 行，删除重复 ${dups.count.toLocaleString()} 行`);
+  }
+  function fillPane(key,sink){ const ta=$("#de-ta-"+key),note=$("#de-note-"+key); ta.value=sink.preview.join("\n"); if(sink.count>sink.preview.length){note.style.display="block";note.textContent=`共 ${sink.count.toLocaleString()} 行，仅预览前 ${sink.preview.length.toLocaleString()} 行；完整请下载或到文件夹查看。`;}else note.style.display="none"; }
+  function setPane(name){ document.querySelectorAll("#page-dedup .subtab").forEach(t=>t.classList.toggle("active",t.dataset.p===name)); document.querySelectorAll("#page-dedup .pane").forEach(p=>p.classList.toggle("active",p.id==="de-pane-"+name)); }
+  document.querySelectorAll("#page-dedup .subtab").forEach(t=>t.addEventListener("click",()=>setPane(t.dataset.p)));
+  document.querySelectorAll("#page-dedup [data-decopy]").forEach(b=>b.onclick=async ()=>{ const s=b.dataset.decopy==="kept"?lastKept:lastDups; if(!s||!s.count){toast("没有内容");return;} try{await navigator.clipboard.writeText(s.preview.join("\n"));toast(s.count>s.preview.length?`已复制预览前 ${s.preview.length.toLocaleString()} 行`:`已复制 ${s.count.toLocaleString()} 行`);}catch{toast("复制失败，请下载");} });
+  document.querySelectorAll("#page-dedup [data-dedl]").forEach(b=>b.onclick=async ()=>{ const s=b.dataset.dedl==="kept"?lastKept:lastDups; if(!s||!s.count){toast("没有内容");return;} download(new Blob(await s.blobParts(),{type:"text/plain;charset=utf-8"}), b.dataset.dedl==="kept"?"去重结果.txt":"重复项.txt"); });
+  $("#de-zipAll").onclick=async ()=>{ if(!lastKept){toast("请先去重");return;} await zipDownload([{name:"去重结果.txt",sink:lastKept},{name:"重复项.txt",sink:lastDups}],"去重结果.zip"); };
+  updateRun();
+})();
+
+/* ===================== 模块五：分隔符转换（字段合并） ===================== */
+(function(){
+  const files=[]; let running=false, lastOut=null;
+  const paste=$("#cv-paste");
+  const prog=progressCtl($("#cv-progress"),$("#cv-fill"),$("#cv-text"));
+  bindDrop($("#cv-drop"),$("#cv-file"),list=>{ const a=pickTxt(list); if(!a.length){toast("请选择 .txt");return;} files.push(...a); render(); });
+  function render(){ renderFileList($("#cv-list"),files,render); updateRun(); }
+  function updateRun(){ $("#cv-run").disabled=!(files.length||paste.value.trim()); const n=countPasteLines(paste.value); $("#cv-pasteHint").textContent=n?`已输入约 ${n.toLocaleString()} 行`:"尚未输入"; }
+  paste.addEventListener("input",()=>{updateRun();updateExample();});
+  $("#cv-clear").onclick=()=>{ files.length=0; render(); paste.value=""; updateRun(); updateExample(); $("#cv-result").style.display="none"; toast("已清空"); };
+  const srcSel=$("#cv-src"),srcC=$("#cv-srcCustom"),tgtSel=$("#cv-tgt"),tgtC=$("#cv-tgtCustom");
+  srcSel.onchange=()=>{ srcC.style.display=srcSel.value==="__custom__"?"block":"none"; updateExample(); };
+  tgtSel.onchange=()=>{ tgtC.style.display=tgtSel.value==="__custom__"?"block":"none"; updateExample(); };
+  ["cv-srcCustom","cv-tgtCustom","cv-scope","cv-trim"].forEach(id=>{ const el=$("#"+id); el.addEventListener("input",updateExample); el.addEventListener("change",updateExample); });
+  $("#cv-big").onchange=()=>{ $("#cv-bigLabel").textContent=$("#cv-big").checked?"开启":"关闭"; if($("#cv-big").checked&&!hasFS)toast("浏览器不支持写盘，将用下载"); };
+  if(!hasFS)$("#cv-bigSub").textContent="当前浏览器不支持写盘；将用「下载」保存（建议 Chrome/Edge）。";
+
+  function cfg(){
+    const srcIsWs=srcSel.value==="ws";
+    let srcRaw=srcSel.value==="__custom__"?(srcC.value||" "):srcSel.value;
+    const srcSep=srcRaw==="\\t"?"\t":srcRaw;
+    let tgtRaw=tgtSel.value==="__custom__"?(tgtC.value||":"):tgtSel.value;
+    const tgtSep=tgtRaw==="\\t"?"\t":tgtRaw;
+    return { srcIsWs, srcSep, tgtSep, scope:$("#cv-scope").value, trim:$("#cv-trim").checked, skipEmpty:$("#cv-empty").checked, dedup:$("#cv-dedup").checked };
+  }
+  function makeTransform(c){
+    return raw=>{
+      let line=c.trim?raw.trim():raw;
+      if(line==="") return "";
+      if(c.scope==="all"){
+        const f=c.srcIsWs?line.split(/\s+/).filter(x=>x!==""):line.split(c.srcSep);
+        return f.join(c.tgtSep);
+      }
+      let idx,sepLen;
+      if(c.srcIsWs){ const m=line.match(/\s+/); if(!m)return line; idx=m.index; sepLen=m[0].length; }
+      else { if(!c.srcSep)return line; idx=line.indexOf(c.srcSep); if(idx===-1)return line; sepLen=c.srcSep.length; }
+      const first=line.slice(0,idx), rest=line.slice(idx+sepLen);
+      if(c.scope==="first2"){ const t=c.srcIsWs?(rest.trim().split(/\s+/)[0]||""):(rest.split(c.srcSep)[0]||""); return first+c.tgtSep+t; }
+      return first+c.tgtSep+rest;
+    };
+  }
+  function updateExample(){
+    const src=(paste.value.split(/\r?\n/).find(x=>x.trim()!=="")) || "emmie-fleur@mx10.ttcn.ne.jp\temmie0918 emmie0918";
+    const t=makeTransform(cfg());
+    $("#cv-example").textContent=`示例输入：${src.replace(/\t/g,"⇥")}\n合并结果：${t(src)}`;
+  }
+  function sources(){ const s=files.map(f=>({file:f})); if(paste.value.trim())s.push({text:paste.value}); return s; }
+  function totalBytes(){ let b=files.reduce((a,f)=>a+f.size,0); if(paste.value.trim())b+=new Blob([paste.value]).size; return b||1; }
+
+  $("#cv-run").onclick=()=>{ if(running)return; run().catch(e=>{ running=false; $("#cv-run").disabled=false; prog.hide(); console.error(e); toast("处理失败："+(e&&e.message||e)); }); };
+  async function run(){
+    const srcs=sources(); if(!srcs.length){toast("请先导入或粘贴");return;}
+    running=true; $("#cv-run").disabled=true; $("#cv-result").style.display="none"; $("#cv-savebar").style.display="none";
+    const useFS=$("#cv-big").checked&&hasFS; let dir=null;
+    if(useFS){ try{dir=await window.showDirectoryPicker({mode:"readwrite"});}catch(e){running=false;$("#cv-run").disabled=false;toast("已取消：未选文件夹");return;} }
+    const c=cfg(), t=makeTransform(c);
+    const seen=c.dedup?new HashSet():null; if(seen)seen.presize(Math.ceil(totalBytes()/24));
+    const out=new Sink("合并结果.txt"); if(useFS)out.setFS(dir);
+    prog.show("合并中…"); let procBytes=0; const tot=totalBytes();
+    const rep=()=>prog.set(procBytes/tot*100,`合并中…　${fmtSize(procBytes)} / ${fmtSize(tot)}`);
+    let inN=0,removed=0;
+    function onLine(raw){ inN++; let line=t(raw); if(c.skipEmpty&&line.trim()===""){removed++;return null;} if(seen){const h=hashKey(line); if(!seen.add(h[0],h[1])){removed++;return null;}} return out.add(line)?out:null; }
+    for(const s of srcs){ await streamSource(s,onLine,n=>{procBytes+=n;rep();}); }
+    prog.set(100,"写入中…"); await tick(); await out.close();
+    prog.hide(); running=false; $("#cv-run").disabled=false; lastOut=out;
+    const ta=$("#cv-ta"),note=$("#cv-note"); ta.value=out.preview.join("\n");
+    if(out.count>out.preview.length){note.style.display="block";note.textContent=`共 ${out.count.toLocaleString()} 行，仅预览前 ${out.preview.length.toLocaleString()} 行；完整请下载或到文件夹查看。`;}else note.style.display="none";
+    $("#cv-stats").innerHTML=`<div class="stat"><div class="n">${inN.toLocaleString()}</div><div class="l">输入行数</div></div><div class="stat ok"><div class="n">${out.count.toLocaleString()}</div><div class="l">输出行数</div></div>`+((c.dedup||c.skipEmpty)?`<div class="stat dup"><div class="n">${removed.toLocaleString()}</div><div class="l">删除/去重</div></div>`:"");
+    if(useFS){ $("#cv-savebar").style.display="block"; $("#cv-savebar").innerHTML=`✅ 已写入文件夹 <b>${escHTML(dir.name)}</b>：合并结果.txt`; }
+    $("#cv-result").style.display="block"; $("#cv-result").scrollIntoView({behavior:"smooth",block:"start"});
+    toast(`合并完成：输出 ${out.count.toLocaleString()} 行`);
+  }
+  $("#cv-copy").onclick=async ()=>{ if(!lastOut||!lastOut.count){toast("没有内容");return;} try{await navigator.clipboard.writeText(lastOut.preview.join("\n"));toast(lastOut.count>lastOut.preview.length?`已复制预览前 ${lastOut.preview.length.toLocaleString()} 行`:`已复制 ${lastOut.count.toLocaleString()} 行`);}catch{toast("复制失败，请下载");} };
+  $("#cv-dl").onclick=async ()=>{ if(!lastOut||!lastOut.count){toast("没有内容");return;} download(new Blob(await lastOut.blobParts(),{type:"text/plain;charset=utf-8"}),"合并结果.txt"); };
+  updateRun(); updateExample();
+})();
+
+/* ===================== 模块六：提取匹配（按邮箱名单捞整行） ===================== */
+(function(){
+  const files=[]; let running=false, lastHit=null, lastMiss=null;
+  const left=$("#ex-left"), right=$("#ex-right");
+  const prog=progressCtl($("#ex-progress"),$("#ex-fill"),$("#ex-text"));
+  const EMAIL_RE=/[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}/;
+
+  bindDrop($("#ex-drop"),$("#ex-file"),list=>{ const a=pickTxt(list); if(!a.length){toast("请选择 .txt");return;} files.push(...a); render(); });
+  function render(){ renderFileList($("#ex-list"),files,render); updateRun(); }
+  function updateRun(){
+    const hasLeft=files.length||left.value.trim(), hasRight=right.value.trim();
+    $("#ex-run").disabled=!(hasLeft&&hasRight);
+    const n=countPasteLines(right.value); $("#ex-rightHint").textContent=n?`名单约 ${n.toLocaleString()} 个邮箱`:"尚未输入";
+  }
+  left.addEventListener("input",updateRun); right.addEventListener("input",updateRun);
+  $("#ex-clear").onclick=()=>{ files.length=0; render(); left.value=""; right.value=""; updateRun(); $("#ex-result").style.display="none"; toast("已清空"); };
+  $("#ex-mode").onchange=()=>{ $("#ex-delimWrap").style.display=$("#ex-mode").value==="field"?"block":"none"; };
+  $("#ex-big").onchange=()=>{ $("#ex-bigLabel").textContent=$("#ex-big").checked?"开启":"关闭"; if($("#ex-big").checked&&!hasFS)toast("浏览器不支持写盘，将用下载"); };
+  if(!hasFS)$("#ex-bigSub").textContent="当前浏览器不支持写盘；将用「下载」保存（建议 Chrome/Edge）。";
+
+  function leftSources(){ const s=files.map(f=>({file:f})); if(left.value.trim())s.push({text:left.value}); return s; }
+  function leftBytes(){ let b=files.reduce((a,f)=>a+f.size,0); if(left.value.trim())b+=new Blob([left.value]).size; return b||1; }
+
+  $("#ex-run").onclick=()=>{ if(running)return; run().catch(e=>{ running=false; $("#ex-run").disabled=false; prog.hide(); console.error(e); toast("处理失败："+(e&&e.message||e)); }); };
+  async function run(){
+    if(!(files.length||left.value.trim())){toast("左边请放数据源");return;}
+    if(!right.value.trim()){toast("右边请粘贴邮箱名单");return;}
+    running=true; $("#ex-run").disabled=true; $("#ex-result").style.display="none"; $("#ex-savebar").style.display="none";
+    const useFS=$("#ex-big").checked&&hasFS; let dir=null;
+    if(useFS){ try{dir=await window.showDirectoryPicker({mode:"readwrite"});}catch(e){running=false;$("#ex-run").disabled=false;toast("已取消：未选文件夹");return;} }
+    const mode=$("#ex-mode").value, delim=$("#ex-delim").value||":", ignoreCase=$("#ex-case").checked, firstOnly=$("#ex-first").checked;
+
+    function norm(s){ return ignoreCase?s.toLowerCase():s; }
+    function rightKeyOf(raw){ let s=raw.trim(); if(s==="")return ""; if(mode==="email"){ const m=s.match(EMAIL_RE); s=m?m[0]:s; } return norm(s); }
+    function leftKeyOf(line){
+      if(mode==="email"){ const m=line.match(EMAIL_RE); return m?norm(m[0]):""; }
+      if(mode==="field"){ const i=line.indexOf(delim); return norm((i>=0?line.slice(0,i):line).trim()); }
+      return norm(line.trim());
+    }
+
+    prog.show("读取名单…"); await tick();
+    // 建右侧名单集合（去重），并保留原始邮箱用于“未找到”
+    const rightSet=new HashSet(), rightList=[];
+    for(const raw of right.value.split(/\r\n|\r|\n/)){
+      const k=rightKeyOf(raw); if(!k)continue;
+      const h=hashKey(k);
+      if(rightSet.add(h[0],h[1])) rightList.push({disp:raw.trim(),a:h[0],b:h[1]});
+    }
+    if(!rightList.length){ running=false;$("#ex-run").disabled=false;prog.hide();toast("名单里没有有效邮箱");return; }
+
+    // 流式扫描左侧数据源，命中即输出整行
+    prog.set(0,"扫描数据源…");
+    const hit=new Sink("匹配结果.txt"); if(useFS)hit.setFS(dir);
+    const found=new HashSet(); const firstSeen=firstOnly?new HashSet():null;
+    let procBytes=0; const tot=leftBytes(); let scanned=0, matched=0;
+    const rep=()=>prog.set(procBytes/tot*100,`扫描数据源…　${fmtSize(procBytes)} / ${fmtSize(tot)}`);
+    function onLine(line){
+      scanned++;
+      const k=leftKeyOf(line); if(!k)return null;
+      const h=hashKey(k);
+      if(!rightSet.has(h[0],h[1]))return null;
+      found.add(h[0],h[1]);
+      if(firstSeen && !firstSeen.add(h[0],h[1]))return null; // 该邮箱已输出过一条
+      matched++;
+      return hit.add(line)?hit:null;
+    }
+    for(const s of leftSources()){ await streamSource(s,onLine,n=>{procBytes+=n;rep();}); }
+
+    // 未找到的邮箱
+    const miss=new Sink("未找到.txt"); if(useFS)miss.setFS(dir);
+    for(const r of rightList){ if(!found.has(r.a,r.b)) miss.add(r.disp); }
+    prog.set(100,"写入中…"); await tick();
+    await Promise.all([hit.close(),miss.close()]);
+
+    lastHit=hit; lastMiss=miss;
+    fillPane("hit",hit); fillPane("miss",miss);
+    $("#ex-c-hit").textContent=hit.count.toLocaleString(); $("#ex-c-miss").textContent=miss.count.toLocaleString();
+    $("#ex-stats").innerHTML=`<div class="stat"><div class="n">${rightList.length.toLocaleString()}</div><div class="l">名单邮箱</div></div><div class="stat"><div class="n">${scanned.toLocaleString()}</div><div class="l">扫描行数</div></div><div class="stat ok"><div class="n">${hit.count.toLocaleString()}</div><div class="l">匹配整行</div></div><div class="stat arc"><div class="n">${found.size.toLocaleString()}</div><div class="l">命中邮箱</div></div><div class="stat dup"><div class="n">${miss.count.toLocaleString()}</div><div class="l">未找到</div></div>`;
+    if(useFS){ $("#ex-savebar").style.display="block"; $("#ex-savebar").innerHTML=`✅ 已写入文件夹 <b>${escHTML(dir.name)}</b>：匹配结果.txt / 未找到.txt`; }
+    setPane("hit"); $("#ex-result").style.display="block";
+    prog.hide(); running=false; $("#ex-run").disabled=false; $("#ex-result").scrollIntoView({behavior:"smooth",block:"start"});
+    toast(`提取完成：匹配 ${hit.count.toLocaleString()} 行，命中 ${found.size.toLocaleString()} 个邮箱，未找到 ${miss.count.toLocaleString()} 个`);
+  }
+  function fillPane(key,sink){ const ta=$("#ex-ta-"+key),note=$("#ex-note-"+key); ta.value=sink.preview.join("\n"); if(sink.count>sink.preview.length){note.style.display="block";note.textContent=`共 ${sink.count.toLocaleString()} 行，仅预览前 ${sink.preview.length.toLocaleString()} 行；完整请下载或到文件夹查看。`;}else note.style.display="none"; }
+  function setPane(name){ document.querySelectorAll("#page-extract .subtab").forEach(t=>t.classList.toggle("active",t.dataset.p===name)); document.querySelectorAll("#page-extract .pane").forEach(p=>p.classList.toggle("active",p.id==="ex-pane-"+name)); }
+  document.querySelectorAll("#page-extract .subtab").forEach(t=>t.addEventListener("click",()=>setPane(t.dataset.p)));
+  document.querySelectorAll("#page-extract [data-excopy]").forEach(b=>b.onclick=async ()=>{ const s=b.dataset.excopy==="hit"?lastHit:lastMiss; if(!s||!s.count){toast("没有内容");return;} try{await navigator.clipboard.writeText(s.preview.join("\n"));toast(s.count>s.preview.length?`已复制预览前 ${s.preview.length.toLocaleString()} 行`:`已复制 ${s.count.toLocaleString()} 行`);}catch{toast("复制失败，请下载");} });
+  document.querySelectorAll("#page-extract [data-exdl]").forEach(b=>b.onclick=async ()=>{ const s=b.dataset.exdl==="hit"?lastHit:lastMiss; if(!s||!s.count){toast("没有内容");return;} download(new Blob(await s.blobParts(),{type:"text/plain;charset=utf-8"}),b.dataset.exdl==="hit"?"匹配结果.txt":"未找到.txt"); });
+  $("#ex-zipAll").onclick=async ()=>{ if(!lastHit){toast("请先提取");return;} await zipDownload([{name:"匹配结果.txt",sink:lastHit},{name:"未找到.txt",sink:lastMiss}],"提取匹配结果.zip"); };
+  updateRun();
+})();
+
+/* ===================== 模块七：随机密码生成 ===================== */
+(function(){
+  const WORDS = "acid acorn acre acts afar affix aged agent agile aging agony ahead aide aids aim ajar alarm alias alibi alien alike alive aloe aloft aloha alone amend amino ample amuse angel anger angle ankle apple april apron aqua area arena argue arise armed armor army aroma array arson art ashen ashes atlas atom attic audio avert avoid awake award awoke axis bacon badge bagel baggy baked baker balmy banjo barge barn bash basil bask batch bath baton bats blade blank blast blaze bleak blend bless blimp blink bloat blob blog blot blunt blurt blush boast boat body boil bok bolt boned boney bonus bony book booth boots boss botch both boxer breed bribe brick bride brim bring brink brisk broad broil broke brook broom brush buck bud buggy bulge bulk bully bunch bunny bunt bush bust busy buzz cable cache cadet cage cake calm cameo canal candy cane canon cape card cargo carol carry carve case cash cause cedar chain chair chant chaos charm chase cheek cheer chef chess chest chew chief chili chill chip chomp chop chow chuck chump chunk churn chute cider cinch city civic civil clad claim clamp clap clash clasp class claw clay clean clear cleat cleft clerk click cling clink clip cloak clock clone cloth cloud clump coach coast coat cod coil coke cola cold colt coma come comic comma cone cope copy coral cork cost cot couch cough cover cozy craft cramp crane crank crate crave crawl crazy creme crepe crept crib cried crisp crook crop cross crowd crown crumb crush crust cub cult cupid cure curl curry curse curve curvy cushy cut cycle dab dad daily dairy daisy dance dandy darn dart dash data date dawn deaf deal dean debit debt debug decaf decal decay deck decor decoy deed delay denim dense dent depth derby desk dial diary dice dig dill dime dimly diner dingy disco dish disk ditch ditzy dizzy dock dodge doing doll dome donor donut dose dot dove down dowry doze drab drama drank draw dress dried drift drill drive drone droop drove drown drum dry duck duct dude dug duke duo dusk dust duty dwarf dwell eagle early earth easel east eaten eats ebay ebony ebook echo edge eel eject elbow elder elf elk elm elope elude elves email emit empty emu enter entry envoy equal erase error erupt essay etch evade even evict evil evoke exact exit fable faced fact fade fall false fancy fang fax feast feed femur fence fend ferry fetal fetch fever fiber fifth fifty film filth final finch fit five flag flaky flame flap flask fled flick fling flint flip flirt float flock flop floss flyer foam foe fog foil folic folk food fool found fox foyer frail frame fray fresh fried frill frisk from front frost froth frown froze fruit gag gains gala game gap gas gave gear gecko geek gem genre gift gig gills given giver glad glass glide gloss glove glow glue goal going golf gong good gooey goofy gore gown grab grain grant grape graph grasp grass grave gravy gray green greet grew grid grief grill grip grit groom grope growl grub grunt guide gulf gulp gummy guru gush gut guy habit half halo halt happy harm hash hasty hatch hate haven hazel hazy heap heat heave hedge hefty help herbs hers hub hug hula hull human humid hump hung hunk hunt hurry hurt hush hut ice icing icon icy igloo image ion iron islam issue item ivory ivy jab jam jaws jazz jeep jelly jet jiffy job jog jolly jolt jot joy judge juice juicy july jumbo jump junky juror jury keep keg kept kick kilt king kite kitty kiwi knee knelt koala kung ladle lady lair lake lance land lapel large lash lasso last latch late lazy left legal lemon lend lens lent level lever lid life lift lilac lily limb limes line lint lion lip list lived liver lunar lunch lung lurch lure lurk lying lyric mace maker malt mama mango manor many map march mardi marry mash match mate math moan mocha moist mold mom moody mop morse most motor motto mount mouse mousy mouth move movie mower mud mug mulch mule mull mumbo mummy mural muse music musky mute nacho nag nail name nanny nap navy near neat neon nerd nest net next niece ninth nutty oak oasis oat ocean oil old olive omen onion only ooze opal open opera opt otter ouch ounce outer oval oven owl ozone pace pagan pager palm panda panic pants panty paper park party pasta patch path patio payer pecan penny pep perch perky perm pest petal petri petty photo plank plant plaza plead plot plow pluck plug plus poach pod poem poet pogo point poise poker polar polio polka polo pond pony poppy pork poser pouch pound pout power prank press print prior prism prize probe prong proof props prude prune pry pug pull pulp pulse puma punch punk pupil puppy purr purse push putt quack quake query quiet quill quilt quit quota quote rabid race rack radar radio raft rage raid rail rake rally ramp ranch range rank rant rash raven reach react ream rebel recap relax relay relic remix repay repel reply rerun reset rhyme rice rich ride rigid rigor rinse riot ripen rise risk ritzy rival river roast robe robin rock rogue roman romp rope rover royal ruby rug ruin rule runny rush rust rut sadly sage said saint salad salon salsa salt same sandy santa satin sauna saved savor sax say scale scam scan scare scarf scary scoff scold scoop scoot scope score scorn scout scowl scrap scrub scuba scuff sect sedan self send sepia serve set seven shack shade shady shaft shaky sham shape share sharp shed sheep sheet shelf shell shine shiny ship shirt shock shop shore shout shove shown showy shred shrug shun shush shut shy sift silk silly silo sip siren sixth size skate skew skid skier skies skip skirt skit sky slab slack slain slam slang slash slate slaw sled sleek sleep sleet slept slice slick slimy sling slip slit slob slot slug slum slurp slush small smash smell smile smirk smog snack snap snare snarl sneak sneer sniff snore snort snout snowy snub snuff speak speed spend spent spew spied spill spiny spoil spoke spoof spool spoon sport spot spout spray spree spur squad squat squid stack staff stage stain stall stamp stand stank stark start stash state stays steam steep stem step stew stick sting stir stock stole stomp stony stood stool stoop stop storm stout stove straw stray strut stuck stud stuff stump stung stunt suds sugar sulk surf sushi swab swan swarm sway swear sweat sweep swell swept swim swing swipe swirl swoop swore syrup tacky taco tag take tall talon tamer tank taper taps tarot tart task taste tasty taunt thank thaw theft theme thigh thing think thong thorn those throb thud thumb thump thus tiara tidal tidy tiger tile tilt tint tiny trace track trade train trait trap trash tray treat tree trek trend trial tribe trick trio trout truce truck trump trunk try tug tulip tummy turf tusk tutor tutu tux tweak tweet twice twine twins twirl twist uncle uncut undo unify union unit untie upon upper urban used user usher utter value vapor vegan venue verse vest veto vice video view viral virus visa visor vixen vocal voice void volt voter vowel wad wafer wager wages wagon wake walk wand wasp watch water wavy wheat whiff whole whoop wick widen widow width wife wifi wilt wimp wind wing wink wipe wired wiry wise wish wispy wok wolf womb wool woozy word work worry wound woven wrath wreck wrist xerox yahoo yam yard year yeast yelp yield yoyo yodel yoga yoyo yummy zebra zero zesty zippy zone zoom".split(" ");
+  const WORDS_SHORT = WORDS.filter(w=>w.length<=4), WORDS_LONG = WORDS.filter(w=>w.length===5);
+  const UPPER="ABCDEFGHIJKLMNOPQRSTUVWXYZ", LOWER="abcdefghijklmnopqrstuvwxyz", DIGITS="0123456789";
+  const DEFAULT_SYMBOLS="!@#$%^&*()-_=+[]{};:,.<>?/~", AMBIG="0O1lI|`'\"";
+  const VOW="aeiou", CONS="bcdfghjklmnpqrstvwxyz", HEX="0123456789abcdef", B64=UPPER+LOWER+DIGITS+"+/";
+  const LOG2=Math.log2;
+
+  /* ---- 加密级随机（拒绝采样去偏，池化减少系统调用） ---- */
+  const cryptoOK = !!(window.crypto && typeof window.crypto.getRandomValues==="function");
+  const pool=new Uint32Array(512); let poolPos=pool.length;
+  function next32(){ if(poolPos>=pool.length){ crypto.getRandomValues(pool); poolPos=0; } return pool[poolPos++]; }
+  function rint(n){ if(!cryptoOK) throw new Error("当前环境没有安全随机源（crypto.getRandomValues），已拒绝生成"); if(!(n>0)) throw new Error("空字符集"); if(n===1) return 0; const lim=4294967296-(4294967296%n); let v; do{ v=next32(); }while(v>=lim); return v%n; }
+  const pick = s => s[rint(s.length)];
+  function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=rint(i+1); const t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+
+  const uniq = s => [...new Set([...s])].join("");
+  const without = (s,ex) => [...s].filter(c=>!ex.has(c)).join("");
+  const isDigit = c => c>="0"&&c<="9";
+  const isLetter = c => /\p{L}/u.test(c);
+  const isSym = c => !isDigit(c)&&!isLetter(c)&&c!==" ";
+
+  /* ---- 强度评估 ---- */
+  function level(bits){ return bits<28?1:bits<40?2:bits<64?3:bits<90?4:5; }
+  const LEVEL_TXT={1:"极弱",2:"弱",3:"一般",4:"强",5:"极强"};
+  function fmtTime(sec){
+    if(sec<1)return "瞬间"; if(sec<60)return Math.round(sec)+" 秒"; if(sec<3600)return Math.round(sec/60)+" 分钟"; if(sec<86400)return Math.round(sec/3600)+" 小时";
+    const y=sec/31557600; if(y<1)return Math.round(sec/86400)+" 天"; if(y<1e4)return (y<10?y.toFixed(1):Math.round(y))+" 年"; if(y<1e8)return Math.round(y/1e4).toLocaleString()+" 万年"; if(y<1.38e10)return Math.round(y/1e8).toLocaleString()+" 亿年";
+    const e=Math.floor(Math.log10(y)); return e>=30?"远超宇宙年龄（宇宙才 138 亿年）":`约 10^${e} 年（远超宇宙年龄）`;
+  }
+  function crackHTML(bits){
+    const g=Math.pow(2,Math.max(0,bits-1));
+    return `<div class="c">在线猜测（约 1 千次/秒，有限速）<b>${fmtTime(g/1e3)}</b></div><div class="c">离线破解（约 100 亿次/秒，GPU 集群）<b>${fmtTime(g/1e10)}</b></div>`;
+  }
+  function paintStrength(meter,label,entropy,crack,bits,extra){
+    const lv=level(bits); meter.className="pw-meter l"+lv; label.textContent=LEVEL_TXT[lv]; label.className="l"+lv;
+    entropy.textContent=`熵 ≈ ${bits.toFixed(1)} bit${extra?" · "+extra:""}`; crack.innerHTML=crackHTML(bits);
+  }
+
+  /* ---- 着色渲染 ---- */
+  const esc=escHTML;
+  function colorize(pw,seps){
+    let out=""; for(const ch of pw){ let cls=""; if(seps&&seps.has(ch))cls="sep"; else if(isDigit(ch))cls="d"; else if(isSym(ch))cls="s"; out+=cls?`<span class="${cls}">${esc(ch)}</span>`:esc(ch); } return out;
+  }
+
+  /* ---- 随机字符模式 ---- */
+  function cfgRandom(){
+    return { len:clampNum($("#pw-lenNum"),4,128,16), upper:$("#pw-upper").checked, lower:$("#pw-lower").checked, digit:$("#pw-digit").checked, symbol:$("#pw-symbol").checked,
+      customOn:$("#pw-customOn").checked, custom:$("#pw-custom").value, symbols:$("#pw-symbols").value, exclude:$("#pw-exclude").value, eachOne:$("#pw-eachOne").checked, ambig:$("#pw-ambig").checked,
+      noAdj:$("#pw-noAdj").checked, noRep:$("#pw-noRep").checked, startLetter:$("#pw-startLetter").checked, endAlnum:$("#pw-endAlnum").checked,
+      minDigit:clampNum($("#pw-minDigit"),0,128,0), minSym:clampNum($("#pw-minSym"),0,128,0), group:clampNum($("#pw-group"),0,64,0), groupSep:$("#pw-groupSep").value };
+  }
+  function genRandom(c){
+    const ex=new Set([...c.exclude]); if(c.ambig)for(const ch of AMBIG)ex.add(ch); if(c.group>0)for(const ch of c.groupSep)ex.add(ch); // 分组分隔符不进入字符池，避免歧义
+    const groups=[];
+    const add=(chars,min,name)=>{ chars=without(uniq(chars),ex); if(!chars.length) throw new Error(`「${name}」在排除后没有剩余字符`); groups.push({chars,min,name}); };
+    if(c.upper)add(UPPER,c.eachOne?1:0,"大写");
+    if(c.lower)add(LOWER,c.eachOne?1:0,"小写");
+    if(c.digit)add(DIGITS,Math.max(c.eachOne?1:0,c.minDigit),"数字");
+    if(c.symbol)add([...c.symbols].filter(ch=>ch!==" ").join("")||DEFAULT_SYMBOLS,Math.max(c.eachOne?1:0,c.minSym),"符号");
+    if(c.customOn){ const cu=[...c.custom].filter(ch=>ch!==" ").join(""); if(!cu) throw new Error("已开启自定义字符，但没有填写内容"); add(cu,c.eachOne?1:0,"自定义"); }
+    if(!groups.length) throw new Error("请至少选择一种字符类型");
+    const all=uniq(groups.map(g=>g.chars).join(""));
+    const n=c.len, need=groups.reduce((a,g)=>a+g.min,0);
+    if(need>n) throw new Error(`各类最少数量之和（${need}）超过了长度 ${n}`);
+    if(c.noRep&&all.length<n) throw new Error(`字符池只有 ${all.length} 个字符，无法生成 ${n} 位不重复密码`);
+    const letters=[...all].filter(isLetter).join(""), alnum=[...all].filter(ch=>isLetter(ch)||isDigit(ch)).join("");
+    if(c.startLetter&&!letters.length) throw new Error("要求首字符是字母，但字符池里没有字母");
+    if(c.endAlnum&&!alnum.length) throw new Error("要求末字符不是符号，但字符池里只有符号");
+    for(let attempt=0;attempt<400;attempt++){
+      const used=new Set(); const arr=[];
+      const take=src=>{ let s=src; if(c.noRep){ s=[...src].filter(ch=>!used.has(ch)).join(""); if(!s.length)return false; } const ch=pick(s); used.add(ch); arr.push(ch); return true; };
+      let ok=true;
+      for(const g of groups){ for(let i=0;i<g.min;i++){ if(!take(g.chars)){ok=false;break;} } if(!ok)break; }
+      if(!ok)continue;
+      while(arr.length<n){ if(!take(all)){ok=false;break;} }
+      if(!ok)continue;
+      shuffle(arr);
+      if(c.startLetter&&!isLetter(arr[0])){ const i=arr.findIndex(isLetter); if(i<0)continue; [arr[0],arr[i]]=[arr[i],arr[0]]; }
+      if(c.endAlnum&&isSym(arr[n-1])){ let i=-1; for(let k=n-2;k>=(c.startLetter?1:0);k--){ if(!isSym(arr[k])){i=k;break;} } if(i<0)continue; [arr[n-1],arr[i]]=[arr[i],arr[n-1]]; if(c.startLetter&&!isLetter(arr[0]))continue; }
+      if(c.noAdj&&!c.noRep){ // 修复相邻重复：找一个可交换位置
+        let bad=false;
+        for(let i=1;i<n;i++){ if(arr[i]!==arr[i-1])continue; let fixed=false;
+          for(let j=0;j<n;j++){ if(j===i||j===i-1)continue; if(arr[j]===arr[i])continue; if(j>0&&arr[j-1]===arr[i])continue; if(j<n-1&&arr[j+1]===arr[i])continue; if(i<n-1&&arr[j]===arr[i+1])continue; if(c.startLetter&&(j===0||i===0)&&!(isLetter(arr[j])&&isLetter(arr[i])))continue; if(c.endAlnum&&(j===n-1||i===n-1)&&(isSym(arr[j])||isSym(arr[i])))continue; [arr[i],arr[j]]=[arr[j],arr[i]]; fixed=true; break; }
+          if(!fixed){bad=true;break;} }
+        if(bad)continue;
+        let still=false; for(let i=1;i<n;i++)if(arr[i]===arr[i-1]){still=true;break;} if(still)continue;
+      }
+      let bits; if(c.noRep){ bits=0; for(let i=0;i<n;i++)bits+=LOG2(all.length-i); } else if(c.noAdj){ bits=LOG2(all.length)+(n-1)*LOG2(Math.max(1,all.length-1)); } else bits=n*LOG2(all.length);
+      let pw=arr.join(""), seps=null;
+      if(c.group>0&&c.groupSep){ const parts=[]; for(let i=0;i<pw.length;i+=c.group)parts.push(pw.slice(i,i+c.group)); pw=parts.join(c.groupSep); seps=new Set([...c.groupSep]); }
+      return { pw, bits, seps, extra:`字符池 ${all.length} 个 · ${n} 位` };
+    }
+    throw new Error("约束太苛刻，多次尝试仍无法满足，请放宽条件");
+  }
+
+  /* ---- 密码短语模式 ---- */
+  function cfgPhrase(){
+    const sepSel=$("#pw-phSep").value;
+    return { words:clampNum($("#pw-wordsNum"),2,16,5), sep:sepSel==="__custom__"?$("#pw-phSepCustom").value:sepSel, caseMode:$("#pw-phCase").value, list:$("#pw-phList").value,
+      addNum:$("#pw-phNum").checked, numLen:clampNum($("#pw-phNumLen"),1,8,2), addSym:$("#pw-phSym").checked, noDup:$("#pw-phNoDup").checked, pos:$("#pw-phExtraPos").value, symbols:$("#pw-symbols").value };
+  }
+  function genPhrase(c){
+    const list=c.list==="short"?WORDS_SHORT:c.list==="long"?WORDS_LONG:WORDS;
+    if(c.noDup&&c.words>list.length) throw new Error("单词数超过词表大小");
+    let bits=0; const ws=[]; const used=new Set();
+    for(let i=0;i<c.words;i++){ let w; if(c.noDup){ do{ w=pick(list); }while(used.has(w)); used.add(w); bits+=LOG2(list.length-i); } else { w=pick(list); bits+=LOG2(list.length); } ws.push(w); }
+    const cap=w=>w[0].toUpperCase()+w.slice(1);
+    for(let i=0;i<ws.length;i++){ const w=ws[i];
+      switch(c.caseMode){ case "cap":ws[i]=cap(w);break; case "upper":ws[i]=w.toUpperCase();break; case "randWord":{const r=rint(3);ws[i]=r===0?w:r===1?cap(w):w.toUpperCase();bits+=LOG2(3);break;} case "randChar":ws[i]=[...w].map(ch=>rint(2)?ch.toUpperCase():ch).join("");bits+=w.length;break; case "alt":ws[i]=i%2?w.toUpperCase():w;break; default:ws[i]=w; } }
+    const symSet=uniq([...c.symbols].filter(ch=>ch!==" ").join("")||DEFAULT_SYMBOLS);
+    const extras=[];
+    if(c.addNum){ let s=""; for(let i=0;i<c.numLen;i++)s+=pick(DIGITS); extras.push(s); bits+=c.numLen*LOG2(10); }
+    if(c.addSym){ extras.push(pick(symSet)); bits+=LOG2(symSet.length); }
+    const sepAt=[]; const seps=new Set();
+    for(let i=0;i<ws.length-1;i++){ let s=c.sep; if(c.sep==="__digit__"){s=pick(DIGITS);bits+=LOG2(10);} else if(c.sep==="__symbol__"){s=pick(symSet);bits+=LOG2(symSet.length);} sepAt.push(s); for(const ch of s)seps.add(ch); }
+    const extraStr=extras.join("");
+    let pw="";
+    if(extraStr&&c.pos==="random"){ const at=rint(ws.length); bits+=LOG2(ws.length); ws[at]+=extraStr; }
+    for(let i=0;i<ws.length;i++){ pw+=ws[i]; if(i<sepAt.length)pw+=sepAt[i]; }
+    if(extraStr&&c.pos==="end")pw+=extraStr; else if(extraStr&&c.pos==="start")pw=extraStr+pw;
+    return { pw, bits, seps, extra:`${c.words} 个词 · 词表 ${list.length} 词`, small:pw.length>40 };
+  }
+
+  /* ---- PIN 模式 ---- */
+  function cfgPin(){ return { len:clampNum($("#pw-pinNum"),3,32,6), noAdj:$("#pw-pinNoAdj").checked, noSeq:$("#pw-pinNoSeq").checked, noZero:$("#pw-pinNoZero").checked, noRep:$("#pw-pinNoRep").checked, noDate:$("#pw-pinNoDate").checked }; }
+  function looksLikeDate(s){
+    if(s.length===4){ const y=+s; return y>=1900&&y<=2099; }
+    if(s.length===6||s.length===8){ const a=s.slice(0,2),b=s.slice(2,4),c=s.slice(4,6),d=s.slice(6,8);
+      const mm=x=>+x>=1&&+x<=12, dd=x=>+x>=1&&+x<=31;
+      if(s.length===6) return (mm(a)&&dd(b))||(dd(a)&&mm(b))||(mm(c)&&dd(b))||(dd(c)&&mm(b));
+      const y1=+s.slice(0,4),y2=+s.slice(4,8); return (y1>=1900&&y1<=2099&&mm(c)&&dd(d))||(y2>=1900&&y2<=2099&&((mm(a)&&dd(b))||(dd(a)&&mm(b)))); }
+    return false;
+  }
+  function genPin(c){
+    if(c.noRep&&c.len>10) throw new Error("不重复数字最多只能 10 位");
+    for(let attempt=0;attempt<5000;attempt++){
+      let s=""; const used=new Set(); let ok=true;
+      for(let i=0;i<c.len;i++){ const cand=[...DIGITS].filter(d=>!(c.noRep&&used.has(d))&&!(c.noZero&&i===0&&d==="0")&&!(c.noAdj&&s.endsWith(d))); if(!cand.length){ok=false;break;} const d=cand[rint(cand.length)]; used.add(d); s+=d; }
+      if(!ok)continue;
+      if(c.noSeq){ let bad=false; for(let i=2;i<s.length;i++){ const a=+s[i-2],b=+s[i-1],d=+s[i]; if((b-a===1&&d-b===1)||(a-b===1&&b-d===1)){bad=true;break;} } if(bad)continue; }
+      if(/^(\d)\1+$/.test(s))continue;
+      if(c.noDate&&looksLikeDate(s))continue;
+      let bits=c.noRep?[...Array(c.len).keys()].reduce((a,i)=>a+LOG2(10-i),0):c.len*LOG2(10);
+      if(c.noAdj&&!c.noRep)bits=LOG2(10)+(c.len-1)*LOG2(9);
+      return { pw:s, bits, seps:null, extra:`${c.len} 位数字` };
+    }
+    throw new Error("约束太苛刻，无法生成，请放宽条件");
+  }
+
+  /* ---- 模板模式 ---- */
+  function parsePattern(src){
+    const toks=[]; let i=0;
+    const sets={A:UPPER,a:LOWER,L:UPPER+LOWER,d:DIGITS,n:UPPER+LOWER+DIGITS,h:HEX,H:HEX.toUpperCase(),b:B64,v:VOW,V:VOW.toUpperCase(),c:CONS,C:CONS.toUpperCase()};
+    while(i<src.length){
+      const ch=src[i];
+      if(ch==="\\"){ if(i+1>=src.length) throw new Error("模板末尾的 \\ 后面缺少字符"); toks.push({t:"lit",v:src[i+1]}); i+=2; continue; }
+      if(ch==="{"){ const m=src.slice(i).match(/^\{(\d{1,3})\}/); if(!m) throw new Error(`第 ${i+1} 个字符处的 {…} 写法不正确，应为 {数字}`); const n=+m[1]; if(n<1||n>512) throw new Error("{n} 的 n 需在 1–512 之间"); if(!toks.length) throw new Error("{n} 前面需要有一项"); const last=toks[toks.length-1]; for(let k=1;k<n;k++)toks.push(last); i+=m[0].length; continue; }
+      if(ch==="["){ const end=src.indexOf("]",i+1); if(end<0) throw new Error("方括号 [ 没有对应的 ]"); const body=src.slice(i+1,end); if(!body) throw new Error("方括号内不能为空"); let set=""; for(let k=0;k<body.length;k++){ if(k+2<body.length&&body[k+1]==="-"){ const a=body.charCodeAt(k),b=body.charCodeAt(k+2); if(b<a) throw new Error(`范围 ${body[k]}-${body[k+2]} 顺序颠倒`); if(b-a>500) throw new Error("范围过大"); for(let cc=a;cc<=b;cc++)set+=String.fromCharCode(cc); k+=2; } else set+=body[k]; } set=uniq(set); toks.push({t:"set",v:set}); i=end+1; continue; }
+      if(ch==="s"){ toks.push({t:"sym"}); i++; continue; }
+      if(ch==="x"){ toks.push({t:"any"}); i++; continue; }
+      if(ch==="w"||ch==="W"||ch==="U"){ toks.push({t:"word",v:ch}); i++; continue; }
+      if(sets[ch]){ toks.push({t:"set",v:sets[ch]}); i++; continue; }
+      toks.push({t:"lit",v:ch}); i++;
+    }
+    if(!toks.length) throw new Error("模板为空");
+    return toks;
+  }
+  function genPattern(){
+    const src=$("#pw-pattern").value; const toks=parsePattern(src);
+    const symSet=uniq([...$("#pw-symbols").value].filter(ch=>ch!==" ").join("")||DEFAULT_SYMBOLS), anySet=uniq(UPPER+LOWER+DIGITS+symSet);
+    let pw="",bits=0; const seps=new Set();
+    for(const t of toks){
+      if(t.t==="lit"){ pw+=t.v; seps.add(t.v); continue; }
+      let s; if(t.t==="set")s=t.v; else if(t.t==="sym")s=symSet; else if(t.t==="any")s=anySet;
+      if(t.t==="word"){ const w=pick(WORDS); pw+=t.v==="w"?w:t.v==="W"?w[0].toUpperCase()+w.slice(1):w.toUpperCase(); bits+=LOG2(WORDS.length); continue; }
+      pw+=pick(s); bits+=LOG2(s.length);
+    }
+    if(pw.length>2048) throw new Error("结果过长（超过 2048 字符）");
+    return { pw, bits, seps, extra:`${toks.length} 个位置 · ${pw.length} 字符`, small:pw.length>40 };
+  }
+
+  /* ---- 任意密码强度估算 ---- */
+  const COMMON=["password","123456","12345678","123456789","1234567890","qwerty","qwertyuiop","abc123","111111","123123","000000","iloveyou","admin","letmein","welcome","monkey","dragon","sunshine","princess","football","password1","passw0rd","1q2w3e4r","qazwsx","asdfgh","zxcvbn","666666","888888","112233","520520","woaini","a123456","123qwe"];
+  const KEYS=["qwertyuiop","asdfghjkl","zxcvbnm","1234567890","0987654321","poiuytrewq","lkjhgfdsa","mnbvcxz"];
+  function estimate(p){
+    const notes=[]; if(!p)return null;
+    const lower=p.toLowerCase();
+    for(const w of COMMON){ if(lower===w||lower.includes(w)&&w.length>=6){ notes.push(`包含常见弱密码「${w}」`); break; } }
+    const hasCommon=notes.length>0;
+    let pool=0; if(/[a-z]/.test(p))pool+=26; if(/[A-Z]/.test(p))pool+=26; if(/\d/.test(p))pool+=10; if(/[^A-Za-z0-9\s]/.test(p))pool+=33; if(/\s/.test(p))pool+=1; if(/[^\x00-\x7F]/.test(p))pool+=100;
+    const chars=[...p]; let bits=chars.length*LOG2(Math.max(pool,2));
+    // 重复字符与序列惩罚
+    let rep=0; for(let i=1;i<chars.length;i++)if(chars[i]===chars[i-1])rep++;
+    if(rep){ bits-=rep*LOG2(Math.max(pool,2))*0.9; notes.push(`有 ${rep} 处相邻重复字符`); }
+    let seq=0; for(let i=2;i<chars.length;i++){ const a=chars[i-2].codePointAt(0),b=chars[i-1].codePointAt(0),c=chars[i].codePointAt(0); if((b-a===1&&c-b===1)||(a-b===1&&b-c===1))seq++; }
+    if(seq){ bits-=seq*LOG2(Math.max(pool,2))*0.8; notes.push(`有 ${seq} 处连续序列（如 abc / 321）`); }
+    if(!hasCommon)for(const k of KEYS){ let done=false; for(let L=k.length;L>=4&&!done;L--){ for(let st=0;st+L<=k.length;st++){ const frag=k.slice(st,st+L); if(lower.includes(frag)){ bits-=L*LOG2(Math.max(pool,2))*0.7; notes.push(`包含键盘顺序「${frag}」`); done=true; break; } } } }
+    const uniqRatio=new Set(chars).size/chars.length; if(chars.length>=6&&uniqRatio<0.5){ bits*=0.7; notes.push("不同字符太少"); }
+    if(/^(19|20)\d{2}$/.test(p)||/(19|20)\d{2}/.test(p))notes.push("疑似含有年份");
+    if(hasCommon)bits=Math.min(bits,10);
+    bits=Math.max(0,bits);
+    if(chars.length<8)notes.push("长度不足 8 位");
+    if(pool<=36&&chars.length<14)notes.push("字符种类单一，建议混合大小写、数字与符号，或改用更长的短语");
+    return { bits, notes };
+  }
+
+  /* ---- UI 绑定 ---- */
+  function clampNum(el,min,max,def){ let v=parseInt(el.value); if(isNaN(v))v=def; v=Math.min(max,Math.max(min,v)); return v; }
+  let mode="random", current=null, batch=[], timer=null;
+  const MODE_TXT={random:"随机字符",phrase:"密码短语",pin:"PIN 码",pattern:"模板组合"};
+  const MODE_FN={random:()=>genRandom(cfgRandom()),phrase:()=>genPhrase(cfgPhrase()),pin:()=>genPin(cfgPin()),pattern:genPattern};
+
+  if(!cryptoOK){ const b=$("#pw-cryptoBadge"); b.textContent="缺少安全随机源"; b.classList.remove("on"); b.style.background="var(--red)"; b.style.color="#fff"; }
+
+  function setMode(m){ mode=m; document.querySelectorAll("#pw-modes .subtab").forEach(t=>t.classList.toggle("active",t.dataset.m===m)); document.querySelectorAll("#page-pw .pane").forEach(p=>p.classList.toggle("active",p.id==="pw-pane-"+m)); $("#pw-modeBadge").textContent=MODE_TXT[m]; generate(); }
+  document.querySelectorAll("#pw-modes .subtab").forEach(t=>t.addEventListener("click",()=>setMode(t.dataset.m)));
+
+  function syncSlider(range,num,show,chips,attr){
+    const paint=v=>{ const min=+range.min,max=+range.max; range.style.setProperty("--pct",((v-min)/(max-min)*100)+"%"); show.textContent=v; if(chips)chips.querySelectorAll(".chip").forEach(c=>c.classList.toggle("on",+c.dataset[attr]===v)); };
+    range.addEventListener("input",()=>{ num.value=range.value; paint(+range.value); schedule(); });
+    num.addEventListener("input",()=>{ const v=clampNum(num,+range.min,+range.max,+range.value); range.value=v; paint(v); schedule(); });
+    num.addEventListener("blur",()=>{ num.value=clampNum(num,+range.min,+range.max,+range.value); });
+    if(chips)chips.querySelectorAll(".chip").forEach(c=>c.addEventListener("click",()=>{ const v=+c.dataset[attr]; range.value=v; num.value=v; paint(v); generate(); }));
+    paint(+range.value);
+  }
+  syncSlider($("#pw-len"),$("#pw-lenNum"),$("#pw-lenShow"),$("#pw-lenChips"),"len");
+  syncSlider($("#pw-words"),$("#pw-wordsNum"),$("#pw-wordsShow"),$("#pw-wordChips"),"w");
+  syncSlider($("#pw-pin"),$("#pw-pinNum"),$("#pw-pinShow"),$("#pw-pinChips"),"p");
+
+  $("#pw-phSep").addEventListener("change",()=>{ $("#pw-phSepCustom").style.display=$("#pw-phSep").value==="__custom__"?"block":"none"; });
+  document.querySelectorAll("#pw-patChips .chip").forEach(c=>c.addEventListener("click",()=>{ $("#pw-pattern").value=c.dataset.pat; if(mode!=="pattern")setMode("pattern"); else generate(); }));
+  document.querySelectorAll("[data-cnt]").forEach(c=>c.addEventListener("click",()=>{ $("#pw-count").value=c.dataset.cnt; generate(); }));
+
+  // 任何设置变化 → 自动重新生成（防抖）
+  function schedule(){ clearTimeout(timer); timer=setTimeout(generate,140); }
+  $("#pw-settings").addEventListener("input",e=>{ if(e.target.id==="pw-count")return; if(e.target.type==="range"||e.target.type==="number")return; schedule(); });
+  $("#pw-settings").addEventListener("change",e=>{ if(e.target.type==="checkbox"||e.target.tagName==="SELECT"||e.target.id==="pw-count")schedule(); });
+  ["pw-minDigit","pw-minSym","pw-group","pw-phNumLen"].forEach(id=>$("#"+id).addEventListener("input",schedule));
+
+  function generate(){
+    clearTimeout(timer);
+    const count=clampNum($("#pw-count"),1,5000,1); $("#pw-count").value=count;
+    document.querySelectorAll("[data-cnt]").forEach(c=>c.classList.toggle("on",+c.dataset.cnt===count));
+    const disp=$("#pw-display"); $("#pw-patternHint").classList.remove("pw-err"); if(mode==="pattern")$("#pw-patternHint").textContent="按下方符号书写；其它字符原样保留";
+    try{
+      const fn=MODE_FN[mode]; batch=[]; const t0=performance.now();
+      for(let i=0;i<count;i++){ batch.push(fn()); if(performance.now()-t0>4000) throw new Error(`生成过慢，已生成 ${batch.length} 条后停止`); }
+      current=batch[0];
+      disp.className="pw-display"+((current.small||current.pw.length>40)?" small":""); disp.innerHTML=colorize(current.pw,current.seps);
+      paintStrength($("#pw-meter"),$("#pw-strLabel"),$("#pw-entropy"),$("#pw-crack"),current.bits,current.extra);
+    }catch(e){
+      current=null; batch=[]; disp.className="pw-display"; disp.innerHTML=`<span class="err">⚠️ ${esc(e.message||String(e))}</span>`;
+      $("#pw-meter").className="pw-meter"; $("#pw-strLabel").textContent="—"; $("#pw-strLabel").className=""; $("#pw-entropy").textContent="熵 — bit"; $("#pw-crack").innerHTML="";
+      if(mode==="pattern"){ $("#pw-patternHint").textContent=e.message||String(e); $("#pw-patternHint").classList.add("pw-err"); }
+    }
+    renderBatch();
+  }
+  function renderBatch(){
+    const card=$("#pw-batchCard"), box=$("#pw-batch"), ta=$("#pw-batchTa");
+    if(batch.length<=1){ card.style.display="none"; box.innerHTML=""; ta.value=""; return; }
+    card.style.display="block"; $("#pw-batchCount").textContent=batch.length.toLocaleString();
+    if(batch.length>300){ box.style.display="none"; box.innerHTML=""; ta.style.display="block"; ta.value=batch.map(b=>b.pw).join("\n"); return; }
+    ta.style.display="none"; box.style.display="flex"; box.innerHTML="";
+    const frag=document.createDocumentFragment();
+    batch.forEach((b,i)=>{ const el=document.createElement("div"); el.className="pw-item"; el.innerHTML=`<span class="ix">${i+1}</span><span class="pv">${colorize(b.pw,b.seps)}</span><button class="btn btn-ghost btn-sm">复制</button>`; el.querySelector("button").onclick=()=>copyText(b.pw,"已复制第 "+(i+1)+" 条"); frag.appendChild(el); });
+    box.appendChild(frag);
+  }
+  async function copyText(text,msg){ try{ await navigator.clipboard.writeText(text); toast(msg||"已复制"); return true; }catch{ try{ const ta=document.createElement("textarea"); ta.value=text; ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta); ta.select(); const ok=document.execCommand("copy"); document.body.removeChild(ta); if(ok){toast(msg||"已复制");return true;} }catch{} toast("复制失败，请手动选择复制"); return false; } }
+  async function copyCurrent(){ if(!current){toast("还没有可复制的密码");return;} if(await copyText(current.pw,"已复制到剪贴板")){ const h=$("#pw-hero"); h.classList.add("flash"); setTimeout(()=>h.classList.remove("flash"),600); } }
+  $("#pw-copy").onclick=copyCurrent; $("#pw-hero").onclick=copyCurrent;
+  $("#pw-regen").onclick=generate; $("#pw-gen").onclick=generate;
+  $("#pw-copyAll").onclick=()=>{ if(!batch.length){toast("没有内容");return;} copyText(batch.map(b=>b.pw).join("\n"),`已复制 ${batch.length} 条`); };
+  $("#pw-dlAll").onclick=()=>{ if(!batch.length){toast("没有内容");return;} download(new Blob([batch.map(b=>b.pw).join("\n")+"\n"],{type:"text/plain;charset=utf-8"}),"随机密码.txt"); };
+  $("#pw-reset").onclick=()=>{
+    const set=(id,v)=>{ const el=$("#"+id); if(el.type==="checkbox")el.checked=v; else el.value=v; };
+    set("pw-len",16);set("pw-lenNum",16);set("pw-upper",true);set("pw-lower",true);set("pw-digit",true);set("pw-symbol",true);set("pw-customOn",false);set("pw-symbols",DEFAULT_SYMBOLS);set("pw-custom","");set("pw-exclude","");
+    set("pw-eachOne",true);set("pw-ambig",false);set("pw-noAdj",false);set("pw-noRep",false);set("pw-startLetter",false);set("pw-endAlnum",false);set("pw-minDigit",0);set("pw-minSym",0);set("pw-group",0);set("pw-groupSep","-");
+    set("pw-words",5);set("pw-wordsNum",5);set("pw-phSep","-");set("pw-phSepCustom","");set("pw-phCase","cap");set("pw-phList","eff");set("pw-phNum",true);set("pw-phSym",false);set("pw-phNoDup",true);set("pw-phNumLen",2);set("pw-phExtraPos","end");
+    set("pw-pin",6);set("pw-pinNum",6);set("pw-pinNoAdj",true);set("pw-pinNoSeq",true);set("pw-pinNoZero",false);set("pw-pinNoRep",false);set("pw-pinNoDate",false);
+    set("pw-pattern","Aaaa-dddd-Aaaa-dddd");set("pw-count",1);
+    $("#pw-phSepCustom").style.display="none";
+    ["pw-len","pw-words","pw-pin"].forEach(r=>$("#"+r).dispatchEvent(new Event("input")));
+    toast("已恢复默认设置"); generate();
+  };
+  // 快捷键：本页可见且焦点不在输入框时，空格=重新生成，C=复制
+  document.addEventListener("keydown",e=>{
+    if(!$("#page-pw").classList.contains("active"))return; const tag=(e.target.tagName||"").toLowerCase(); if(tag==="input"||tag==="textarea"||tag==="select"||e.ctrlKey||e.metaKey||e.altKey)return;
+    if(e.code==="Space"){ e.preventDefault(); generate(); } else if(e.key==="c"||e.key==="C"){ e.preventDefault(); copyCurrent(); }
+  });
+  // 任意密码检测
+  const chk=$("#pw-checkIn");
+  chk.addEventListener("input",()=>{ const r=estimate(chk.value); const box=$("#pw-checkBox"); if(!r){box.style.display="none";return;} box.style.display="block"; paintStrength($("#pw-checkMeter"),$("#pw-checkLabel"),$("#pw-checkEntropy"),$("#pw-checkCrack"),r.bits,`${[...chk.value].length} 字符`); $("#pw-checkNotes").innerHTML=r.notes.length?r.notes.map(n=>"⚠️ "+esc(n)).join("<br>"):"✅ 未发现明显的模式问题（估算仅供参考，无法识别与你个人相关的信息）"; });
+
+  window.__pwTest={genRandom,cfgRandom,genPhrase,cfgPhrase,genPin,cfgPin,genPattern,parsePattern,estimate,rint};
+  generate();
 })();
 </script>
 </body>
