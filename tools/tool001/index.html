@@ -202,7 +202,7 @@
   .pw-legend{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px 16px;font-size:13px;color:var(--text-2);margin-top:10px;line-height:1.6}
   .pw-legend .k{display:inline-block;font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-weight:700;background:var(--chip);color:var(--text);border-radius:6px;padding:1px 7px;margin-right:6px;min-width:26px;text-align:center}
   .pw-err{color:var(--red)}
-  .pw-batch{display:flex;flex-direction:column;gap:6px;max-height:520px;overflow:auto;padding-right:2px}
+  .pw-batch{display:flex;flex-direction:column;gap:6px;max-height:640px;overflow:auto;padding-right:2px;overscroll-behavior:contain}
   .pw-item{display:flex;align-items:center;gap:10px;background:var(--chip);border-radius:var(--radius-sm);padding:8px 8px 8px 14px;font-size:13px}
   .pw-item .ix{color:var(--text-3);font-size:12px;width:40px;flex:none;text-align:right;font-variant-numeric:tabular-nums}
   .pw-item .pv{flex:1;font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;word-break:break-all;line-height:1.5}
@@ -795,7 +795,7 @@
 
       <div class="or-divider"><span>批量生成</span></div>
       <div class="pw-inline">
-        <div class="field"><label>一次生成数量</label><input type="number" id="pw-count" min="1" max="5000" value="1"><div class="hint">1 = 只显示上方一条；最多 5000 条，可复制全部或下载</div></div>
+        <div class="field"><label>一次生成数量</label><input type="number" id="pw-count" min="1" max="5000" value="1"><div class="hint">1 = 只显示上方一条；最多 5000 条，全部逐行列出，可单条 / 全部复制或下载</div></div>
         <div class="chips" style="margin-top:0"><button class="chip" data-cnt="1">1</button><button class="chip" data-cnt="10">10</button><button class="chip" data-cnt="50">50</button><button class="chip" data-cnt="100">100</button><button class="chip" data-cnt="1000">1000</button></div>
       </div>
       <div class="actions"><button class="btn btn-primary" id="pw-gen">🎲 生成</button><button class="btn btn-ghost" id="pw-reset">恢复默认</button></div>
@@ -809,7 +809,6 @@
         <span class="hint" style="margin:0">序号同时用于显示、复制全部与下载；单条「复制」只复制密码本身，复制过的行会打 ✓ 标记</span>
       </div>
       <div class="pw-batch" id="pw-batch"></div>
-      <textarea id="pw-batchTa" readonly spellcheck="false" style="display:none"></textarea>
     </div>
 
     <div class="card pw-check">
@@ -1689,25 +1688,25 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
   let copied=new Set();
   function markCopied(i){ copied.add(i); const el=$("#pw-batch").children[i]; if(el)el.classList.add("copied"); $("#pw-copiedCount").textContent=copied.size.toLocaleString(); }
   function renderBatch(){
-    const card=$("#pw-batchCard"), box=$("#pw-batch"), ta=$("#pw-batchTa"), hi=$("#pw-heroIdx");
+    const card=$("#pw-batchCard"), box=$("#pw-batch"), hi=$("#pw-heroIdx");
     copied=new Set(); $("#pw-copiedCount").textContent="0";
-    if(batch.length<=1){ card.style.display="none"; box.innerHTML=""; ta.value=""; hi.style.display="none"; return; }
+    if(batch.length<=1){ card.style.display="none"; box.innerHTML=""; hi.style.display="none"; return; }
     hi.style.display=$("#pw-numOn").checked?"inline-block":"none"; hi.textContent=numTag(1).trim()||"1";
     card.style.display="block"; $("#pw-batchCount").textContent=batch.length.toLocaleString();
-    if(batch.length>300){ box.style.display="none"; box.innerHTML=""; ta.style.display="block"; ta.value=numbered(withIndex(batch)); return; }
-    ta.style.display="none"; box.style.display="flex"; box.innerHTML="";
-    const frag=document.createDocumentFragment();
-    batch.forEach((b,i)=>{ const el=document.createElement("div"); el.className="pw-item"; el.innerHTML=`<span class="ix"></span><span class="pv" title="点击复制">${colorize(b.pw,b.seps)}</span><span class="ok">✓ 已复制</span><button class="btn btn-ghost btn-sm">复制</button>`;
-      el.querySelector(".ix").textContent=numTag(i+1).trim()||String(i+1);
-      const doCopy=async ()=>{ if(await copyText(b.pw,"已复制第 "+(i+1)+" 条"))markCopied(i); };
-      el.querySelector("button").onclick=doCopy; el.querySelector(".pv").onclick=doCopy;
-      frag.appendChild(el); });
-    box.appendChild(frag);
+    // 一次性拼接 HTML，5000 行也只需一次布局；点击用事件委托
+    const parts=new Array(batch.length);
+    for(let i=0;i<batch.length;i++){ const b=batch[i]; parts[i]=`<div class="pw-item" data-i="${i}"><span class="ix">${esc(numTag(i+1).trim()||String(i+1))}</span><span class="pv" title="点击复制">${colorize(b.pw,b.seps)}</span><span class="ok">✓ 已复制</span><button class="btn btn-ghost btn-sm" type="button">复制</button></div>`; }
+    box.innerHTML=parts.join(""); box.scrollTop=0;
   }
+  $("#pw-batch").addEventListener("click",async e=>{
+    const row=e.target.closest(".pw-item"); if(!row)return;
+    if(!(e.target.closest("button")||e.target.closest(".pv")))return;
+    const i=+row.dataset.i, b=batch[i]; if(!b)return;
+    if(await copyText(b.pw,"已复制第 "+(i+1)+" 条"))markCopied(i);
+  });
   function refreshNumbers(){ // 只刷新序号文字，不重新生成
     if(batch.length<=1)return; const hi=$("#pw-heroIdx"); hi.style.display=$("#pw-numOn").checked?"inline-block":"none"; hi.textContent=numTag(1).trim()||"1";
-    if(batch.length>300){ $("#pw-batchTa").value=numbered(withIndex(batch)); return; }
-    [...$("#pw-batch").children].forEach((el,i)=>{ el.querySelector(".ix").textContent=numTag(i+1).trim()||String(i+1); });
+    const rows=$("#pw-batch").children; for(let i=0;i<rows.length;i++){ rows[i].firstChild.textContent=numTag(i+1).trim()||String(i+1); }
   }
   $("#pw-numOn").addEventListener("change",refreshNumbers); $("#pw-numFmt").addEventListener("change",refreshNumbers);
   async function copyText(text,msg){ try{ await navigator.clipboard.writeText(text); toast(msg||"已复制"); return true; }catch{ try{ const ta=document.createElement("textarea"); ta.value=text; ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta); ta.select(); const ok=document.execCommand("copy"); document.body.removeChild(ta); if(ok){toast(msg||"已复制");return true;} }catch{} toast("复制失败，请手动选择复制"); return false; } }
