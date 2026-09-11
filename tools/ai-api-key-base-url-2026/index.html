@@ -14,6 +14,7 @@
     --accent3: #fdcb6e;
     --accent4: #e17055;
     --accent5: #00b894;
+    --accent6: #fd79a8;
     --text: #e4e6eb;
     --text-dim: #8b8fa3;
     --tag-bg: rgba(108,92,231,0.15);
@@ -21,6 +22,7 @@
     --tag-bg3: rgba(253,203,110,0.15);
     --tag-bg4: rgba(225,112,85,0.15);
     --tag-bg5: rgba(0,184,148,0.15);
+    --tag-bg6: rgba(253,121,168,0.15);
     --success: #00b894;
     --danger: #e17055;
     --shadow: rgba(108,92,231,0.12);
@@ -35,6 +37,7 @@
     --accent3: #a06a00;
     --accent4: #d35400;
     --accent5: #009474;
+    --accent6: #c2185b;
     --text: #2d3436;
     --text-dim: #6b7280;
     --tag-bg: rgba(91,75,213,0.10);
@@ -42,6 +45,7 @@
     --tag-bg3: rgba(160,106,0,0.10);
     --tag-bg4: rgba(211,84,0,0.10);
     --tag-bg5: rgba(0,148,116,0.10);
+    --tag-bg6: rgba(194,24,91,0.10);
     --shadow: rgba(91,75,213,0.18);
     --mark-text: #2d3436;
   }
@@ -54,18 +58,21 @@
     line-height: 1.6;
     transition: background 0.3s, color 0.3s;
   }
-  /* Theme Toggle */
-  .theme-toggle {
+  /* Top-right buttons */
+  .top-actions {
     position: fixed;
     top: 16px;
     right: 16px;
     z-index: 100;
-    width: 44px;
+    display: flex;
+    gap: 8px;
+  }
+  .theme-toggle, .export-btn {
     height: 44px;
-    border-radius: 50%;
+    border-radius: 22px;
     border: 1px solid var(--card-border);
     background: var(--card-bg);
-    font-size: 1.25em;
+    color: var(--text);
     cursor: pointer;
     box-shadow: 0 2px 12px rgba(0,0,0,0.18);
     transition: transform 0.2s, background 0.3s, border-color 0.3s;
@@ -73,7 +80,10 @@
     align-items: center;
     justify-content: center;
   }
+  .theme-toggle { width: 44px; font-size: 1.25em; }
+  .export-btn { padding: 0 16px; font-size: 0.85em; gap: 6px; }
   .theme-toggle:hover { transform: scale(1.1) rotate(15deg); border-color: var(--accent); }
+  .export-btn:hover { border-color: var(--accent); color: var(--accent); }
   mark.hl {
     background: var(--accent3);
     color: var(--mark-text);
@@ -220,8 +230,19 @@
     padding: 2px 8px;
     border-radius: 5px;
     flex: 1;
+    cursor: pointer;
   }
+  .info-value:hover { outline: 1px solid var(--accent2); }
   .info-value.key-format { color: var(--accent3); background: rgba(253,203,110,0.06); }
+  .info-value.key-format:hover { outline-color: var(--accent3); }
+  .info-value.auth { color: var(--accent6); background: rgba(253,121,168,0.06); cursor: default; }
+  .info-value.auth:hover { outline: none; }
+  .info-value.link { cursor: default; }
+  .info-value.link:hover { outline: none; }
+  .info-value a { color: var(--accent); text-decoration: none; }
+  .info-value a:hover { text-decoration: underline; }
+  .url-line { display: block; }
+  .url-line .url-tag { color: var(--text-dim); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 0.9em; margin-right: 4px; }
 
   /* Models Section */
   .models-section { margin-top: 6px; }
@@ -294,6 +315,7 @@
   .pb-anthropic { background: var(--tag-bg4); color: var(--accent4); }
   .pb-native { background: var(--tag-bg3); color: #b8860b; }
   .pb-aws { background: var(--tag-bg5); color: var(--accent5); }
+  .pb-gemini { background: var(--tag-bg2); color: var(--accent2); }
 
   /* Card Footer */
   .card-footer {
@@ -335,7 +357,7 @@
 
   /* Search */
   .search-wrap {
-    max-width: 500px;
+    max-width: 560px;
     margin: 0 auto 10px;
     padding: 0 20px;
   }
@@ -353,12 +375,15 @@
   .search-box:focus { border-color: var(--accent); }
   .search-box::placeholder { color: var(--text-dim); }
 
+  .empty-tip { text-align: center; color: var(--text-dim); padding: 40px 20px; grid-column: 1 / -1; }
+
   /* Responsive */
   @media (max-width: 500px) {
     .grid { grid-template-columns: 1fr; padding: 10px 10px 30px; }
     .header h1 { font-size: 1.5em; }
     .stats-bar { gap: 10px; }
     .stat-item { min-width: 90px; padding: 8px 14px; }
+    .export-btn span.txt { display: none; }
   }
 </style>
 <script>
@@ -373,16 +398,19 @@
 </head>
 <body>
 
-<button class="theme-toggle" id="themeToggle" title="切换白天/黑夜模式">🌞</button>
+<div class="top-actions">
+  <button class="export-btn" id="exportBtn" title="导出 Key 格式 + Base URL 清单（Markdown）">📋 <span class="txt">导出清单</span></button>
+  <button class="theme-toggle" id="themeToggle" title="切换白天/黑夜模式">🌞</button>
+</div>
 
 <div class="header">
   <h1>🤖 AI 大模型 API Key & Base URL 速查表</h1>
-  <p>涵盖 40+ 主流 AI 平台的 Key 格式、Base URL、常用模型，一键复制</p>
-  <div class="update-badge">📅 更新至 2026 年 6 月</div>
+  <p>涵盖 100+ 国内外 AI 平台的 Key 格式、鉴权方式、Base URL、获取地址、常用模型，一键复制</p>
+  <div class="update-badge">📅 更新至 2026 年 9 月</div>
 </div>
 
 <div class="search-wrap">
-  <input type="text" class="search-box" id="searchBox" placeholder="🔍 搜索平台名称 / Key 前缀 (如 sk-proj- / nvapi- / AQ.) / 模型名 (如 gpt-5.5 / claude-opus)...">
+  <input type="text" class="search-box" id="searchBox" placeholder="🔍 搜索平台 / Key 前缀 (sk-proj- / nvapi- / AQ. / bce-v3) / 域名 / 模型名 (gpt-5.5 / claude-opus)...">
 </div>
 
 <div class="filter-bar" id="filterBar">
@@ -390,7 +418,8 @@
   <button class="filter-btn" data-cat="international">🌍 国际平台</button>
   <button class="filter-btn" data-cat="domestic">🇨🇳 国内平台</button>
   <button class="filter-btn" data-cat="cloud">☁️ 云厂商</button>
-  <button class="filter-btn" data-cat="aggregate">🔗 聚合/中转</button>
+  <button class="filter-btn" data-cat="aggregate">🔗 聚合/中转/网关</button>
+  <button class="filter-btn" data-cat="media">🎨 图像/视频/语音</button>
   <button class="filter-btn" data-cat="local">💻 本地/自建</button>
 </div>
 
@@ -398,6 +427,7 @@
   <div class="stat-item"><div class="num" id="statTotal">0</div><div class="label">平台总数</div></div>
   <div class="stat-item"><div class="num" id="statModels">0</div><div class="label">收录模型</div></div>
   <div class="stat-item"><div class="num" id="statOpenai">0</div><div class="label">OpenAI 兼容</div></div>
+  <div class="stat-item"><div class="num" id="statAnthropic">0</div><div class="label">Anthropic 兼容</div></div>
   <div class="stat-item"><div class="num" id="statCats">0</div><div class="label">分类</div></div>
 </div>
 
@@ -407,17 +437,28 @@
 
 <script>
 // ============ DATA ============
+// 字段说明：
+//   keyPrefix  Key 前缀（多个用 / 分隔）
+//   keyFormat  Key 完整形态说明
+//   auth       鉴权方式（请求头）
+//   baseUrl    Base URL，多行时用 "标签: URL" 形式，换行分隔
+//   console    获取 Key 的控制台地址
+//   protocol   openai / anthropic / gemini / native / aws
 const platforms = [
-  // ===== 国际平台 =====
+  // ===================================================================
+  // ===== 🌍 国际平台 =====
+  // ===================================================================
   {
     name: "OpenAI",
-    provider: "OpenAI / Microsoft",
+    provider: "OpenAI",
     cat: "international",
     icon: "🤖",
     iconBg: "linear-gradient(135deg,#6c5ce7,#a29bfe)",
-    keyFormat: "sk-proj-xxxxxxxx / sk-xxxxxxxx",
-    keyPrefix: "sk-proj- / sk-",
+    keyPrefix: "sk-proj- / sk-svcacct- / sk-admin- / sk-",
+    keyFormat: "sk-proj-xxxx（项目 Key，默认）/ sk-svcacct-xxxx（服务账号）/ sk-admin-xxxx（组织管理 Key）/ sk-xxxx（旧版用户 Key）",
+    auth: "Authorization: Bearer <key>",
     baseUrl: "https://api.openai.com/v1",
+    console: "https://platform.openai.com/api-keys",
     protocol: ["openai"],
     models: [
       "gpt-5.5","gpt-5.4","gpt-5.4-mini","gpt-image-2",
@@ -427,7 +468,10 @@ const platforms = [
       "gpt-4o","gpt-4o-mini",
       "text-embedding-3-large","text-embedding-3-small"
     ],
-    notes: [{text:"官方平台，按量计费，支持 Azure OpenAI 部署",type:"green"}]
+    notes: [
+      {text:"官方平台，按量计费；Responses API 与 Chat Completions 并存",type:"green"},
+      {text:"sk-admin- 仅用于组织管理 / 用量查询，不能调用模型",type:"dim"}
+    ]
   },
   {
     name: "Anthropic (Claude)",
@@ -435,122 +479,33 @@ const platforms = [
     cat: "international",
     icon: "🧠",
     iconBg: "linear-gradient(135deg,#e17055,#fab1a0)",
-    keyFormat: "sk-ant-api03-xxxxxxxx",
-    keyPrefix: "sk-ant-",
-    baseUrl: "https://api.anthropic.com",
+    keyPrefix: "sk-ant-api03- / sk-ant-admin01- / sk-ant-oat01-",
+    keyFormat: "sk-ant-api03-xxxx（API Key）/ sk-ant-admin01-xxxx（Admin Key，仅管理）/ sk-ant-oat01-xxxx（OAuth Token，Claude Code 登录）",
+    auth: "x-api-key: <key> + anthropic-version: 2023-06-01",
+    baseUrl: "https://api.anthropic.com（SDK 自动拼接 /v1/messages）",
+    console: "https://console.anthropic.com/settings/keys",
     protocol: ["anthropic"],
     models: [
+      "claude-fable-5-1","claude-opus-5","claude-sonnet-5",
       "claude-opus-4-8","claude-opus-4-7","claude-opus-4-6",
       "claude-sonnet-4-6","claude-sonnet-4-5-20250929",
       "claude-haiku-4-5","claude-fable-5",
       "claude-opus-4-5-20251101"
     ],
-    notes: [{text:"使用 x-api-key Header 鉴权，非 OpenAI 格式；SDK 自动拼接 /v1/messages 路径",type:"dim"}]
+    notes: [{text:"非 OpenAI 格式；也提供 OpenAI 兼容层 /v1/chat/completions（功能受限）",type:"dim"}]
   },
   {
-    name: "OpenRouter",
-    provider: "OpenRouter Inc.",
-    cat: "aggregate",
-    icon: "🔀",
-    iconBg: "linear-gradient(135deg,#00cec9,#81ecec)",
-    keyFormat: "sk-or-v1-xxxxxxxx / sk-or-xxxxxxxx",
-    keyPrefix: "sk-or-",
-    baseUrl: "https://openrouter.ai/api/v1",
-    protocol: ["openai"],
-    models: [
-      "anthropic/claude-opus-4-8","anthropic/claude-sonnet-4-6",
-      "deepseek/deepseek-v4-pro","deepseek/deepseek-v3.2",
-      "openai/gpt-5.5","openai/gpt-5.4",
-      "google/gemini-3.1-pro-preview","google/gemini-3.5-flash",
-      "xai/grok-4.3","minimax/minimax-m3",
-      "qwen/qwen3.7-max","mistralai/mistral-large-3",
-      "meta-llama/llama-4-maverick"
-    ],
-    notes: [{text:"聚合 300+ 模型，一个 Key 通吃所有",type:"green"}]
-  },
-  {
-    name: "NVIDIA NIM / Build",
-    provider: "NVIDIA",
-    cat: "international",
-    icon: "🟢",
-    iconBg: "linear-gradient(135deg,#76b900,#b5e550)",
-    keyFormat: "nvapi-xxxxxxxx",
-    keyPrefix: "nvapi-",
-    baseUrl: "https://integrate.api.nvidia.com/v1",
-    protocol: ["openai"],
-    models: [
-      "nvidia/llama-3.1-70b-instruct","nvidia/llama-3.3-70b-instruct",
-      "nvidia/llama-4-scout-17b","nvidia/llama-4-maverick-17b",
-      "nvidia/nemotron-3-ultra-550b-a55b",
-      "nvidia/deepseek-v4-pro","nvidia/kimi-k2.6","nvidia/glm-5.1",
-      "nvidia/qwen3-32b","nvidia/mistral-7b-instruct"
-    ],
-    notes: [{text:"免费额度 + 按量计费，开源模型托管",type:"green"}]
-  },
-  {
-    name: "DeepSeek",
-    provider: "杭州深度求索",
-    cat: "domestic",
-    icon: "🔍",
-    iconBg: "linear-gradient(135deg,#4facfe,#00f2fe)",
-    keyFormat: "sk-xxxxxxxx",
-    keyPrefix: "sk-",
-    baseUrl: "https://api.deepseek.com/v1",
-    protocol: ["openai"],
-    models: [
-      "deepseek-v4","deepseek-v4-flash","deepseek-v4-pro",
-      "deepseek-v3.2","deepseek-v3.1",
-      "deepseek-r1","deepseek-r1-0528",
-      "deepseek-math-7b","deepseek-janus-pro-7b","deepseek-vl2"
-    ],
-    notes: [{text:"国产之光，性价比极高",type:"green"}]
-  },
-  {
-    name: "Groq",
-    provider: "Groq Inc.",
-    cat: "international",
-    icon: "⚡",
-    iconBg: "linear-gradient(135deg,#fdcb6e,#ffeaa7)",
-    keyFormat: "gsk_xxxxxxxx",
-    keyPrefix: "gsk_",
-    baseUrl: "https://api.groq.com/openai/v1",
-    protocol: ["openai"],
-    models: [
-      "llama-3.1-8b-instant","llama-3.3-70b-versatile",
-      "llama-4-scout-17b","llama-4-maverick-17b",
-      "qwen3-32b","qwq-32b","gpt-oss-20b","gpt-oss-120b",
-      "llama-3.2-11b-vision"
-    ],
-    notes: [{text:"极速推理，LPU 硬件加速",type:"green"}]
-  },
-  {
-    name: "xAI (Grok)",
-    provider: "xAI / Elon Musk",
-    cat: "international",
-    icon: "🚀",
-    iconBg: "linear-gradient(135deg,#1da1f2,#aab8c2)",
-    keyFormat: "xai-xxxxxxxx",
-    keyPrefix: "xai-",
-    baseUrl: "https://api.x.ai/v1",
-    protocol: ["openai"],
-    models: [
-      "grok-4.3","grok-4.20-reasoning","grok-4.20-non-reasoning",
-      "grok-4.20-multi-agent","grok-4-0709",
-      "grok-code-fast-1","grok-build-0.1",
-      "grok-imagine-image-quality"
-    ],
-    notes: [{text:"Grok 4.3 支持 1M 上下文 + 4 级推理力度",type:"dim"}]
-  },
-  {
-    name: "Google Gemini",
+    name: "Google Gemini (AI Studio)",
     provider: "Google / Alphabet",
     cat: "international",
     icon: "💎",
     iconBg: "linear-gradient(135deg,#4285f4,#34a853,#fbbc05,#ea4335)",
-    keyFormat: "AIzaSyxxxxxxxx",
     keyPrefix: "AIza",
-    baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
-    protocol: ["openai", "native"],
+    keyFormat: "AIzaSyxxxxxxxx（39 字符 Google API Key）",
+    auth: "x-goog-api-key: <key>（原生）/ Bearer（OpenAI 兼容端点）",
+    baseUrl: "OpenAI兼容: https://generativelanguage.googleapis.com/v1beta/openai\n原生: https://generativelanguage.googleapis.com/v1beta",
+    console: "https://aistudio.google.com/apikey",
+    protocol: ["openai", "gemini"],
     models: [
       "gemini-2.5-flash-image","gemini-3-pro-image-preview",
       "gemini-3.1-flash-image-preview","gemini-2.5-flash",
@@ -560,17 +515,39 @@ const platforms = [
       "gemini-embedding-001","gemini-embedding-2-preview",
       "gemini-flash-latest","gemini-flash-lite-latest","gemini-pro-latest"
     ],
-    notes: [{text:"OpenAI 兼容端点（/openai 后缀）用 Bearer 鉴权；原生 REST 用 x-goog-api-key Header 或 ?key= 参数",type:"dim"}]
+    notes: [{text:"免费层额度充足；同一 AIza Key 也可用于其他 Google API",type:"green"}]
+  },
+  {
+    name: "xAI (Grok)",
+    provider: "xAI",
+    cat: "international",
+    icon: "🚀",
+    iconBg: "linear-gradient(135deg,#1da1f2,#aab8c2)",
+    keyPrefix: "xai-",
+    keyFormat: "xai-xxxxxxxx（约 84 字符）",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "OpenAI兼容: https://api.x.ai/v1\nAnthropic兼容: https://api.x.ai（/v1/messages）",
+    console: "https://console.x.ai",
+    protocol: ["openai", "anthropic"],
+    models: [
+      "grok-4.3","grok-4.20-reasoning","grok-4.20-non-reasoning",
+      "grok-4.20-multi-agent","grok-4-0709",
+      "grok-code-fast-1","grok-build-0.1",
+      "grok-imagine-image-quality"
+    ],
+    notes: [{text:"Grok 4.3 支持 1M 上下文 + 4 级推理力度",type:"dim"}]
   },
   {
     name: "Mistral AI",
-    provider: "Mistral AI (France)",
+    provider: "Mistral AI (法国)",
     cat: "international",
     icon: "🌊",
     iconBg: "linear-gradient(135deg,#ff7000,#ff9500)",
-    keyFormat: "字母数字串（无固定 sk- 前缀）",
     keyPrefix: "无固定前缀",
-    baseUrl: "https://api.mistral.ai/v1",
+    keyFormat: "32 位字母数字串（无前缀）",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "主端点: https://api.mistral.ai/v1\nCodestral 专用: https://codestral.mistral.ai/v1",
+    console: "https://console.mistral.ai/api-keys",
     protocol: ["openai"],
     models: [
       "mistral-large-3","mistral-medium-3.5","mistral-small-4",
@@ -582,13 +559,15 @@ const platforms = [
   },
   {
     name: "Cohere",
-    provider: "Cohere AI (Canada)",
+    provider: "Cohere AI (加拿大)",
     cat: "international",
     icon: "🟤",
     iconBg: "linear-gradient(135deg,#3c4043,#5f6368)",
-    keyFormat: "字母数字串（无固定前缀）",
     keyPrefix: "无固定前缀",
+    keyFormat: "40 位字母数字串（无前缀）",
+    auth: "Authorization: Bearer <key>",
     baseUrl: "OpenAI兼容: https://api.cohere.ai/compatibility/v1\n原生: https://api.cohere.com/v2",
+    console: "https://dashboard.cohere.com/api-keys",
     protocol: ["openai", "native"],
     models: [
       "command-a-plus-05-2026","command-r-plus-08-2024",
@@ -596,26 +575,70 @@ const platforms = [
       "embed-v4","rerank-4","cohere-transcribe-03-2026",
       "tiny-aya-3.35b"
     ],
-    notes: [{text:"企业级 RAG 场景强，支持 100+ 语言",type:"dim"}]
+    notes: [{text:"企业级 RAG 场景强，Trial Key 免费但限速",type:"dim"}]
   },
   {
-    name: "Hugging Face Inference",
-    provider: "Hugging Face",
+    name: "Meta Llama API",
+    provider: "Meta",
     cat: "international",
-    icon: "🤗",
-    iconBg: "linear-gradient(135deg,#ff9d00,#ff6d00)",
-    keyFormat: "hf_xxxxxxxx",
-    keyPrefix: "hf_",
-    baseUrl: "https://router.huggingface.co/v1",
-    protocol: ["openai"],
+    icon: "🦙",
+    iconBg: "linear-gradient(135deg,#0866ff,#8b9dc3)",
+    keyPrefix: "LLM|",
+    keyFormat: "LLM|<app_id>|<secret>（竖线分隔三段）",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "OpenAI兼容: https://api.llama.com/compat/v1\n原生: https://api.llama.com/v1",
+    console: "https://llama.developer.meta.com",
+    protocol: ["openai", "native"],
     models: [
-      "deepseek-ai/DeepSeek-R1","deepseek-ai/DeepSeek-V3.2",
-      "Qwen/Qwen3-32B","Qwen/Qwen3-8B",
-      "meta-llama/Llama-3.3-70B-Instruct","meta-llama/Llama-3.1-8B-Instruct",
-      "zai-org/GLM-4.7","moonshotai/Kimi-K2.5",
-      "openai/gpt-oss-120b","mistralai/Mistral-7B-Instruct-v0.3"
+      "Llama-4-Maverick-17B-128E-Instruct-FP8","Llama-4-Scout-17B-16E-Instruct-FP8",
+      "Llama-3.3-70B-Instruct","Llama-3.3-8B-Instruct"
     ],
-    notes: [{text:"调用格式: huggingface/<org>/<model>",type:"dim"}]
+    notes: [{text:"Meta 官方托管 Llama，需申请预览资格",type:"dim"}]
+  },
+  {
+    name: "AI21 Labs (Jamba)",
+    provider: "AI21 Labs (以色列)",
+    cat: "international",
+    icon: "🧬",
+    iconBg: "linear-gradient(135deg,#e91e63,#ff6f91)",
+    keyPrefix: "无固定前缀",
+    keyFormat: "字母数字串（无前缀）",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "https://api.ai21.com/studio/v1",
+    console: "https://studio.ai21.com/settings/account",
+    protocol: ["openai"],
+    models: ["jamba-large-1.7","jamba-mini-1.7","jamba-large","jamba-mini"],
+    notes: [{text:"Jamba 为 Mamba+Transformer 混合架构，256K 上下文",type:"dim"}]
+  },
+  {
+    name: "Reka AI",
+    provider: "Reka AI",
+    cat: "international",
+    icon: "🎭",
+    iconBg: "linear-gradient(135deg,#7b2cbf,#c77dff)",
+    keyPrefix: "无固定前缀",
+    keyFormat: "字母数字串（无前缀）",
+    auth: "X-Api-Key: <key>（原生）/ Bearer（OpenAI 兼容）",
+    baseUrl: "https://api.reka.ai/v1",
+    console: "https://platform.reka.ai",
+    protocol: ["openai"],
+    models: ["reka-core","reka-flash-3","reka-flash","reka-edge"],
+    notes: [{text:"多模态（视频理解）见长",type:"dim"}]
+  },
+  {
+    name: "Writer (Palmyra)",
+    provider: "Writer Inc.",
+    cat: "international",
+    icon: "✍️",
+    iconBg: "linear-gradient(135deg,#1c1c1c,#5a5a5a)",
+    keyPrefix: "无固定前缀",
+    keyFormat: "字母数字串（无前缀）",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "https://api.writer.com/v1",
+    console: "https://app.writer.com/aistudio",
+    protocol: ["openai"],
+    models: ["palmyra-x5","palmyra-x4","palmyra-fin","palmyra-med","palmyra-creative"],
+    notes: [{text:"企业写作 / 金融医疗垂类模型",type:"dim"}]
   },
   {
     name: "Perplexity",
@@ -623,9 +646,11 @@ const platforms = [
     cat: "international",
     icon: "🔎",
     iconBg: "linear-gradient(135deg,#20b2aa,#48d1cc)",
-    keyFormat: "pplx-xxxxxxxx",
     keyPrefix: "pplx-",
+    keyFormat: "pplx-xxxxxxxx",
+    auth: "Authorization: Bearer <key>",
     baseUrl: "https://api.perplexity.ai",
+    console: "https://www.perplexity.ai/settings/api",
     protocol: ["openai"],
     models: [
       "sonar","sonar-pro","sonar-reasoning",
@@ -634,14 +659,93 @@ const platforms = [
     notes: [{text:"API 仅提供自家 Sonar 联网搜索系列；网页版可选第三方模型但不开放 API",type:"dim"}]
   },
   {
+    name: "NVIDIA NIM / Build",
+    provider: "NVIDIA",
+    cat: "international",
+    icon: "🟢",
+    iconBg: "linear-gradient(135deg,#76b900,#b5e550)",
+    keyPrefix: "nvapi-",
+    keyFormat: "nvapi-xxxxxxxx",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "https://integrate.api.nvidia.com/v1",
+    console: "https://build.nvidia.com/settings/api-keys",
+    protocol: ["openai"],
+    models: [
+      "nvidia/llama-3.1-70b-instruct","nvidia/llama-3.3-70b-instruct",
+      "nvidia/llama-4-scout-17b","nvidia/llama-4-maverick-17b",
+      "nvidia/nemotron-3-ultra-550b-a55b",
+      "nvidia/deepseek-v4-pro","nvidia/kimi-k2.6","nvidia/glm-5.1",
+      "nvidia/qwen3-32b","nvidia/mistral-7b-instruct"
+    ],
+    notes: [{text:"免费额度 + 按量计费，开源模型托管",type:"green"}]
+  },
+  {
+    name: "Groq",
+    provider: "Groq Inc.",
+    cat: "international",
+    icon: "⚡",
+    iconBg: "linear-gradient(135deg,#fdcb6e,#ffeaa7)",
+    keyPrefix: "gsk_",
+    keyFormat: "gsk_xxxxxxxx（下划线）",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "https://api.groq.com/openai/v1",
+    console: "https://console.groq.com/keys",
+    protocol: ["openai"],
+    models: [
+      "llama-3.1-8b-instant","llama-3.3-70b-versatile",
+      "llama-4-scout-17b","llama-4-maverick-17b",
+      "qwen3-32b","qwq-32b","gpt-oss-20b","gpt-oss-120b",
+      "llama-3.2-11b-vision","whisper-large-v3"
+    ],
+    notes: [{text:"极速推理，LPU 硬件加速，有免费层",type:"green"}]
+  },
+  {
+    name: "Cerebras",
+    provider: "Cerebras Systems",
+    cat: "international",
+    icon: "💨",
+    iconBg: "linear-gradient(135deg,#f15a29,#f7931e)",
+    keyPrefix: "csk-",
+    keyFormat: "csk-xxxxxxxx",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "https://api.cerebras.ai/v1",
+    console: "https://cloud.cerebras.ai/platform",
+    protocol: ["openai"],
+    models: [
+      "llama-3.3-70b","llama3.1-8b","llama-4-scout-17b",
+      "qwen-3-32b","qwen-3-235b-a22b","gpt-oss-120b"
+    ],
+    notes: [{text:"晶圆级芯片推理，速度比 Groq 更快，有免费额度",type:"green"}]
+  },
+  {
+    name: "SambaNova Cloud",
+    provider: "SambaNova Systems",
+    cat: "international",
+    icon: "🌸",
+    iconBg: "linear-gradient(135deg,#ee4c7c,#f9a1bc)",
+    keyPrefix: "无固定前缀（UUID）",
+    keyFormat: "UUID 形式 xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "https://api.sambanova.ai/v1",
+    console: "https://cloud.sambanova.ai/apis",
+    protocol: ["openai"],
+    models: [
+      "DeepSeek-V3.1","DeepSeek-R1-0528","Llama-4-Maverick-17B-128E-Instruct",
+      "Meta-Llama-3.3-70B-Instruct","Qwen3-32B","gpt-oss-120b"
+    ],
+    notes: [{text:"RDU 芯片推理，DeepSeek 全血版速度快，有免费额度",type:"green"}]
+  },
+  {
     name: "Together AI",
     provider: "Together Computer",
     cat: "international",
     icon: "👥",
     iconBg: "linear-gradient(135deg,#6366f1,#8b5cf6)",
-    keyFormat: "字母数字串",
     keyPrefix: "无固定前缀",
+    keyFormat: "64 位十六进制串（无前缀）",
+    auth: "Authorization: Bearer <key>",
     baseUrl: "https://api.together.xyz/v1",
+    console: "https://api.together.ai/settings/api-keys",
     protocol: ["openai"],
     models: [
       "meta-llama/Llama-4-Maverick","meta-llama/Llama-4-Scout",
@@ -660,9 +764,11 @@ const platforms = [
     cat: "international",
     icon: "🎆",
     iconBg: "linear-gradient(135deg,#ef4444,#f97316)",
-    keyFormat: "fw-xxxxxxxx",
-    keyPrefix: "fw-",
+    keyPrefix: "fw_ / fw-",
+    keyFormat: "fw_xxxxxxxx（新版下划线）/ fw-xxxxxxxx（旧版）",
+    auth: "Authorization: Bearer <key>",
     baseUrl: "https://api.fireworks.ai/inference/v1",
+    console: "https://app.fireworks.ai/settings/users/api-keys",
     protocol: ["openai"],
     models: [
       "deepseek-v3.2","deepseek-v4-pro","deepseek-r1-0528",
@@ -672,40 +778,7 @@ const platforms = [
       "openai/gpt-oss-20b","FLUX.1-kontext-pro",
       "whisper-v3-large"
     ],
-    notes: [{text:"极速推理 + 微调 + 批量推理",type:"green"}]
-  },
-  {
-    name: "Novita AI",
-    provider: "Novita AI",
-    cat: "aggregate",
-    icon: "🔮",
-    iconBg: "linear-gradient(135deg,#8b5cf6,#a78bfa)",
-    keyFormat: "nv-xxxxxxxx",
-    keyPrefix: "nv-",
-    baseUrl: "https://api.novita.ai/v3/openai",
-    protocol: ["openai"],
-    models: [
-      "moonshotai/kimi-k2.5","zai-org/glm-5.1",
-      "minimax/minimax-m2.7","deepseek/deepseek-v3.2",
-      "google/gemma-4-31b-it"
-    ],
-    notes: [{text:"200+ 开源模型，支持工具调用",type:"dim"}]
-  },
-  {
-    name: "Cerebras",
-    provider: "Cerebras Systems",
-    cat: "international",
-    icon: "💨",
-    iconBg: "linear-gradient(135deg,#f15a29,#f7931e)",
-    keyFormat: "csk-xxxxxxxx",
-    keyPrefix: "csk-",
-    baseUrl: "https://api.cerebras.ai/v1",
-    protocol: ["openai"],
-    models: [
-      "llama-3.3-70b","llama3.1-8b","llama-4-scout-17b",
-      "qwen-3-32b","qwen-3-235b-a22b","gpt-oss-120b"
-    ],
-    notes: [{text:"晶圆级芯片推理，速度比 Groq 更快，有免费额度",type:"green"}]
+    notes: [{text:"完整模型 ID 为 accounts/fireworks/models/<name>",type:"dim"}]
   },
   {
     name: "DeepInfra",
@@ -713,9 +786,11 @@ const platforms = [
     cat: "international",
     icon: "🌌",
     iconBg: "linear-gradient(135deg,#1e3a8a,#3b82f6)",
-    keyFormat: "字母数字串（无固定前缀）",
     keyPrefix: "无固定前缀",
+    keyFormat: "32 位字母数字串（无前缀）",
+    auth: "Authorization: Bearer <key>",
     baseUrl: "https://api.deepinfra.com/v1/openai",
+    console: "https://deepinfra.com/dash/api_keys",
     protocol: ["openai"],
     models: [
       "meta-llama/Llama-4-Maverick","meta-llama/Llama-3.3-70B-Instruct",
@@ -725,14 +800,37 @@ const platforms = [
     notes: [{text:"开源模型托管，按 token 计费价格极低",type:"green"}]
   },
   {
+    name: "Hugging Face Inference",
+    provider: "Hugging Face",
+    cat: "international",
+    icon: "🤗",
+    iconBg: "linear-gradient(135deg,#ff9d00,#ff6d00)",
+    keyPrefix: "hf_",
+    keyFormat: "hf_xxxxxxxx（37 字符 Access Token）",
+    auth: "Authorization: Bearer <token>",
+    baseUrl: "https://router.huggingface.co/v1",
+    console: "https://huggingface.co/settings/tokens",
+    protocol: ["openai"],
+    models: [
+      "deepseek-ai/DeepSeek-R1","deepseek-ai/DeepSeek-V3.2",
+      "Qwen/Qwen3-32B","Qwen/Qwen3-8B",
+      "meta-llama/Llama-3.3-70B-Instruct","meta-llama/Llama-3.1-8B-Instruct",
+      "zai-org/GLM-4.7","moonshotai/Kimi-K2.5",
+      "openai/gpt-oss-120b","mistralai/Mistral-7B-Instruct-v0.3"
+    ],
+    notes: [{text:"Router 自动路由到 Together / Fireworks / Novita 等 Inference Provider，模型名可加 :provider 后缀",type:"dim"}]
+  },
+  {
     name: "GitHub Models",
     provider: "GitHub / Microsoft",
     cat: "international",
     icon: "🐙",
     iconBg: "linear-gradient(135deg,#24292e,#6e7681)",
-    keyFormat: "github_pat_xxxx / ghp_xxxx（PAT 令牌）",
     keyPrefix: "github_pat_ / ghp_",
+    keyFormat: "github_pat_xxxx（细粒度 PAT）/ ghp_xxxx（经典 PAT）",
+    auth: "Authorization: Bearer <token>",
     baseUrl: "https://models.github.ai/inference",
+    console: "https://github.com/settings/personal-access-tokens",
     protocol: ["openai"],
     models: [
       "openai/gpt-5.5","openai/gpt-5.4-mini",
@@ -742,17 +840,298 @@ const platforms = [
     ],
     notes: [{text:"GitHub 账号即有免费额度，适合开发测试（有速率限制）",type:"green"}]
   },
-
-  // ===== 国内平台 =====
   {
-    name: "智谱 AI (GLM)",
+    name: "Nebius Token Factory",
+    provider: "Nebius (原 AI Studio)",
+    cat: "international",
+    icon: "🧊",
+    iconBg: "linear-gradient(135deg,#00b4d8,#0077b6)",
+    keyPrefix: "eyJ（JWT）",
+    keyFormat: "eyJhbGci... JWT 长串（无 sk- 前缀）",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "https://api.studio.nebius.com/v1",
+    console: "https://studio.nebius.com/settings/api-keys",
+    protocol: ["openai"],
+    models: [
+      "deepseek-ai/DeepSeek-V3-0324","deepseek-ai/DeepSeek-R1-0528",
+      "meta-llama/Llama-3.3-70B-Instruct","Qwen/Qwen3-235B-A22B",
+      "openai/gpt-oss-120b"
+    ],
+    notes: [{text:"欧洲 GPU 云，开源模型价格低",type:"dim"}]
+  },
+  {
+    name: "Hyperbolic",
+    provider: "Hyperbolic Labs",
+    cat: "international",
+    icon: "📐",
+    iconBg: "linear-gradient(135deg,#111827,#4b5563)",
+    keyPrefix: "eyJ（JWT）",
+    keyFormat: "eyJhbGci... JWT 长串",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "https://api.hyperbolic.xyz/v1",
+    console: "https://app.hyperbolic.xyz/settings",
+    protocol: ["openai"],
+    models: [
+      "deepseek-ai/DeepSeek-V3","deepseek-ai/DeepSeek-R1",
+      "meta-llama/Llama-3.3-70B-Instruct","Qwen/Qwen3-235B-A22B",
+      "moonshotai/Kimi-K2-Instruct"
+    ],
+    notes: [{text:"去中心化 GPU 市场，注册送额度",type:"dim"}]
+  },
+  {
+    name: "Lambda Inference",
+    provider: "Lambda Labs",
+    cat: "international",
+    icon: "λ",
+    iconBg: "linear-gradient(135deg,#5e35b1,#9575cd)",
+    keyPrefix: "secret_",
+    keyFormat: "secret_<名称>_xxxxxxxx",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "https://api.lambda.ai/v1",
+    console: "https://cloud.lambda.ai/api-keys",
+    protocol: ["openai"],
+    models: [
+      "deepseek-r1-671b","deepseek-v3-0324",
+      "llama-4-maverick-17b-128e-instruct-fp8","llama3.3-70b-instruct-fp8",
+      "qwen3-32b-fp8","hermes-3-llama-3.1-405b-fp8"
+    ],
+    notes: [{text:"GPU 云厂商附带的 Serverless 推理",type:"dim"}]
+  },
+  {
+    name: "Baseten",
+    provider: "Baseten",
+    cat: "international",
+    icon: "🔟",
+    iconBg: "linear-gradient(135deg,#f59e0b,#fbbf24)",
+    keyPrefix: "无固定前缀",
+    keyFormat: "字母数字串（无前缀）",
+    auth: "Authorization: Api-Key <key>（注意是 Api-Key 不是 Bearer）",
+    baseUrl: "Model APIs: https://inference.baseten.co/v1\n自部署: https://model-<id>.api.baseten.co/environments/production/sync/v1",
+    console: "https://app.baseten.co/settings/api_keys",
+    protocol: ["openai"],
+    models: [
+      "deepseek-ai/DeepSeek-V3.1","deepseek-ai/DeepSeek-R1-0528",
+      "moonshotai/Kimi-K2-Instruct","openai/gpt-oss-120b",
+      "Qwen/Qwen3-Coder-480B-A35B-Instruct","zai-org/GLM-4.5"
+    ],
+    notes: [{text:"OpenAI SDK 需把 api_key 传为 'Api-Key xxx' 或改 header",type:"danger"}]
+  },
+  {
+    name: "Upstage (Solar)",
+    provider: "Upstage (韩国)",
+    cat: "international",
+    icon: "☀️",
+    iconBg: "linear-gradient(135deg,#805ad5,#b794f4)",
+    keyPrefix: "up_",
+    keyFormat: "up_xxxxxxxx",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "https://api.upstage.ai/v1",
+    console: "https://console.upstage.ai/api-keys",
+    protocol: ["openai"],
+    models: [
+      "solar-pro2","solar-pro","solar-mini",
+      "embedding-query","embedding-passage","document-parse"
+    ],
+    notes: [{text:"Solar 系列 + 文档解析 OCR",type:"dim"}]
+  },
+  {
+    name: "FriendliAI",
+    provider: "FriendliAI (韩国)",
+    cat: "international",
+    icon: "🤝",
+    iconBg: "linear-gradient(135deg,#2563eb,#60a5fa)",
+    keyPrefix: "flp_",
+    keyFormat: "flp_xxxxxxxx",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "https://api.friendli.ai/serverless/v1",
+    console: "https://friendli.ai/suite/setting/tokens",
+    protocol: ["openai"],
+    models: [
+      "meta-llama-3.3-70b-instruct","meta-llama-3.1-8b-instruct",
+      "deepseek-r1","Qwen3-235B-A22B"
+    ],
+    notes: [{text:"Serverless / Dedicated 两种模式",type:"dim"}]
+  },
+  {
+    name: "Featherless AI",
+    provider: "Featherless",
+    cat: "international",
+    icon: "🪶",
+    iconBg: "linear-gradient(135deg,#0d9488,#5eead4)",
+    keyPrefix: "rc_",
+    keyFormat: "rc_xxxxxxxx",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "https://api.featherless.ai/v1",
+    console: "https://featherless.ai/account/api-keys",
+    protocol: ["openai"],
+    models: [
+      "deepseek-ai/DeepSeek-R1-0528","Qwen/Qwen3-32B",
+      "meta-llama/Llama-3.3-70B-Instruct","mistralai/Mistral-Small-3.2-24B-Instruct-2506"
+    ],
+    notes: [{text:"订阅制包月，可跑数千款 HuggingFace 开源模型",type:"green"}]
+  },
+  {
+    name: "Chutes (Bittensor)",
+    provider: "Rayon Labs",
+    cat: "international",
+    icon: "🪂",
+    iconBg: "linear-gradient(135deg,#1e1b4b,#6d28d9)",
+    keyPrefix: "cpk_",
+    keyFormat: "cpk_xxxxxxxx",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "https://llm.chutes.ai/v1",
+    console: "https://chutes.ai/app/api",
+    protocol: ["openai"],
+    models: [
+      "deepseek-ai/DeepSeek-V3.1","deepseek-ai/DeepSeek-R1-0528",
+      "moonshotai/Kimi-K2-Instruct","zai-org/GLM-4.5-Air",
+      "Qwen/Qwen3-235B-A22B-Instruct-2507"
+    ],
+    notes: [{text:"去中心化算力，价格极低但稳定性一般",type:"dim"}]
+  },
+  {
+    name: "Venice AI",
+    provider: "Venice AI",
+    cat: "international",
+    icon: "🎭",
+    iconBg: "linear-gradient(135deg,#b91c1c,#f87171)",
+    keyPrefix: "无固定前缀",
+    keyFormat: "字母数字串（无前缀）",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "https://api.venice.ai/api/v1",
+    console: "https://venice.ai/settings/api",
+    protocol: ["openai"],
+    models: [
+      "llama-3.3-70b","qwen3-235b","deepseek-r1-671b",
+      "venice-uncensored","mistral-31-24b"
+    ],
+    notes: [{text:"主打隐私 / 无审查，Pro 订阅或 VVV 代币抵扣",type:"dim"}]
+  },
+  {
+    name: "Nous Research",
+    provider: "Nous Research",
+    cat: "international",
+    icon: "🦉",
+    iconBg: "linear-gradient(135deg,#374151,#9ca3af)",
+    keyPrefix: "无固定前缀",
+    keyFormat: "字母数字串（无前缀）",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "https://inference-api.nousresearch.com/v1",
+    console: "https://portal.nousresearch.com",
+    protocol: ["openai"],
+    models: [
+      "Hermes-4-405B","Hermes-4-70B",
+      "Hermes-3-Llama-3.1-405B","DeepHermes-3-Mistral-24B-Preview"
+    ],
+    notes: [{text:"Hermes 系列官方推理",type:"dim"}]
+  },
+  {
+    name: "Inception Labs (Mercury)",
+    provider: "Inception Labs",
+    cat: "international",
+    icon: "🌀",
+    iconBg: "linear-gradient(135deg,#0f766e,#2dd4bf)",
+    keyPrefix: "sk_",
+    keyFormat: "sk_xxxxxxxx（下划线）",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "https://api.inceptionlabs.ai/v1",
+    console: "https://platform.inceptionlabs.ai",
+    protocol: ["openai"],
+    models: ["mercury","mercury-coder","mercury-2"],
+    notes: [{text:"扩散式 LLM（dLLM），出字速度极快",type:"dim"}]
+  },
+  {
+    name: "Ollama Cloud",
+    provider: "Ollama (云端)",
+    cat: "international",
+    icon: "🦙",
+    iconBg: "linear-gradient(135deg,#374151,#111827)",
+    keyPrefix: "无固定前缀",
+    keyFormat: "字母数字串（无前缀）",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "OpenAI兼容: https://ollama.com/v1\n原生: https://ollama.com/api",
+    console: "https://ollama.com/settings/keys",
+    protocol: ["openai", "native"],
+    models: [
+      "gpt-oss:120b","gpt-oss:20b","deepseek-v3.1:671b",
+      "qwen3-coder:480b","kimi-k2:1t","glm-4.6"
+    ],
+    notes: [{text:"本地 ollama 命令加 -cloud 后缀即可用云端算力跑大模型",type:"green"}]
+  },
+  {
+    name: "Voyage AI (Embedding)",
+    provider: "Voyage AI / MongoDB",
+    cat: "international",
+    icon: "🧭",
+    iconBg: "linear-gradient(135deg,#0ea5e9,#6366f1)",
+    keyPrefix: "pa-",
+    keyFormat: "pa-xxxxxxxx",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "https://api.voyageai.com/v1",
+    console: "https://dashboard.voyageai.com",
+    protocol: ["openai"],
+    models: [
+      "voyage-3.5","voyage-3.5-lite","voyage-3-large",
+      "voyage-code-3","voyage-multimodal-3","rerank-2.5"
+    ],
+    notes: [{text:"Anthropic 官方推荐的 Embedding 服务，无对话模型",type:"dim"}]
+  },
+  {
+    name: "Jina AI",
+    provider: "Jina AI (德国)",
+    cat: "international",
+    icon: "🔗",
+    iconBg: "linear-gradient(135deg,#009191,#4fd1c5)",
+    keyPrefix: "jina_",
+    keyFormat: "jina_xxxxxxxx",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "Embedding: https://api.jina.ai/v1\nReader: https://r.jina.ai/<url>\nSearch: https://s.jina.ai/<query>",
+    console: "https://jina.ai/api-dashboard",
+    protocol: ["openai"],
+    models: [
+      "jina-embeddings-v4","jina-embeddings-v3",
+      "jina-reranker-v2-base-multilingual","jina-clip-v2"
+    ],
+    notes: [{text:"Embedding / Rerank / 网页抓取 Reader，注册送 1000 万 token",type:"green"}]
+  },
+
+  // ===================================================================
+  // ===== 🇨🇳 国内平台 =====
+  // ===================================================================
+  {
+    name: "DeepSeek",
+    provider: "杭州深度求索",
+    cat: "domestic",
+    icon: "🔍",
+    iconBg: "linear-gradient(135deg,#4facfe,#00f2fe)",
+    keyPrefix: "sk-",
+    keyFormat: "sk- + 32 位小写字母数字（定长 35 字符）",
+    auth: "Authorization: Bearer <key>（Anthropic 端点用 x-api-key）",
+    baseUrl: "OpenAI兼容: https://api.deepseek.com/v1（或不带 /v1）\nAnthropic兼容: https://api.deepseek.com/anthropic",
+    console: "https://platform.deepseek.com/api_keys",
+    protocol: ["openai", "anthropic"],
+    models: [
+      "deepseek-chat","deepseek-reasoner",
+      "deepseek-v4","deepseek-v4-flash","deepseek-v4-pro",
+      "deepseek-v3.2","deepseek-v3.1",
+      "deepseek-r1","deepseek-r1-0528"
+    ],
+    notes: [
+      {text:"国产之光，性价比极高；同形态 sk-+32 位也可能是中转站签发，需看 Base URL",type:"green"},
+      {text:"deepseek-chat / deepseek-reasoner 为官方通用别名，自动指向最新版本",type:"dim"}
+    ]
+  },
+  {
+    name: "智谱 AI (GLM / Z.ai)",
     provider: "北京智谱华章",
     cat: "domestic",
     icon: "🔬",
     iconBg: "linear-gradient(135deg,#667eea,#764ba2)",
-    keyFormat: "AQ.xxxx.xxxx / xxxx.xxxx",
-    keyPrefix: "AQ. / xxxx.",
-    baseUrl: "OpenAI兼容: https://open.bigmodel.cn/api/paas/v4/\nAnthropic兼容: https://open.bigmodel.cn/api/anthropic",
+    keyPrefix: "AQ. / xxxx.xxxx",
+    keyFormat: "AQ.xxxx.xxxx（新版）/ <id>.<secret>（旧版 32位.16位）",
+    auth: "Authorization: Bearer <key>（Anthropic 端点用 x-api-key）",
+    baseUrl: "OpenAI兼容: https://open.bigmodel.cn/api/paas/v4\nAnthropic兼容: https://open.bigmodel.cn/api/anthropic\nCoding Plan: https://open.bigmodel.cn/api/coding/paas/v4\n国际 Z.ai: https://api.z.ai/api/paas/v4",
+    console: "https://open.bigmodel.cn/usercenter/apikeys",
     protocol: ["openai", "anthropic"],
     models: [
       "glm-5","glm-5.1","glm-4.7","glm-4.6v",
@@ -760,8 +1139,8 @@ const platforms = [
       "glm-3-6b","cogview-3-plus"
     ],
     notes: [
-      {text:"按量 Key 格式 AQ.xxxx.xxxx，Coding Plan 为 sk-cp- 前缀",type:"dim"},
-      {text:"支持 OpenAI + Anthropic 双协议",type:"green"}
+      {text:"按量与 Coding Plan 共用同一 Key，仅 Base URL 不同",type:"dim"},
+      {text:"支持 OpenAI + Anthropic 双协议；glm-4-flash 免费",type:"green"}
     ]
   },
   {
@@ -770,20 +1149,22 @@ const platforms = [
     cat: "domestic",
     icon: "🎯",
     iconBg: "linear-gradient(135deg,#fa709a,#fee140)",
-    keyFormat: "按量: sk-xxxxxxxx / Coding Plan: sk-cp-xxxxxxxx",
-    keyPrefix: "sk- / sk-cp-",
-    baseUrl: "按量: https://api.minimaxi.com/v1\nCoding Plan: https://api.minimaxi.com/v1 (同)",
-    protocol: ["openai"],
+    keyPrefix: "sk- / sk-cp- / eyJ",
+    keyFormat: "sk-xxxx（按量新版）/ sk-cp-xxxx（Coding Plan）/ eyJ... JWT 长串（旧版）",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "OpenAI兼容: https://api.minimaxi.com/v1\nAnthropic兼容: https://api.minimaxi.com/anthropic\n国际站: https://api.minimax.io/v1",
+    console: "https://platform.minimaxi.com/user-center/basic-information/interface-key",
+    protocol: ["openai", "anthropic"],
     models: [
       "MiniMax-M3","MiniMax-M2.7","MiniMax-M2.7-highspeed",
       "MiniMax-M2.5","MiniMax-M2.5-highspeed",
       "MiniMax-M2.1","MiniMax-M2.1-highspeed",
       "MiniMax-M2","MiniMax-M1","MiniMax-Text-01",
-      "MiniMax-VL-01","MiniMax-Hailuo-2.3"
+      "MiniMax-VL-01","MiniMax-Hailuo-2.3","speech-02-hd"
     ],
     notes: [
       {text:"sk-cp- 为 Coding Plan 套餐专属 Key",type:"dim"},
-      {text:"支持图像/视频/音乐/语音多模态生成",type:"green"}
+      {text:"支持图像/视频（Hailuo）/音乐/语音多模态生成",type:"green"}
     ]
   },
   {
@@ -792,46 +1173,55 @@ const platforms = [
     cat: "domestic",
     icon: "🌙",
     iconBg: "linear-gradient(135deg,#a18cd1,#fbc2eb)",
-    keyFormat: "sk-xxxxxxxx",
-    keyPrefix: "sk-",
-    baseUrl: "https://api.moonshot.cn/v1",
-    protocol: ["openai"],
+    keyPrefix: "sk- / sk-kimi-",
+    keyFormat: "sk-xxxx（开放平台按量）/ sk-kimi-xxxx（Kimi Code 会员）",
+    auth: "Authorization: Bearer <key>（Anthropic 端点用 x-api-key）",
+    baseUrl: "OpenAI兼容: https://api.moonshot.cn/v1\nAnthropic兼容: https://api.moonshot.cn/anthropic\nKimi Code: https://api.kimi.com/coding/v1\n国际站: https://api.moonshot.ai/v1",
+    console: "https://platform.moonshot.cn/console/api-keys",
+    protocol: ["openai", "anthropic"],
     models: [
-      "kimi-k2.6","kimi-k2.5","kimi-k2",
+      "kimi-k2.6","kimi-k2.5","kimi-k2","kimi-k2-thinking",
       "kimi-k2-0905","moonshot-v1-128k","moonshot-v1-8k"
     ],
     notes: [{text:"长上下文专家，K2.6 支持 256K 上下文 + 视觉",type:"green"}]
   },
   {
-    name: "零一万物 (Yi)",
-    provider: "北京零一万物 / 李开复",
-    cat: "domestic",
-    icon: "壹",
-    iconBg: "linear-gradient(135deg,#e74c3c,#e67e22)",
-    keyFormat: "sk-xxxxxxxx",
-    keyPrefix: "sk-",
-    baseUrl: "https://api.lingyiwanwu.com/v1",
-    protocol: ["openai"],
-    models: [
-      "yi-large","yi-medium","yi-large-rag","yi-large-turbo"
-    ],
-    notes: [{text:"Yi-Large 曾为 LMSYS 榜单 TOP10 唯一国产模型",type:"dim"}]
-  },
-  {
-    name: "百度文心（千帆）",
-    provider: "百度",
+    name: "百度千帆（文心）",
+    provider: "百度智能云",
     cat: "domestic",
     icon: "🐝",
     iconBg: "linear-gradient(135deg,#3385ff,#00b4ff)",
-    keyFormat: "字母数字串（IAM 或 API Key）",
-    keyPrefix: "无固定前缀",
+    keyPrefix: "bce-v3/ALTAK-",
+    keyFormat: "bce-v3/ALTAK-xxxx/xxxx（v2 API Key，含斜杠）",
+    auth: "Authorization: Bearer <key>",
     baseUrl: "https://qianfan.baidubce.com/v2",
+    console: "https://console.bce.baidu.com/iam/#/iam/apikey/list",
     protocol: ["openai"],
     models: [
       "ernie-5.1","ernie-5.0","ernie-x1.1","ernie-x1-turbo",
-      "ernie-4.0-turbo","ernie-3.5-8k","ernie-speed-128k"
+      "ernie-4.0-turbo","ernie-3.5-8k","ernie-speed-128k",
+      "deepseek-v3.2","qwen3-235b"
     ],
-    notes: [{text:"需百度云 IAM 鉴权或 API Key，文心 5.0 为全模态模型",type:"dim"}]
+    notes: [{text:"旧版 AK/SK + access_token 鉴权已淘汰，统一用 bce-v3 API Key",type:"dim"}]
+  },
+  {
+    name: "腾讯混元 (Hunyuan)",
+    provider: "腾讯云",
+    cat: "domestic",
+    icon: "🐧",
+    iconBg: "linear-gradient(135deg,#0052d9,#00a4ff)",
+    keyPrefix: "sk-",
+    keyFormat: "sk-xxxxxxxx",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "https://api.hunyuan.cloud.tencent.com/v1",
+    console: "https://console.cloud.tencent.com/hunyuan/api-key",
+    protocol: ["openai"],
+    models: [
+      "hunyuan-turbo-s","hunyuan-t1","hunyuan-large",
+      "hunyuan-standard","hunyuan-lite","hunyuan-vision",
+      "hunyuan-embedding"
+    ],
+    notes: [{text:"hunyuan-lite 免费调用；T1 为深度思考模型",type:"green"}]
   },
   {
     name: "讯飞星火 (Spark)",
@@ -839,9 +1229,11 @@ const platforms = [
     cat: "domestic",
     icon: "⭐",
     iconBg: "linear-gradient(135deg,#0052d9,#4a90d9)",
-    keyFormat: "OpenAI兼容: APIPassword（Bearer）/ 原生: AppId+APIKey+APISecret 三元组",
     keyPrefix: "非单一 Key",
+    keyFormat: "OpenAI兼容: APIPassword（Bearer）/ 原生 WebSocket: AppId + APIKey + APISecret 三元组",
+    auth: "Authorization: Bearer <APIPassword>",
     baseUrl: "OpenAI兼容: https://spark-api-open.xf-yun.com/v1\nWebSocket: wss://spark-api.xf-yun.com",
+    console: "https://console.xfyun.cn",
     protocol: ["openai", "native"],
     models: [
       "spark-x2-lite","spark-x2-pro","spark-x2-max","spark-x2-ultra",
@@ -855,33 +1247,19 @@ const platforms = [
     cat: "domestic",
     icon: "🔬",
     iconBg: "linear-gradient(135deg,#0ea5e9,#38bdf8)",
-    keyFormat: "sk-xxxxxxxx",
     keyPrefix: "sk-",
-    baseUrl: "https://api.siliconflow.cn/v1",
-    protocol: ["openai"],
+    keyFormat: "sk-xxxxxxxx（约 51 字符）",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "OpenAI兼容: https://api.siliconflow.cn/v1\nAnthropic兼容: https://api.siliconflow.cn\n国际站: https://api.siliconflow.com/v1",
+    console: "https://cloud.siliconflow.cn/account/ak",
+    protocol: ["openai", "anthropic"],
     models: [
       "zai/glm-5","zai/glm-4.7","moonshotai/kimi-k2.5",
       "deepseek/deepseek-v4-pro","deepseek/deepseek-v3.2",
-      "Qwen/qwen3.6-plus","MiniMax/minimax-m2.7"
+      "Qwen/qwen3.6-plus","MiniMax/minimax-m2.7",
+      "BAAI/bge-m3","FunAudioLLM/CosyVoice2-0.5B"
     ],
-    notes: [{text:"聚合 DeepSeek / GLM / Kimi / Qwen 等国产模型",type:"green"}]
-  },
-  {
-    name: "腾讯混元 (Hunyuan)",
-    provider: "腾讯",
-    cat: "domestic",
-    icon: "🐧",
-    iconBg: "linear-gradient(135deg,#0052d9,#00a4ff)",
-    keyFormat: "sk-xxxxxxxx",
-    keyPrefix: "sk-",
-    baseUrl: "https://api.hunyuan.cloud.tencent.com/v1",
-    protocol: ["openai"],
-    models: [
-      "hunyuan-turbo-s","hunyuan-t1","hunyuan-large",
-      "hunyuan-standard","hunyuan-lite","hunyuan-vision",
-      "hunyuan-embedding"
-    ],
-    notes: [{text:"hunyuan-lite 免费调用；T1 为深度思考模型",type:"green"}]
+    notes: [{text:"聚合 DeepSeek / GLM / Kimi / Qwen 等国产模型，小模型免费",type:"green"}]
   },
   {
     name: "阶跃星辰 (StepFun)",
@@ -889,9 +1267,11 @@ const platforms = [
     cat: "domestic",
     icon: "🪜",
     iconBg: "linear-gradient(135deg,#10b981,#06b6d4)",
-    keyFormat: "字母数字串（无固定前缀）",
     keyPrefix: "无固定前缀",
+    keyFormat: "字母数字串（无前缀）",
+    auth: "Authorization: Bearer <key>",
     baseUrl: "https://api.stepfun.com/v1",
+    console: "https://platform.stepfun.com/interface-key",
     protocol: ["openai"],
     models: [
       "step-3","step-2-16k","step-2-mini",
@@ -905,9 +1285,11 @@ const platforms = [
     cat: "domestic",
     icon: "⛰️",
     iconBg: "linear-gradient(135deg,#f97316,#fbbf24)",
-    keyFormat: "sk-xxxxxxxx",
     keyPrefix: "sk-",
+    keyFormat: "sk-xxxxxxxx",
+    auth: "Authorization: Bearer <key>",
     baseUrl: "https://api.baichuan-ai.com/v1",
+    console: "https://platform.baichuan-ai.com/console/apikey",
     protocol: ["openai"],
     models: [
       "Baichuan4-Turbo","Baichuan4-Air","Baichuan4",
@@ -915,24 +1297,139 @@ const platforms = [
     ],
     notes: [{text:"深耕医疗领域，模型名首字母大写",type:"dim"}]
   },
+  {
+    name: "零一万物 (Yi)",
+    provider: "北京零一万物",
+    cat: "domestic",
+    icon: "壹",
+    iconBg: "linear-gradient(135deg,#e74c3c,#e67e22)",
+    keyPrefix: "sk-",
+    keyFormat: "sk-xxxxxxxx",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "https://api.lingyiwanwu.com/v1",
+    console: "https://platform.lingyiwanwu.com/apikeys",
+    protocol: ["openai"],
+    models: [
+      "yi-large","yi-medium","yi-large-rag","yi-large-turbo","yi-lightning"
+    ],
+    notes: [{text:"2025 年起转向企业方案，公开 API 逐步收缩",type:"dim"}]
+  },
+  {
+    name: "商汤日日新 (SenseNova)",
+    provider: "商汤科技",
+    cat: "domestic",
+    icon: "🌅",
+    iconBg: "linear-gradient(135deg,#7c3aed,#ec4899)",
+    keyPrefix: "sk- / AK+SK",
+    keyFormat: "sk-xxxx（新版 API Key）/ AccessKey + SecretKey 自签 JWT（旧版）",
+    auth: "Authorization: Bearer <key 或 JWT>",
+    baseUrl: "https://api.sensenova.cn/compatible-mode/v1",
+    console: "https://console.sensecore.cn/aistudio",
+    protocol: ["openai"],
+    models: [
+      "SenseNova-V6-5-Pro","SenseNova-V6-Pro","SenseNova-V6-Turbo",
+      "SenseNova-V6-Reasoner","SenseChat-5"
+    ],
+    notes: [{text:"多模态原生融合模型，视频理解强",type:"dim"}]
+  },
+  {
+    name: "360 智脑",
+    provider: "360 集团",
+    cat: "domestic",
+    icon: "🛡️",
+    iconBg: "linear-gradient(135deg,#00b894,#55efc4)",
+    keyPrefix: "无固定前缀",
+    keyFormat: "字母数字串（无前缀）",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "https://api.360.cn/v1",
+    console: "https://ai.360.com",
+    protocol: ["openai"],
+    models: ["360gpt2-o1","360gpt2-pro","360gpt-turbo","360gpt-pro"],
+    notes: [{text:"OpenAI 兼容接口",type:"dim"}]
+  },
+  {
+    name: "小米 MiMo",
+    provider: "小米",
+    cat: "domestic",
+    icon: "📱",
+    iconBg: "linear-gradient(135deg,#ff6900,#ffb347)",
+    keyPrefix: "无固定前缀",
+    keyFormat: "字母数字串（无前缀）",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "https://api.xiaomimimo.com/v1",
+    console: "https://platform.xiaomimimo.com",
+    protocol: ["openai"],
+    models: ["mimo-v2-flash","mimo-vl-7b-rl","mimo-7b-rl"],
+    notes: [{text:"MiMo-V2-Flash 为 MoE 推理模型，开源权重",type:"dim"}]
+  },
+  {
+    name: "美团 LongCat",
+    provider: "美团",
+    cat: "domestic",
+    icon: "🐈",
+    iconBg: "linear-gradient(135deg,#ffc300,#ff8c00)",
+    keyPrefix: "ak_",
+    keyFormat: "ak_xxxxxxxx",
+    auth: "Authorization: Bearer <key>（Anthropic 端点用 x-api-key）",
+    baseUrl: "OpenAI兼容: https://api.longcat.chat/openai/v1\nAnthropic兼容: https://api.longcat.chat/anthropic",
+    console: "https://longcat.chat/platform/api_keys",
+    protocol: ["openai", "anthropic"],
+    models: ["LongCat-Flash-Chat","LongCat-Flash-Thinking","LongCat-Flash-Lite"],
+    notes: [{text:"每日免费额度，560B MoE 开源",type:"green"}]
+  },
+  {
+    name: "快手 StreamLake (KAT-Coder)",
+    provider: "快手万擎",
+    cat: "domestic",
+    icon: "🎬",
+    iconBg: "linear-gradient(135deg,#ff4906,#ffa62b)",
+    keyPrefix: "sk-kwaipilot-",
+    keyFormat: "sk-kwaipilot-xxxxxxxx",
+    auth: "x-api-key: <key>（Anthropic 格式）",
+    baseUrl: "https://wanqing.streamlakeapi.com/api/gateway/v1/endpoints/<ep-id>/claude-code-proxy",
+    console: "https://www.streamlake.ai",
+    protocol: ["anthropic"],
+    models: ["KAT-Coder-Pro-V1","KAT-Coder-Air-V1","KAT-Coder-Exp-72B"],
+    notes: [{text:"需在控制台创建接入点（ep-id）后拼入 URL，主要面向 Claude Code",type:"dim"}]
+  },
+  {
+    name: "字节 Coze (扣子)",
+    provider: "字节跳动",
+    cat: "domestic",
+    icon: "🧩",
+    iconBg: "linear-gradient(135deg,#4d53e8,#8b90f7)",
+    keyPrefix: "pat_",
+    keyFormat: "pat_xxxxxxxx（个人访问令牌）",
+    auth: "Authorization: Bearer <pat>",
+    baseUrl: "国内: https://api.coze.cn\n国际: https://api.coze.com",
+    console: "https://www.coze.cn/open/api",
+    protocol: ["native"],
+    models: ["按 bot_id 调用智能体，不直接暴露模型名"],
+    notes: [{text:"Agent 平台 API，非裸模型接口",type:"dim"}]
+  },
 
-  // ===== 云厂商 =====
+  // ===================================================================
+  // ===== ☁️ 云厂商 =====
+  // ===================================================================
   {
     name: "阿里云百炼（按量）",
     provider: "阿里云",
     cat: "cloud",
     icon: "☁️",
     iconBg: "linear-gradient(135deg,#ff6a00,#ee0979)",
-    keyFormat: "sk-xxxxxxxx",
     keyPrefix: "sk-",
-    baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
-    protocol: ["openai"],
+    keyFormat: "sk-xxxxxxxx（35 字符）",
+    auth: "Authorization: Bearer <key>（Anthropic 端点用 x-api-key）",
+    baseUrl: "OpenAI兼容: https://dashscope.aliyuncs.com/compatible-mode/v1\nAnthropic兼容: https://dashscope.aliyuncs.com/apps/anthropic\n原生: https://dashscope.aliyuncs.com/api/v1\n国际站: https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+    console: "https://bailian.console.aliyun.com/?tab=model#/api-key",
+    protocol: ["openai", "anthropic", "native"],
     models: [
       "qwen3.7-max","qwen3.7-plus","qwen3.6-35b-a3b",
       "qwen3.5","qwen3-32b","qwen2.5-72b",
+      "qwen3-coder-plus","qwen-vl-max","qwen-image",
       "deepseek-v4-pro","glm-5","kimi-k2.6"
     ],
-    notes: [{text:"150+ 模型，含 Qwen 全系 + 第三方模型",type:"green"}]
+    notes: [{text:"150+ 模型，含 Qwen 全系 + 第三方模型，新用户送百万 token",type:"green"}]
   },
   {
     name: "阿里云百炼 (Coding Plan)",
@@ -940,32 +1437,56 @@ const platforms = [
     cat: "cloud",
     icon: "☁️",
     iconBg: "linear-gradient(135deg,#ff6a00,#ee0979)",
-    keyFormat: "sk-sp-xxxxxxxx",
     keyPrefix: "sk-sp-",
-    baseUrl: "https://coding.dashscope.aliyuncs.com/v1",
-    protocol: ["openai"],
+    keyFormat: "sk-sp-xxxxxxxx",
+    auth: "Authorization: Bearer <key>（Anthropic 端点用 x-api-key）",
+    baseUrl: "OpenAI兼容: https://coding.dashscope.aliyuncs.com/v1\nAnthropic兼容: https://coding.dashscope.aliyuncs.com/apps/anthropic",
+    console: "https://bailian.console.aliyun.com/cn-beijing/?tab=codingplan",
+    protocol: ["openai", "anthropic"],
     models: [
-      "qwen-max","qwen-plus","qwen3-coder-plus",
-      "deepseek-coder-v2","glm-4-plus"
+      "qwen3-coder-plus","qwen3-coder-next","qwen3.7-max",
+      "glm-5","kimi-k2.6","minimax-m2.7"
     ],
     notes: [{text:"sk-sp- 为套餐专属 Key，与按量不互通",type:"danger"}]
   },
   {
     name: "火山方舟 (Doubao)",
-    provider: "字节跳动",
+    provider: "字节跳动 / 火山引擎",
     cat: "cloud",
     icon: "🌋",
     iconBg: "linear-gradient(135deg,#ff2e63,#ff8a00)",
-    keyFormat: "接入点 ID (ep-xxxx)",
-    keyPrefix: "ep- / 无固定前缀",
-    baseUrl: "https://ark.cn-beijing.volces.com/api/v3",
-    protocol: ["openai"],
+    keyPrefix: "无固定前缀（UUID）",
+    keyFormat: "UUID 形式 API Key xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "OpenAI兼容: https://ark.cn-beijing.volces.com/api/v3\nAnthropic兼容: https://ark.cn-beijing.volces.com/api/v3（/messages）\nCoding Plan: https://ark.cn-beijing.volces.com/api/coding/v3",
+    console: "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey",
+    protocol: ["openai", "anthropic"],
     models: [
       "doubao-seed-2-0","doubao-seed-2-0-lite-260215",
-      "doubao-pro-4k","doubao-lite-4k",
+      "doubao-seed-1-6-250615","doubao-seed-1-6-thinking-250715",
+      "doubao-seedream-4-0","doubao-seedance-1-0-pro",
+      "deepseek-v3-1-250821","kimi-k2-250905",
       "doubao-embedding-large","doubao-vision-pro"
     ],
-    notes: [{text:"model 字段填 ep-xxxx 接入点 ID，非模型名",type:"danger"}]
+    notes: [{text:"model 字段可填 ep-xxxx 接入点 ID，也可直接填模型名（需先在控制台开通）",type:"dim"}]
+  },
+  {
+    name: "华为云 ModelArts MaaS",
+    provider: "华为云",
+    cat: "cloud",
+    icon: "🌺",
+    iconBg: "linear-gradient(135deg,#c7000b,#ff6b6b)",
+    keyPrefix: "无固定前缀",
+    keyFormat: "字母数字长串（API Key）",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "https://api.modelarts-maas.com/v1",
+    console: "https://console.huaweicloud.com/modelarts/?region=cn-southwest-2#/model-studio/authmanage",
+    protocol: ["openai"],
+    models: [
+      "DeepSeek-V3.2","DeepSeek-R1","Qwen3-235B-A22B",
+      "Qwen3-32B","glm-4.5","kimi-k2"
+    ],
+    notes: [{text:"昇腾算力托管，新用户送免费 token",type:"green"}]
   },
   {
     name: "AWS Bedrock",
@@ -973,18 +1494,20 @@ const platforms = [
     cat: "cloud",
     icon: "🟠",
     iconBg: "linear-gradient(135deg,#ff9900,#ffc107)",
-    keyFormat: "AWS AK/SK + STS Token（非 sk- 前缀）",
-    keyPrefix: "AKIA / ASIA",
-    baseUrl: "via boto3 bedrock-runtime",
-    protocol: ["aws"],
+    keyPrefix: "ABSK / AKIA / ASIA",
+    keyFormat: "ABSK... Bedrock API Key（base64 长串约 132 字符）/ AKIA+SecretKey 长期凭证 / ASIA 临时凭证 + SessionToken",
+    auth: "Bearer <ABSK Key> 或 AWS SigV4 签名（boto3）",
+    baseUrl: "原生: https://bedrock-runtime.<region>.amazonaws.com\nOpenAI兼容: https://bedrock-runtime.<region>.amazonaws.com/openai/v1",
+    console: "https://console.aws.amazon.com/bedrock/home#/api-keys",
+    protocol: ["aws", "openai"],
     models: [
       "anthropic.claude-opus-4-8","anthropic.claude-sonnet-4-6",
       "anthropic.claude-haiku-4-5","amazon.nova-pro",
       "amazon.titan-embed-text-v2","cohere.command-r-plus",
       "meta.llama4-maverick","meta.llama3-70b","deepseek-r1",
-      "minimax.m2","ai21.jamba-1.5-large"
+      "minimax.m2","ai21.jamba-1.5-large","openai.gpt-oss-120b"
     ],
-    notes: [{text:"无 API Key，使用 AWS IAM 鉴权 + boto3 SDK；跨区推理需加 us. / eu. 前缀",type:"dim"}]
+    notes: [{text:"跨区推理需加 us. / eu. / apac. 前缀；ABSK Key 可直接当 Bearer 用",type:"dim"}]
   },
   {
     name: "Azure OpenAI",
@@ -992,9 +1515,11 @@ const platforms = [
     cat: "cloud",
     icon: "🔷",
     iconBg: "linear-gradient(135deg,#0078d4,#00bcf2)",
-    keyFormat: "Azure API Key（非 sk- 前缀）",
-    keyPrefix: "非 sk- 前缀",
-    baseUrl: "https://<resource>.openai.azure.com/",
+    keyPrefix: "无前缀（32 位 hex）",
+    keyFormat: "KEY1 / KEY2：32 位十六进制（无前缀），必须配套资源端点",
+    auth: "api-key: <key>（或 Entra ID Bearer）",
+    baseUrl: "v1 统一端点: https://<resource>.openai.azure.com/openai/v1\n旧版: https://<resource>.openai.azure.com/openai/deployments/<deploy>/chat/completions?api-version=2024-10-21",
+    console: "https://portal.azure.com",
     protocol: ["openai"],
     models: [
       "gpt-5.5","gpt-5.4","gpt-5.4-mini","gpt-5.4-nano",
@@ -1002,7 +1527,25 @@ const platforms = [
       "gpt-4o","gpt-4o-mini","o3","o3-mini",
       "gpt-4.1","gpt-4.1-mini","gpt-image-1"
     ],
-    notes: [{text:"需 Azure 订阅 + 资源部署，支持企业合规",type:"green"}]
+    notes: [{text:"Key 单独无用，必须配 https://<资源名>.openai.azure.com 端点；model 填部署名",type:"danger"}]
+  },
+  {
+    name: "Azure AI Foundry",
+    provider: "Microsoft Azure",
+    cat: "cloud",
+    icon: "🏭",
+    iconBg: "linear-gradient(135deg,#5c2d91,#8661c5)",
+    keyPrefix: "无固定前缀",
+    keyFormat: "长字母数字串（无前缀），配套项目端点",
+    auth: "api-key: <key> 或 Authorization: Bearer <key>",
+    baseUrl: "https://<resource>.services.ai.azure.com/models\nOpenAI 路径: https://<resource>.services.ai.azure.com/openai/v1",
+    console: "https://ai.azure.com",
+    protocol: ["openai"],
+    models: [
+      "DeepSeek-V3.2","DeepSeek-R1","Llama-4-Maverick-17B-128E-Instruct-FP8",
+      "Phi-4","mistral-large-3","grok-4.3","gpt-5.5"
+    ],
+    notes: [{text:"Azure 上的第三方模型（DeepSeek / Llama / Grok / Mistral）走此入口",type:"dim"}]
   },
   {
     name: "Google Vertex AI",
@@ -1010,16 +1553,19 @@ const platforms = [
     cat: "cloud",
     icon: "🟡",
     iconBg: "linear-gradient(135deg,#4285f4,#34a853)",
-    keyFormat: "GCP Service Account JSON",
-    keyPrefix: "非 sk- 前缀",
-    baseUrl: "https://<region>-aiplatform.googleapis.com/v1",
-    protocol: ["openai", "native"],
+    keyPrefix: "AQ.（Express）/ 无",
+    keyFormat: "服务账号 JSON → OAuth access_token（标准）/ AQ.xxxx API Key（Express 模式）",
+    auth: "Authorization: Bearer <access_token> 或 x-goog-api-key: AQ.xxx",
+    baseUrl: "原生: https://<region>-aiplatform.googleapis.com/v1\nOpenAI兼容: https://<region>-aiplatform.googleapis.com/v1/projects/<project>/locations/<region>/endpoints/openapi\nExpress: https://aiplatform.googleapis.com/v1",
+    console: "https://console.cloud.google.com/vertex-ai",
+    protocol: ["openai", "gemini", "anthropic"],
     models: [
       "gemini-3.1-pro-preview","gemini-3.5-flash","gemini-3-flash-preview",
-      "gemini-2.5-pro","gemini-2.5-flash","gemini-1.5-pro",
-      "gemini-1.5-flash","text-embedding-004"
+      "gemini-2.5-pro","gemini-2.5-flash",
+      "claude-opus-4-8","claude-sonnet-4-6",
+      "llama-4-maverick-17b-128e-instruct-maas","text-embedding-005"
     ],
-    notes: [{text:"需 GCP 项目 + 服务账号鉴权",type:"dim"}]
+    notes: [{text:"Model Garden 可调 Claude / Llama / Mistral；AQ. 前缀与智谱新版 Key 相同，需看域名区分",type:"dim"}]
   },
   {
     name: "Cloudflare Workers AI",
@@ -1027,37 +1573,316 @@ const platforms = [
     cat: "cloud",
     icon: "🌩️",
     iconBg: "linear-gradient(135deg,#f38020,#faad3f)",
-    keyFormat: "Cloudflare API Token（Bearer）",
     keyPrefix: "无固定前缀",
+    keyFormat: "Cloudflare API Token（40 位字母数字，Bearer）",
+    auth: "Authorization: Bearer <token>",
     baseUrl: "https://api.cloudflare.com/client/v4/accounts/<account_id>/ai/v1",
+    console: "https://dash.cloudflare.com/profile/api-tokens",
     protocol: ["openai"],
     models: [
       "@cf/meta/llama-4-scout-17b","@cf/meta/llama-3.3-70b-instruct",
       "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b",
       "@cf/qwen/qwq-32b","@cf/google/gemma-3-12b-it",
-      "@cf/mistral/mistral-7b-instruct"
+      "@cf/mistral/mistral-7b-instruct","@cf/openai/gpt-oss-120b"
     ],
     notes: [{text:"边缘网络推理，每日有免费额度，模型名带 @cf/ 前缀",type:"green"}]
   },
-
-  // ===== 聚合/中转 =====
   {
-    name: "NEW API / One API (自建)",
-    provider: "开源项目（自部署）",
+    name: "IBM watsonx.ai",
+    provider: "IBM",
+    cat: "cloud",
+    icon: "🔵",
+    iconBg: "linear-gradient(135deg,#0f62fe,#4589ff)",
+    keyPrefix: "无固定前缀",
+    keyFormat: "IAM API Key（44 位字母数字）→ 换取 IAM Bearer token",
+    auth: "Authorization: Bearer <iam_token>（API Key 先换 token）",
+    baseUrl: "https://us-south.ml.cloud.ibm.com/ml/v1（需 project_id）",
+    console: "https://cloud.ibm.com/iam/apikeys",
+    protocol: ["native"],
+    models: [
+      "ibm/granite-4-h-small","ibm/granite-3-3-8b-instruct",
+      "meta-llama/llama-4-maverick-17b-128e-instruct-fp8","mistralai/mistral-large-2"
+    ],
+    notes: [{text:"企业合规向，Granite 系列开源",type:"dim"}]
+  },
+  {
+    name: "Oracle OCI Generative AI",
+    provider: "Oracle Cloud",
+    cat: "cloud",
+    icon: "🟥",
+    iconBg: "linear-gradient(135deg,#c74634,#f80000)",
+    keyPrefix: "无（签名密钥）",
+    keyFormat: "OCI API 签名密钥（~/.oci/config + PEM 私钥），无单一 Key",
+    auth: "OCI 请求签名（SDK 自动处理）",
+    baseUrl: "https://inference.generativeai.<region>.oci.oraclecloud.com",
+    console: "https://cloud.oracle.com",
+    protocol: ["native"],
+    models: [
+      "cohere.command-a-03-2025","cohere.command-r-plus-08-2024",
+      "meta.llama-4-maverick-17b-128e-instruct-fp8","xai.grok-4"
+    ],
+    notes: [{text:"Cohere / Llama / Grok 托管，企业专用",type:"dim"}]
+  },
+  {
+    name: "Databricks Model Serving",
+    provider: "Databricks",
+    cat: "cloud",
+    icon: "🧱",
+    iconBg: "linear-gradient(135deg,#ff3621,#ff7a5c)",
+    keyPrefix: "dapi",
+    keyFormat: "dapixxxxxxxx（个人访问令牌）",
+    auth: "Authorization: Bearer <token>",
+    baseUrl: "https://<workspace>.cloud.databricks.com/serving-endpoints",
+    console: "https://<workspace>.cloud.databricks.com/settings/user/developer/access-tokens",
+    protocol: ["openai"],
+    models: [
+      "databricks-claude-sonnet-4-6","databricks-meta-llama-3-3-70b-instruct",
+      "databricks-gemma-3-12b","databricks-gte-large-en"
+    ],
+    notes: [{text:"Foundation Model API 按 token 计费，模型名带 databricks- 前缀",type:"dim"}]
+  },
+  {
+    name: "Modal",
+    provider: "Modal Labs",
+    cat: "cloud",
+    icon: "🟩",
+    iconBg: "linear-gradient(135deg,#7fee64,#3ecf3e)",
+    keyPrefix: "ak- / as-",
+    keyFormat: "ak-xxxx（token-id）+ as-xxxx（token-secret）成对使用",
+    auth: "Modal SDK 环境变量 MODAL_TOKEN_ID / MODAL_TOKEN_SECRET",
+    baseUrl: "https://<workspace>--<app>.modal.run/v1（自部署 vLLM / SGLang 端点）",
+    console: "https://modal.com/settings/tokens",
+    protocol: ["openai"],
+    models: ["自部署任意开源模型（vLLM / SGLang 容器）"],
+    notes: [{text:"Serverless GPU 平台，非模型商店；端点鉴权自定义",type:"dim"}]
+  },
+
+  // ===================================================================
+  // ===== 🔗 聚合 / 中转 / 网关 =====
+  // ===================================================================
+  {
+    name: "OpenRouter",
+    provider: "OpenRouter Inc.",
     cat: "aggregate",
-    icon: "🔧",
-    iconBg: "linear-gradient(135deg,#22c55e,#16a34a)",
-    keyFormat: "sk-xxxxxxxx（后台自行生成）",
-    keyPrefix: "sk-",
-    baseUrl: "http://localhost:3000/v1（或自定义域名）",
+    icon: "🔀",
+    iconBg: "linear-gradient(135deg,#00cec9,#81ecec)",
+    keyPrefix: "sk-or-v1-",
+    keyFormat: "sk-or-v1-xxxxxxxx（64 位 hex）",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "https://openrouter.ai/api/v1",
+    console: "https://openrouter.ai/settings/keys",
+    protocol: ["openai"],
+    models: [
+      "anthropic/claude-opus-4-8","anthropic/claude-sonnet-4-6",
+      "deepseek/deepseek-v4-pro","deepseek/deepseek-v3.2",
+      "openai/gpt-5.5","openai/gpt-5.4",
+      "google/gemini-3.1-pro-preview","google/gemini-3.5-flash",
+      "xai/grok-4.3","minimax/minimax-m3",
+      "qwen/qwen3.7-max","mistralai/mistral-large-3",
+      "meta-llama/llama-4-maverick"
+    ],
+    notes: [{text:"聚合 300+ 模型，一个 Key 通吃所有；模型名加 :free 后缀有免费版",type:"green"}]
+  },
+  {
+    name: "Vercel AI Gateway",
+    provider: "Vercel",
+    cat: "aggregate",
+    icon: "▲",
+    iconBg: "linear-gradient(135deg,#000000,#444444)",
+    keyPrefix: "vck_",
+    keyFormat: "vck_xxxxxxxx",
+    auth: "Authorization: Bearer <key>（Anthropic 端点用 x-api-key）",
+    baseUrl: "OpenAI兼容: https://ai-gateway.vercel.sh/v1\nAnthropic兼容: https://ai-gateway.vercel.sh",
+    console: "https://vercel.com/dashboard/ai-gateway",
     protocol: ["openai", "anthropic"],
     models: [
-      "取决于后台配置的上游渠道（可映射任意模型名）"
+      "openai/gpt-5.5","anthropic/claude-opus-4-8","google/gemini-3.5-flash",
+      "xai/grok-4.3","deepseek/deepseek-v4","moonshotai/kimi-k2.6"
     ],
-    notes: [
-      {text:"开源网关：统一管理多平台 Key，支持额度、分组、计费、模型重定向",type:"green"},
-      {text:"NEW API 为 One API 二开分支，额外支持 Anthropic / Gemini 协议转发",type:"dim"}
-    ]
+    notes: [{text:"官价零加价，统一计费 + 自动故障转移",type:"green"}]
+  },
+  {
+    name: "Cloudflare AI Gateway",
+    provider: "Cloudflare",
+    cat: "aggregate",
+    icon: "🌩️",
+    iconBg: "linear-gradient(135deg,#f38020,#f6821f)",
+    keyPrefix: "上游 Key + cf-aig-authorization",
+    keyFormat: "透传上游厂商 Key；开启鉴权网关时另加 cf-aig-authorization: Bearer <CF Token>",
+    auth: "上游厂商原鉴权 + 可选 cf-aig-authorization 头",
+    baseUrl: "https://gateway.ai.cloudflare.com/v1/<account_id>/<gateway>/<provider>\n统一入口: https://gateway.ai.cloudflare.com/v1/<account_id>/<gateway>/compat",
+    console: "https://dash.cloudflare.com/?to=/:account/ai/ai-gateway",
+    protocol: ["openai", "anthropic", "gemini"],
+    models: ["透传上游（openai / anthropic / google-ai-studio / workers-ai 等 provider 路径）"],
+    notes: [{text:"免费缓存 / 限流 / 日志 / 故障转移，不改上游 Key",type:"green"}]
+  },
+  {
+    name: "Portkey",
+    provider: "Portkey AI",
+    cat: "aggregate",
+    icon: "🔑",
+    iconBg: "linear-gradient(135deg,#6b21a8,#a855f7)",
+    keyPrefix: "无固定前缀",
+    keyFormat: "字母数字串（Portkey API Key）+ 虚拟 Key / Provider 头",
+    auth: "x-portkey-api-key: <key> + x-portkey-provider 或 x-portkey-virtual-key",
+    baseUrl: "https://api.portkey.ai/v1",
+    console: "https://app.portkey.ai/api-keys",
+    protocol: ["openai"],
+    models: ["透传上游（@provider/model 形式）"],
+    notes: [{text:"企业级 LLM 网关：可观测 / 缓存 / 守护规则",type:"dim"}]
+  },
+  {
+    name: "Helicone AI Gateway",
+    provider: "Helicone",
+    cat: "aggregate",
+    icon: "📊",
+    iconBg: "linear-gradient(135deg,#0ea5e9,#2563eb)",
+    keyPrefix: "sk-helicone-",
+    keyFormat: "sk-helicone-xxxxxxxx",
+    auth: "Authorization: Bearer <helicone_key>（上游 Key 在后台托管）",
+    baseUrl: "https://ai-gateway.helicone.ai/v1",
+    console: "https://us.helicone.ai/settings/api-keys",
+    protocol: ["openai"],
+    models: ["gpt-5.5","claude-opus-4-8","gemini-3.5-flash","deepseek-v4"],
+    notes: [{text:"可观测性 + 统一网关，一个 Key 路由 100+ 模型",type:"dim"}]
+  },
+  {
+    name: "Requesty Router",
+    provider: "Requesty",
+    cat: "aggregate",
+    icon: "🛣️",
+    iconBg: "linear-gradient(135deg,#059669,#34d399)",
+    keyPrefix: "无固定前缀",
+    keyFormat: "字母数字串（无前缀）",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "https://router.requesty.ai/v1",
+    console: "https://app.requesty.ai/api-keys",
+    protocol: ["openai"],
+    models: ["openai/gpt-5.5","anthropic/claude-sonnet-4-6","google/gemini-3.5-flash","deepseek/deepseek-v4"],
+    notes: [{text:"面向 Cline / Roo Code 等编码工具的路由",type:"dim"}]
+  },
+  {
+    name: "Novita AI",
+    provider: "Novita AI",
+    cat: "aggregate",
+    icon: "🔮",
+    iconBg: "linear-gradient(135deg,#8b5cf6,#a78bfa)",
+    keyPrefix: "sk_ / nv-",
+    keyFormat: "sk_xxxx-xxxx-xxxx（新版下划线）/ nv-xxxx（旧版）",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "OpenAI兼容: https://api.novita.ai/openai/v1\n旧路径: https://api.novita.ai/v3/openai",
+    console: "https://novita.ai/settings/key-management",
+    protocol: ["openai"],
+    models: [
+      "moonshotai/kimi-k2.5","zai-org/glm-5.1",
+      "minimax/minimax-m2.7","deepseek/deepseek-v3.2",
+      "google/gemma-4-31b-it"
+    ],
+    notes: [{text:"200+ 开源模型 + 图像/视频生成，支持工具调用",type:"dim"}]
+  },
+  {
+    name: "Parasail",
+    provider: "Parasail",
+    cat: "aggregate",
+    icon: "🪁",
+    iconBg: "linear-gradient(135deg,#0284c7,#7dd3fc)",
+    keyPrefix: "psk-",
+    keyFormat: "psk-xxxxxxxx",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "https://api.parasail.io/v1",
+    console: "https://www.saas.parasail.io",
+    protocol: ["openai"],
+    models: [
+      "parasail-deepseek-v3.1","parasail-deepseek-r1-0528",
+      "parasail-kimi-k2-instruct","parasail-glm-4.5-air"
+    ],
+    notes: [{text:"按量 Serverless + 专用部署，价格低",type:"dim"}]
+  },
+  {
+    name: "Poe API",
+    provider: "Quora",
+    cat: "aggregate",
+    icon: "💬",
+    iconBg: "linear-gradient(135deg,#5d5fef,#a5a6f6)",
+    keyPrefix: "无固定前缀",
+    keyFormat: "字母数字串（无前缀）",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "https://api.poe.com/v1",
+    console: "https://poe.com/api_key",
+    protocol: ["openai"],
+    models: ["GPT-5.5","Claude-Opus-4.8","Gemini-3.5-Flash","Grok-4.3","DeepSeek-V4"],
+    notes: [{text:"Poe 订阅积分直接当 API 用；模型名为 Poe 上的 bot 名",type:"dim"}]
+  },
+  {
+    name: "AiHubMix",
+    provider: "AiHubMix",
+    cat: "aggregate",
+    icon: "🧃",
+    iconBg: "linear-gradient(135deg,#f43f5e,#fb7185)",
+    keyPrefix: "sk-",
+    keyFormat: "sk-xxxxxxxx",
+    auth: "Authorization: Bearer <key>（Anthropic / Gemini 端点用各自原生头）",
+    baseUrl: "OpenAI兼容: https://aihubmix.com/v1\nAnthropic兼容: https://aihubmix.com\nGemini原生: https://aihubmix.com/gemini",
+    console: "https://aihubmix.com/token",
+    protocol: ["openai", "anthropic", "gemini"],
+    models: ["gpt-5.5","claude-opus-4-8","gemini-3.5-flash","deepseek-v4","qwen3.7-max"],
+    notes: [{text:"国内可直连的官转聚合，支持三种原生协议",type:"green"}]
+  },
+  {
+    name: "ZenMux (蚂蚁百灵)",
+    provider: "ZenMux / 蚂蚁集团",
+    cat: "aggregate",
+    icon: "🐜",
+    iconBg: "linear-gradient(135deg,#1677ff,#69b1ff)",
+    keyPrefix: "sk-ai-v1-",
+    keyFormat: "sk-ai-v1-xxxxxxxx",
+    auth: "Authorization: Bearer <key>（Anthropic 端点用 x-api-key）",
+    baseUrl: "OpenAI兼容: https://zenmux.ai/api/v1\nAnthropic兼容: https://zenmux.ai/api/anthropic",
+    console: "https://zenmux.ai/settings/keys",
+    protocol: ["openai", "anthropic"],
+    models: [
+      "inclusionai/ling-1t","inclusionai/ring-1t",
+      "anthropic/claude-sonnet-4-6","openai/gpt-5.5","deepseek/deepseek-v4"
+    ],
+    notes: [{text:"蚂蚁百灵 Ling / Ring 系列官方 API 入口，兼做聚合",type:"dim"}]
+  },
+  {
+    name: "PPIO 派欧云",
+    provider: "PPIO (PPInfra)",
+    cat: "aggregate",
+    icon: "🥧",
+    iconBg: "linear-gradient(135deg,#3b82f6,#93c5fd)",
+    keyPrefix: "sk_",
+    keyFormat: "sk_xxxxxxxx（下划线）",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "https://api.ppinfra.com/v3/openai",
+    console: "https://ppio.com/settings/key-management",
+    protocol: ["openai"],
+    models: [
+      "deepseek/deepseek-v3.1","deepseek/deepseek-r1-0528",
+      "moonshotai/kimi-k2-instruct","zai-org/glm-4.5",
+      "qwen/qwen3-235b-a22b-instruct-2507"
+    ],
+    notes: [{text:"国内开源模型算力平台，注册送额度",type:"green"}]
+  },
+  {
+    name: "无问芯穹 (Infini-AI)",
+    provider: "无问芯穹",
+    cat: "aggregate",
+    icon: "♾️",
+    iconBg: "linear-gradient(135deg,#0ea5e9,#06b6d4)",
+    keyPrefix: "sk-cp- / sk-",
+    keyFormat: "sk-cp-xxxx（Coding Plan）/ sk-xxxx（按量）",
+    auth: "Authorization: Bearer <key>（Anthropic 端点用 x-api-key）",
+    baseUrl: "按量: https://cloud.infini-ai.com/maas/v1\nCoding OpenAI: https://cloud.infini-ai.com/maas/coding/v1\nCoding Anthropic: https://cloud.infini-ai.com/maas/coding",
+    console: "https://cloud.infini-ai.com/platform/ai",
+    protocol: ["openai", "anthropic"],
+    models: [
+      "deepseek-v3.2","deepseek-v3.2-thinking",
+      "kimi-k2.5","minimax-m2.1","minimax-m2.5","minimax-m2.7",
+      "glm-4.7","glm-5","glm-5.1"
+    ],
+    notes: [{text:"Coding Plan 专属 Key (sk-cp-)，支持双协议",type:"dim"}]
   },
   {
     name: "Vector Engine",
@@ -1065,9 +1890,11 @@ const platforms = [
     cat: "aggregate",
     icon: "🎯",
     iconBg: "linear-gradient(135deg,#6366f1,#a855f7)",
-    keyFormat: "sk-xxxxxxxx",
     keyPrefix: "sk-",
+    keyFormat: "sk-xxxxxxxx",
+    auth: "Authorization: Bearer <key>",
     baseUrl: "https://api.vectorengine.ai/v1",
+    console: "https://vectorengine.ai",
     protocol: ["openai"],
     models: [
       "gpt-4o","gpt-4o-mini","claude-sonnet-4-6",
@@ -1077,43 +1904,334 @@ const platforms = [
     notes: [{text:"国内中转聚合，一个 Key 调多个平台",type:"dim"}]
   },
   {
-    name: "无问芯穹 (Infini-AI)",
-    provider: "无问芯穹",
+    name: "NEW API / One API (自建)",
+    provider: "开源项目（自部署）",
     cat: "aggregate",
-    icon: "♾️",
-    iconBg: "linear-gradient(135deg,#0ea5e9,#06b6d4)",
-    keyFormat: "sk-cp-xxxxxxxx",
-    keyPrefix: "sk-cp-",
-    baseUrl: "OpenAI: https://cloud.infini-ai.com/maas/coding/v1\nAnthropic: https://cloud.infini-ai.com/maas/coding",
+    icon: "🔧",
+    iconBg: "linear-gradient(135deg,#22c55e,#16a34a)",
+    keyPrefix: "sk-",
+    keyFormat: "sk-xxxxxxxx（后台令牌页生成，48 位）",
+    auth: "Authorization: Bearer <key>（Anthropic / Gemini 端点用各自原生头）",
+    baseUrl: "OpenAI兼容: http://localhost:3000/v1\nAnthropic兼容: http://localhost:3000\nGemini原生: http://localhost:3000（/v1beta）",
+    console: "http://localhost:3000/console/token",
+    protocol: ["openai", "anthropic", "gemini"],
+    models: ["取决于后台配置的上游渠道（可映射任意模型名）"],
+    notes: [
+      {text:"开源网关：统一管理多平台 Key，支持额度、分组、计费、模型重定向",type:"green"},
+      {text:"NEW API 为 One API 二开分支，额外支持 Anthropic / Gemini / Responses 协议转发",type:"dim"}
+    ]
+  },
+  {
+    name: "LiteLLM Proxy (自建)",
+    provider: "BerriAI（开源）",
+    cat: "aggregate",
+    icon: "🚂",
+    iconBg: "linear-gradient(135deg,#1d4ed8,#60a5fa)",
+    keyPrefix: "sk-",
+    keyFormat: "sk-xxxxxxxx（虚拟 Key，后台生成）/ master key 自定义",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "http://localhost:4000/v1（默认端口 4000）",
+    console: "http://localhost:4000/ui",
     protocol: ["openai", "anthropic"],
-    models: [
-      "deepseek-v3.2","deepseek-v3.2-thinking",
-      "kimi-k2.5","minimax-m2.1","minimax-m2.5","minimax-m2.7",
-      "glm-4.7","glm-5","glm-5.1"
-    ],
-    notes: [{text:"Coding Plan 专属 Key (sk-cp-)，支持双协议",type:"dim"}]
+    models: ["config.yaml 中配置的 100+ 上游（provider/model 形式）"],
+    notes: [{text:"Python 网关，支持预算 / 限流 / 回退，Anthropic 格式 /v1/messages 透传",type:"dim"}]
   },
 
-  // ===== 本地/自建 =====
+  // ===================================================================
+  // ===== 🎨 图像 / 视频 / 语音 =====
+  // ===================================================================
+  {
+    name: "ElevenLabs (语音)",
+    provider: "ElevenLabs",
+    cat: "media",
+    icon: "🎙️",
+    iconBg: "linear-gradient(135deg,#000000,#5b5b5b)",
+    keyPrefix: "sk_",
+    keyFormat: "sk_xxxxxxxx（下划线，新版）/ 32 位 hex（旧版）",
+    auth: "xi-api-key: <key>",
+    baseUrl: "https://api.elevenlabs.io/v1",
+    console: "https://elevenlabs.io/app/settings/api-keys",
+    protocol: ["native"],
+    models: [
+      "eleven_v3","eleven_multilingual_v2","eleven_flash_v2_5",
+      "eleven_turbo_v2_5","scribe_v1"
+    ],
+    notes: [{text:"TTS / 克隆 / 转写（Scribe），注意与短横 sk- 区分",type:"dim"}]
+  },
+  {
+    name: "Deepgram (语音)",
+    provider: "Deepgram",
+    cat: "media",
+    icon: "🎧",
+    iconBg: "linear-gradient(135deg,#13ef93,#0d9e5f)",
+    keyPrefix: "无前缀（40 位 hex）",
+    keyFormat: "40 位十六进制串",
+    auth: "Authorization: Token <key>（注意是 Token 不是 Bearer）",
+    baseUrl: "https://api.deepgram.com/v1",
+    console: "https://console.deepgram.com",
+    protocol: ["native"],
+    models: ["nova-3","nova-2","aura-2","whisper-large"],
+    notes: [{text:"STT / TTS，注册送 $200 额度",type:"green"}]
+  },
+  {
+    name: "AssemblyAI (语音)",
+    provider: "AssemblyAI",
+    cat: "media",
+    icon: "📝",
+    iconBg: "linear-gradient(135deg,#2545d3,#7b8cff)",
+    keyPrefix: "无前缀（32 位 hex）",
+    keyFormat: "32 位十六进制串",
+    auth: "authorization: <key>（裸 Key，无 Bearer）",
+    baseUrl: "https://api.assemblyai.com/v2",
+    console: "https://www.assemblyai.com/app/api-keys",
+    protocol: ["native"],
+    models: ["universal","slam-1","best","nano"],
+    notes: [{text:"语音转写 + 说话人分离 + 摘要",type:"dim"}]
+  },
+  {
+    name: "Cartesia (语音)",
+    provider: "Cartesia",
+    cat: "media",
+    icon: "🗣️",
+    iconBg: "linear-gradient(135deg,#ff4f00,#ffb199)",
+    keyPrefix: "sk_car_",
+    keyFormat: "sk_car_xxxxxxxx",
+    auth: "X-API-Key: <key> + Cartesia-Version: 2025-04-16",
+    baseUrl: "https://api.cartesia.ai",
+    console: "https://play.cartesia.ai/keys",
+    protocol: ["native"],
+    models: ["sonic-3","sonic-2","ink-whisper"],
+    notes: [{text:"超低延迟 TTS（Sonic），状态空间模型",type:"dim"}]
+  },
+  {
+    name: "Fish Audio (语音)",
+    provider: "Fish Audio",
+    cat: "media",
+    icon: "🐟",
+    iconBg: "linear-gradient(135deg,#0891b2,#67e8f9)",
+    keyPrefix: "无固定前缀",
+    keyFormat: "字母数字串（无前缀）",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "https://api.fish.audio/v1",
+    console: "https://fish.audio/go-api/api-keys",
+    protocol: ["native"],
+    models: ["s1","speech-1.6","speech-1.5"],
+    notes: [{text:"中文 TTS / 声音克隆效果好",type:"dim"}]
+  },
+  {
+    name: "Stability AI (图像)",
+    provider: "Stability AI",
+    cat: "media",
+    icon: "🖼️",
+    iconBg: "linear-gradient(135deg,#7c3aed,#c084fc)",
+    keyPrefix: "sk-",
+    keyFormat: "sk-xxxxxxxx",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "https://api.stability.ai/v2beta",
+    console: "https://platform.stability.ai/account/keys",
+    protocol: ["native"],
+    models: [
+      "stable-image-ultra","stable-image-core",
+      "sd3.5-large","sd3.5-medium","stable-video-diffusion"
+    ],
+    notes: [{text:"Stable Diffusion 官方 API，按积分计费",type:"dim"}]
+  },
+  {
+    name: "Black Forest Labs (FLUX)",
+    provider: "Black Forest Labs (德国)",
+    cat: "media",
+    icon: "🌲",
+    iconBg: "linear-gradient(135deg,#1a1a1a,#4a4a4a)",
+    keyPrefix: "无前缀（UUID）",
+    keyFormat: "UUID 形式 xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    auth: "x-key: <key>",
+    baseUrl: "https://api.bfl.ai/v1",
+    console: "https://dashboard.bfl.ai",
+    protocol: ["native"],
+    models: [
+      "flux-kontext-pro","flux-kontext-max",
+      "flux-pro-1.1-ultra","flux-pro-1.1","flux-dev"
+    ],
+    notes: [{text:"FLUX 官方 API，异步轮询取结果",type:"dim"}]
+  },
+  {
+    name: "Replicate",
+    provider: "Replicate",
+    cat: "media",
+    icon: "🔁",
+    iconBg: "linear-gradient(135deg,#000000,#3b3b3b)",
+    keyPrefix: "r8_",
+    keyFormat: "r8_xxxxxxxx（40 字符）",
+    auth: "Authorization: Bearer <token>",
+    baseUrl: "https://api.replicate.com/v1",
+    console: "https://replicate.com/account/api-tokens",
+    protocol: ["native"],
+    models: [
+      "black-forest-labs/flux-1.1-pro","stability-ai/sdxl",
+      "meta/llama-4-maverick-instruct","openai/whisper","minimax/video-01"
+    ],
+    notes: [{text:"按秒计费的模型市场，图像/视频/音频/LLM 都有",type:"dim"}]
+  },
+  {
+    name: "fal.ai",
+    provider: "fal.ai",
+    cat: "media",
+    icon: "🎨",
+    iconBg: "linear-gradient(135deg,#ec4899,#8b5cf6)",
+    keyPrefix: "<key_id>:<key_secret>",
+    keyFormat: "UUID:xxxxxxxx（冒号分隔 id 与 secret）",
+    auth: "Authorization: Key <key_id>:<key_secret>",
+    baseUrl: "同步: https://fal.run\n队列: https://queue.fal.run",
+    console: "https://fal.ai/dashboard/keys",
+    protocol: ["native"],
+    models: [
+      "fal-ai/flux-pro/kontext","fal-ai/flux/dev",
+      "fal-ai/kling-video/v2.1/master","fal-ai/minimax/hailuo-02","fal-ai/wan/v2.2"
+    ],
+    notes: [{text:"生成式媒体推理最快的平台之一，模型名带 fal-ai/ 前缀",type:"green"}]
+  },
+  {
+    name: "Runway (视频)",
+    provider: "Runway",
+    cat: "media",
+    icon: "🎥",
+    iconBg: "linear-gradient(135deg,#111111,#666666)",
+    keyPrefix: "key_",
+    keyFormat: "key_xxxxxxxx",
+    auth: "Authorization: Bearer <key> + X-Runway-Version: 2024-11-06",
+    baseUrl: "https://api.dev.runwayml.com/v1",
+    console: "https://dev.runwayml.com",
+    protocol: ["native"],
+    models: ["gen4_turbo","gen4_aleph","gen4_image","gen3a_turbo"],
+    notes: [{text:"必须带 X-Runway-Version 版本头",type:"danger"}]
+  },
+  {
+    name: "Luma AI (视频)",
+    provider: "Luma AI",
+    cat: "media",
+    icon: "🌠",
+    iconBg: "linear-gradient(135deg,#0f172a,#38bdf8)",
+    keyPrefix: "luma-",
+    keyFormat: "luma-xxxx-xxxx-xxxx",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "https://api.lumalabs.ai/dream-machine/v1",
+    console: "https://lumalabs.ai/dream-machine/api/keys",
+    protocol: ["native"],
+    models: ["ray-2","ray-flash-2","ray-1.6","photon-1","photon-flash-1"],
+    notes: [{text:"Dream Machine 视频 + Photon 图像",type:"dim"}]
+  },
+  {
+    name: "Ideogram (图像)",
+    provider: "Ideogram",
+    cat: "media",
+    icon: "🔤",
+    iconBg: "linear-gradient(135deg,#f97316,#fde047)",
+    keyPrefix: "无固定前缀",
+    keyFormat: "字母数字串（无前缀）",
+    auth: "Api-Key: <key>",
+    baseUrl: "https://api.ideogram.ai",
+    console: "https://ideogram.ai/manage-api",
+    protocol: ["native"],
+    models: ["V_3","V_2","V_2_TURBO"],
+    notes: [{text:"文字渲染最强的图像模型",type:"dim"}]
+  },
+  {
+    name: "Recraft (图像)",
+    provider: "Recraft",
+    cat: "media",
+    icon: "🖌️",
+    iconBg: "linear-gradient(135deg,#111827,#f43f5e)",
+    keyPrefix: "无固定前缀",
+    keyFormat: "字母数字串（无前缀）",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "https://external.api.recraft.ai/v1",
+    console: "https://www.recraft.ai/profile/api",
+    protocol: ["openai"],
+    models: ["recraftv3","recraftv2","recraft-vector"],
+    notes: [{text:"OpenAI images 格式兼容，支持矢量 SVG 输出",type:"dim"}]
+  },
+  {
+    name: "快手可灵 (Kling)",
+    provider: "快手",
+    cat: "media",
+    icon: "🎞️",
+    iconBg: "linear-gradient(135deg,#ff4906,#ff8f3f)",
+    keyPrefix: "无（AK/SK → JWT）",
+    keyFormat: "AccessKey + SecretKey → 自签 JWT（HS256，iss=AK，exp 30 分钟）",
+    auth: "Authorization: Bearer <JWT>",
+    baseUrl: "国内: https://api-beijing.klingai.com\n国际: https://api-singapore.klingai.com",
+    console: "https://app.klingai.com/cn/dev/",
+    protocol: ["native"],
+    models: ["kling-v2-1-master","kling-v2-1","kling-v2-master","kling-v1-6","kling-image-v2"],
+    notes: [{text:"视频生成头部；每次请求需用 SK 现签 JWT",type:"dim"}]
+  },
+  {
+    name: "生数 Vidu (视频)",
+    provider: "生数科技",
+    cat: "media",
+    icon: "🎦",
+    iconBg: "linear-gradient(135deg,#6d28d9,#c4b5fd)",
+    keyPrefix: "无固定前缀",
+    keyFormat: "字母数字串（无前缀）",
+    auth: "Authorization: Token <key>",
+    baseUrl: "https://api.vidu.cn/ent/v2",
+    console: "https://platform.vidu.cn",
+    protocol: ["native"],
+    models: ["viduq1","vidu2.0","vidu1.5"],
+    notes: [{text:"清华系视频模型，参考生视频（多主体一致）见长",type:"dim"}]
+  },
+  {
+    name: "字节即梦 (Jimeng)",
+    provider: "字节跳动 / 火山引擎",
+    cat: "media",
+    icon: "💭",
+    iconBg: "linear-gradient(135deg,#1e40af,#60a5fa)",
+    keyPrefix: "无（火山 AK/SK 签名）",
+    keyFormat: "火山引擎 AccessKey + SecretKey，HMAC-SHA256 请求签名",
+    auth: "Volc SigV4 签名（SDK 自动处理）",
+    baseUrl: "https://visual.volcengineapi.com（Action=CVSync2AsyncSubmitTask）",
+    console: "https://console.volcengine.com/iam/keymanage",
+    protocol: ["native"],
+    models: ["jimeng_t2i_v31","jimeng_t2v_v30","jimeng_i2v_v30"],
+    notes: [{text:"req_key 以控制台「视觉智能」列表为准；也可走火山方舟 doubao-seedream 用 API Key",type:"dim"}]
+  },
+  {
+    name: "PixVerse (视频)",
+    provider: "爱诗科技",
+    cat: "media",
+    icon: "🎬",
+    iconBg: "linear-gradient(135deg,#0f766e,#5eead4)",
+    keyPrefix: "无固定前缀",
+    keyFormat: "字母数字串（无前缀）",
+    auth: "API-KEY: <key> + Ai-trace-id: <uuid>",
+    baseUrl: "https://app-api.pixverse.ai/openapi/v2",
+    console: "https://platform.pixverse.ai",
+    protocol: ["native"],
+    models: ["v4.5","v4","v3.5"],
+    notes: [{text:"每次请求需带唯一 Ai-trace-id",type:"dim"}]
+  },
+
+  // ===================================================================
+  // ===== 💻 本地 / 自建 =====
+  // ===================================================================
   {
     name: "Ollama",
     provider: "Ollama (本地)",
     cat: "local",
     icon: "🦙",
     iconBg: "linear-gradient(135deg,#ff9d00,#ff6d00)",
-    keyFormat: "无需 Key（可用任意占位）",
     keyPrefix: "无",
-    baseUrl: "http://localhost:11434/v1",
-    protocol: ["openai"],
+    keyFormat: "无需 Key（可用任意占位如 ollama）",
+    auth: "无（可选反代加 Bearer）",
+    baseUrl: "OpenAI兼容: http://localhost:11434/v1\n原生: http://localhost:11434/api",
+    console: "https://ollama.com/download",
+    protocol: ["openai", "native"],
     models: [
       "llama3.3:70b","llama3.1:8b","llama4:scout",
       "qwen3:32b","qwen2.5:7b","deepseek-r1:14b",
-      "glm-4:9b","mistral:7b","phi4:14b"
+      "glm-4:9b","mistral:7b","phi4:14b","gpt-oss:20b"
     ],
-    notes: [
-      {text:"本地运行，完全免费，支持 100+ 开源模型",type:"green"},
-      {text:"原生 API 为 http://localhost:11434/api（如 /api/chat）",type:"dim"}
-    ]
+    notes: [{text:"本地运行，完全免费，支持 100+ 开源模型",type:"green"}]
   },
   {
     name: "vLLM",
@@ -1121,14 +2239,29 @@ const platforms = [
     cat: "local",
     icon: "⚙️",
     iconBg: "linear-gradient(135deg,#7c3aed,#a78bfa)",
-    keyFormat: "可自定义或无需 Key",
     keyPrefix: "自定义",
+    keyFormat: "可自定义（--api-key 参数）或无需 Key",
+    auth: "Authorization: Bearer <自定义 key>",
     baseUrl: "http://localhost:8000/v1",
+    console: "https://docs.vllm.ai",
     protocol: ["openai"],
-    models: [
-      "任意 HuggingFace 模型（需自行部署）"
-    ],
+    models: ["任意 HuggingFace 模型（vllm serve <model> 启动）"],
     notes: [{text:"高性能推理引擎，适合自部署生产环境",type:"dim"}]
+  },
+  {
+    name: "SGLang",
+    provider: "LMSYS (本地)",
+    cat: "local",
+    icon: "🔥",
+    iconBg: "linear-gradient(135deg,#dc2626,#f97316)",
+    keyPrefix: "自定义",
+    keyFormat: "可自定义（--api-key 参数）或无需 Key",
+    auth: "Authorization: Bearer <自定义 key>",
+    baseUrl: "http://localhost:30000/v1",
+    console: "https://docs.sglang.ai",
+    protocol: ["openai"],
+    models: ["任意 HuggingFace 模型（python -m sglang.launch_server 启动）"],
+    notes: [{text:"RadixAttention 前缀缓存，DeepSeek 官方推荐推理框架",type:"dim"}]
   },
   {
     name: "LM Studio",
@@ -1136,13 +2269,13 @@ const platforms = [
     cat: "local",
     icon: "💻",
     iconBg: "linear-gradient(135deg,#10b981,#34d399)",
-    keyFormat: "无需 Key（可用 lm-studio 占位）",
     keyPrefix: "无",
-    baseUrl: "http://localhost:1234/v1",
+    keyFormat: "无需 Key（可用 lm-studio 占位）",
+    auth: "无",
+    baseUrl: "OpenAI兼容: http://localhost:1234/v1\n原生: http://localhost:1234/api/v0",
+    console: "https://lmstudio.ai",
     protocol: ["openai"],
-    models: [
-      "任意 GGUF 格式模型（通过 UI 加载）"
-    ],
+    models: ["任意 GGUF / MLX 模型（通过 UI 加载）"],
     notes: [{text:"图形界面管理本地模型，新手友好",type:"green"}]
   },
   {
@@ -1151,16 +2284,147 @@ const platforms = [
     cat: "local",
     icon: "🧩",
     iconBg: "linear-gradient(135deg,#64748b,#94a3b8)",
-    keyFormat: "无需 Key（--api-key 可选）",
     keyPrefix: "无",
+    keyFormat: "无需 Key（--api-key 可选）",
+    auth: "Authorization: Bearer <自定义 key>（可选）",
     baseUrl: "http://localhost:8080/v1",
+    console: "https://github.com/ggml-org/llama.cpp",
     protocol: ["openai"],
-    models: [
-      "任意 GGUF 模型（llama-server -m model.gguf 启动）"
-    ],
-    notes: [{text:"纯 C/C++ 推理，无 GPU 也能跑，Ollama/LM Studio 的底层引擎",type:"dim"}]
+    models: ["任意 GGUF 模型（llama-server -m model.gguf 启动）"],
+    notes: [{text:"纯 C/C++ 推理，无 GPU 也能跑，Ollama / LM Studio 的底层引擎",type:"dim"}]
+  },
+  {
+    name: "LocalAI",
+    provider: "LocalAI (本地)",
+    cat: "local",
+    icon: "🏠",
+    iconBg: "linear-gradient(135deg,#0891b2,#22d3ee)",
+    keyPrefix: "自定义",
+    keyFormat: "可自定义（API_KEY 环境变量）或无需 Key",
+    auth: "Authorization: Bearer <自定义 key>",
+    baseUrl: "http://localhost:8080/v1",
+    console: "https://localai.io",
+    protocol: ["openai"],
+    models: ["LLM / 图像 / 语音 / Embedding 全套本地替代"],
+    notes: [{text:"OpenAI 全功能本地替代（含 TTS / 图像生成）",type:"dim"}]
+  },
+  {
+    name: "Xinference",
+    provider: "Xorbits (本地)",
+    cat: "local",
+    icon: "🧮",
+    iconBg: "linear-gradient(135deg,#7e22ce,#d8b4fe)",
+    keyPrefix: "自定义",
+    keyFormat: "可自定义（--auth-config）或无需 Key",
+    auth: "Authorization: Bearer <自定义 key>",
+    baseUrl: "http://localhost:9997/v1",
+    console: "https://inference.readthedocs.io",
+    protocol: ["openai"],
+    models: ["LLM / Embedding / Rerank / 多模态（xinference launch）"],
+    notes: [{text:"国内团队开源，Dify / RAGFlow 常用后端",type:"dim"}]
+  },
+  {
+    name: "Open WebUI",
+    provider: "Open WebUI (本地)",
+    cat: "local",
+    icon: "🖥️",
+    iconBg: "linear-gradient(135deg,#0f172a,#475569)",
+    keyPrefix: "sk-",
+    keyFormat: "sk-xxxxxxxx（设置 → 账号 → API Key 生成）",
+    auth: "Authorization: Bearer <key>",
+    baseUrl: "http://localhost:3000/api（注意是 /api 不是 /v1）",
+    console: "http://localhost:3000/settings/account",
+    protocol: ["openai"],
+    models: ["透传已接入的 Ollama / OpenAI 兼容后端"],
+    notes: [{text:"聊天前端兼做 API 网关，路径为 /api/chat/completions",type:"danger"}]
+  },
+  {
+    name: "Jan",
+    provider: "Jan (本地)",
+    cat: "local",
+    icon: "👋",
+    iconBg: "linear-gradient(135deg,#1e293b,#64748b)",
+    keyPrefix: "自定义",
+    keyFormat: "可自定义或无需 Key",
+    auth: "Authorization: Bearer <自定义 key>",
+    baseUrl: "http://localhost:1337/v1",
+    console: "https://jan.ai",
+    protocol: ["openai"],
+    models: ["任意 GGUF 模型（Jan Hub 下载）"],
+    notes: [{text:"开源 ChatGPT 桌面替代，内置本地 API Server",type:"dim"}]
+  },
+  {
+    name: "text-generation-webui",
+    provider: "oobabooga (本地)",
+    cat: "local",
+    icon: "📟",
+    iconBg: "linear-gradient(135deg,#374151,#9ca3af)",
+    keyPrefix: "自定义",
+    keyFormat: "可自定义（--api-key）或无需 Key",
+    auth: "Authorization: Bearer <自定义 key>",
+    baseUrl: "http://localhost:5000/v1",
+    console: "https://github.com/oobabooga/text-generation-webui",
+    protocol: ["openai"],
+    models: ["GGUF / GPTQ / EXL2 / Transformers 多后端"],
+    notes: [{text:"启动加 --api 参数开启 OpenAI 兼容接口",type:"dim"}]
+  },
+  {
+    name: "KoboldCpp",
+    provider: "LostRuins (本地)",
+    cat: "local",
+    icon: "🎲",
+    iconBg: "linear-gradient(135deg,#b45309,#fbbf24)",
+    keyPrefix: "无",
+    keyFormat: "无需 Key（--password 可选）",
+    auth: "Authorization: Bearer <password>（可选）",
+    baseUrl: "http://localhost:5001/v1",
+    console: "https://github.com/LostRuins/koboldcpp",
+    protocol: ["openai"],
+    models: ["任意 GGUF 模型（单文件 exe 启动）"],
+    notes: [{text:"单文件免安装，角色扮演社区常用",type:"dim"}]
+  },
+  {
+    name: "MLX (Apple Silicon)",
+    provider: "Apple mlx-lm (本地)",
+    cat: "local",
+    icon: "🍎",
+    iconBg: "linear-gradient(135deg,#1f2937,#6b7280)",
+    keyPrefix: "无",
+    keyFormat: "无需 Key",
+    auth: "无",
+    baseUrl: "http://localhost:8080/v1",
+    console: "https://github.com/ml-explore/mlx-lm",
+    protocol: ["openai"],
+    models: ["mlx-community/* 模型（mlx_lm.server --model 启动）"],
+    notes: [{text:"Mac M 系列芯片原生加速",type:"dim"}]
   }
 ];
+
+// ============ HELPERS ============
+function escapeHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+// 把 "标签: URL" 多行文本渲染为带标签的行
+function renderUrlLines(text) {
+  return text.split('\n').map(line => {
+    const m = line.match(/^([^:]{1,24}):\s+(.+)$/);
+    if (m && !/^https?$/.test(m[1])) {
+      return `<span class="url-line" data-copy="${escapeHtml(m[2])}"><span class="url-tag">${escapeHtml(m[1])}:</span>${escapeHtml(m[2])}</span>`;
+    }
+    return `<span class="url-line" data-copy="${escapeHtml(line)}">${escapeHtml(line)}</span>`;
+  }).join('');
+}
+const PROTO_META = {
+  openai:    {cls:'pb-openai',    label:'OpenAI兼容'},
+  anthropic: {cls:'pb-anthropic', label:'Anthropic兼容'},
+  gemini:    {cls:'pb-gemini',    label:'Gemini原生'},
+  native:    {cls:'pb-native',    label:'原生协议'},
+  aws:       {cls:'pb-aws',       label:'AWS SDK'}
+};
+const CAT_NAME = {
+  international:'🌍 国际平台', domestic:'🇨🇳 国内平台', cloud:'☁️ 云厂商',
+  aggregate:'🔗 聚合/中转/网关', media:'🎨 图像/视频/语音', local:'💻 本地/自建'
+};
 
 // ============ RENDER ============
 function renderCards(data) {
@@ -1174,39 +2438,47 @@ function renderCards(data) {
     card.dataset.cat = p.cat;
 
     const protocolHTML = p.protocol.map(prot => {
-      const cls = prot === 'openai' ? 'pb-openai' : prot === 'anthropic' ? 'pb-anthropic' : prot === 'native' ? 'pb-native' : 'pb-aws';
-      const label = prot === 'openai' ? 'OpenAI兼容' : prot === 'anthropic' ? 'Anthropic兼容' : prot === 'native' ? '原生协议' : 'AWS SDK';
-      return `<span class="protocol-badge ${cls}">${label}</span>`;
+      const m = PROTO_META[prot] || PROTO_META.native;
+      return `<span class="protocol-badge ${m.cls}">${m.label}</span>`;
     }).join('');
 
-    const modelTags = p.models.map(m => `<span class="model-tag" data-model="${m}">${m}</span>`).join('');
+    const modelTags = p.models.map(m => `<span class="model-tag" data-model="${escapeHtml(m)}">${escapeHtml(m)}</span>`).join('');
 
-    const notesHTML = p.notes.map(n => {
+    const notesHTML = (p.notes || []).map(n => {
       const cls = n.type === 'danger' ? 'note' : n.type === 'green' ? 'note green' : 'note dim';
-      return `<div class="${cls}">${n.text}</div>`;
+      return `<div class="${cls}">${escapeHtml(n.text)}</div>`;
     }).join('');
+
+    const consoleHTML = p.console
+      ? `<div class="info-row"><div class="info-label">获取 Key</div><div class="info-value link"><a href="${escapeHtml(p.console)}" target="_blank" rel="noopener">${escapeHtml(p.console.replace(/^https?:\/\//,''))}</a></div></div>`
+      : '';
 
     card.innerHTML = `
       <div class="card-header">
         <div class="card-icon" style="background:${p.iconBg}">${p.icon}</div>
         <div>
-          <div class="card-title">${p.name}</div>
-          <div class="card-provider">${p.provider}</div>
+          <div class="card-title">${escapeHtml(p.name)}</div>
+          <div class="card-provider">${escapeHtml(p.provider)}</div>
         </div>
       </div>
       <div class="card-body">
         <div class="info-row">
           <div class="info-label">Key 前缀</div>
-          <div class="info-value key-format">${p.keyPrefix}</div>
+          <div class="info-value key-format" data-copy="${escapeHtml(p.keyPrefix)}" title="点击复制">${escapeHtml(p.keyPrefix)}</div>
         </div>
         <div class="info-row">
           <div class="info-label">Key 格式</div>
-          <div class="info-value key-format">${p.keyFormat}</div>
+          <div class="info-value key-format" data-copy="${escapeHtml(p.keyFormat)}" title="点击复制">${escapeHtml(p.keyFormat)}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">鉴权方式</div>
+          <div class="info-value auth">${escapeHtml(p.auth || '')}</div>
         </div>
         <div class="info-row">
           <div class="info-label">Base URL</div>
-          <div class="info-value">${p.baseUrl.replace(/\n/g,'<br>')}</div>
+          <div class="info-value" title="点击某一行复制该 URL">${renderUrlLines(p.baseUrl)}</div>
         </div>
+        ${consoleHTML}
         <div class="models-section">
           <div class="models-header">
             <div class="models-label">📦 常用模型（点击复制）</div>
@@ -1225,6 +2497,7 @@ function renderCards(data) {
   document.getElementById('statTotal').textContent = data.length;
   document.getElementById('statModels').textContent = totalModels;
   document.getElementById('statOpenai').textContent = data.filter(p => p.protocol.includes('openai')).length;
+  document.getElementById('statAnthropic').textContent = data.filter(p => p.protocol.includes('anthropic')).length;
   document.getElementById('statCats').textContent = new Set(data.map(p => p.cat)).size;
 }
 
@@ -1238,16 +2511,12 @@ function applyFilter(cat) {
   if (searchBox.value) {
     searchBox.value = '';
     document.querySelectorAll('.model-tag').forEach(tag => {
-      tag.innerHTML = tag.dataset.model;
+      tag.textContent = tag.dataset.model;
     });
   }
   const cards = document.querySelectorAll('.card');
   cards.forEach(c => {
-    if (cat === 'all' || c.dataset.cat === cat) {
-      c.style.display = '';
-    } else {
-      c.style.display = 'none';
-    }
+    c.style.display = (cat === 'all' || c.dataset.cat === cat) ? '' : 'none';
   });
 }
 
@@ -1259,13 +2528,11 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
 document.getElementById('searchBox').addEventListener('input', function() {
   const q = this.value.toLowerCase().trim();
   if (!q) {
-    // 清空搜索时恢复分类筛选
     document.querySelectorAll('.card').forEach(c => {
       c.style.display = (currentFilter === 'all' || c.dataset.cat === currentFilter) ? '' : 'none';
     });
-    // 清除高亮
     document.querySelectorAll('.model-tag').forEach(tag => {
-      tag.innerHTML = tag.dataset.model;
+      tag.textContent = tag.dataset.model;
     });
     return;
   }
@@ -1275,20 +2542,19 @@ document.getElementById('searchBox').addEventListener('input', function() {
     currentFilter = 'all';
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === 'all'));
   }
+  const regex = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
   document.querySelectorAll('.card').forEach(c => {
     const text = c.textContent.toLowerCase();
     const matches = text.includes(q);
     c.style.display = matches ? '' : 'none';
 
-    // 高亮匹配的模型名
     if (matches) {
       c.querySelectorAll('.model-tag').forEach(tag => {
         const modelName = tag.dataset.model;
         if (modelName.toLowerCase().includes(q)) {
-          const regex = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-          tag.innerHTML = modelName.replace(regex, '<mark class="hl">$1</mark>');
+          tag.innerHTML = escapeHtml(modelName).replace(regex, '<mark class="hl">$1</mark>');
         } else {
-          tag.innerHTML = modelName;
+          tag.textContent = modelName;
         }
       });
     }
@@ -1302,35 +2568,72 @@ function showToast(msg) {
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2000);
 }
+function copyText(text, msg) {
+  navigator.clipboard.writeText(text).then(() => showToast(msg || `✅ 已复制: ${text}`));
+}
 
 document.addEventListener('click', function(e) {
+  const t = e.target;
   // Copy single model
-  if (e.target.classList.contains('model-tag')) {
-    const model = e.target.dataset.model;
+  if (t.classList.contains('model-tag')) {
+    const model = t.dataset.model;
     navigator.clipboard.writeText(model).then(() => {
-      e.target.classList.add('copied');
+      t.classList.add('copied');
       showToast(`✅ 已复制: ${model}`);
-      setTimeout(() => e.target.classList.remove('copied'), 1500);
+      setTimeout(() => t.classList.remove('copied'), 1500);
     });
+    return;
   }
   // Copy all models（英文逗号分隔，可直接粘贴到 NEW API 等渠道的模型列表）
-  if (e.target.classList.contains('copy-all-btn')) {
-    const btn = e.target;
-    const idx = parseInt(btn.dataset.idx);
+  if (t.classList.contains('copy-all-btn')) {
+    const idx = parseInt(t.dataset.idx);
     const p = platforms[idx];
-    const text = p.models.join(',');
-    navigator.clipboard.writeText(text).then(() => {
+    navigator.clipboard.writeText(p.models.join(',')).then(() => {
       showToast(`✅ 已复制 ${p.models.length} 个模型（逗号分隔）`);
-      btn.textContent = '✅ 已复制';
-      setTimeout(() => { btn.textContent = '复制全部'; }, 1500);
+      t.textContent = '✅ 已复制';
+      setTimeout(() => { t.textContent = '复制全部'; }, 1500);
     });
+    return;
   }
+  // Copy a URL line
+  const urlLine = t.closest('.url-line');
+  if (urlLine) { copyText(urlLine.dataset.copy); return; }
+  // Copy key prefix / format
+  const kv = t.closest('.info-value.key-format');
+  if (kv && kv.dataset.copy) { copyText(kv.dataset.copy); return; }
+});
+
+// ============ EXPORT MARKDOWN ============
+function buildMarkdown() {
+  const order = ['international','domestic','cloud','aggregate','media','local'];
+  const esc = s => String(s).replace(/\|/g,'\\|').replace(/\n/g,'<br>');
+  let md = `# AI 大模型 API Key 格式 & Base URL 清单\n\n> 共 ${platforms.length} 个平台 · 更新至 2026 年 9 月\n\n`;
+  order.forEach(cat => {
+    const list = platforms.filter(p => p.cat === cat);
+    if (!list.length) return;
+    md += `## ${CAT_NAME[cat]}（${list.length}）\n\n`;
+    md += `| 厂商 | Key 前缀 | Key 格式 | 鉴权方式 | Base URL | 获取 Key |\n|---|---|---|---|---|---|\n`;
+    list.forEach(p => {
+      md += `| **${esc(p.name)}** | \`${esc(p.keyPrefix)}\` | ${esc(p.keyFormat)} | ${esc(p.auth||'')} | ${esc(p.baseUrl)} | ${p.console ? esc(p.console) : ''} |\n`;
+    });
+    md += `\n`;
+  });
+  return md;
+}
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const md = buildMarkdown();
+  const blob = new Blob([md], {type:'text/markdown;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'AI厂商-Key格式与BaseURL清单.md';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  showToast('📋 已导出 Markdown 清单');
 });
 
 // ============ THEME TOGGLE ============
 const themeToggle = document.getElementById('themeToggle');
 function syncThemeIcon() {
-  // 黑夜模式显示太阳（点击切到白天），白天模式显示月亮
   themeToggle.textContent = document.documentElement.dataset.theme === 'light' ? '🌙' : '🌞';
 }
 themeToggle.addEventListener('click', () => {
