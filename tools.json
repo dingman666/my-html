@@ -109,6 +109,12 @@
       "name": "文本处理工具 · 合并去重 / 分割 / 清洗",
       "path": "tools/tool001/",
       "icon": "tools/tool001/icon.png"
+    },
+    {
+      "id": "xianyu",
+      "name": "闲鱼违禁词检测 · 合规助手",
+      "path": "tools/xianyu/",
+      "icon": "tools/xianyu/icon.png"
     }
   ]
 }
