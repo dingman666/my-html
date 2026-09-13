@@ -405,7 +405,7 @@
 
 <div class="header">
   <h1>🤖 AI 大模型 API Key & Base URL 速查表</h1>
-  <p>涵盖 100+ 国内外 AI 平台的 Key 格式、鉴权方式、Base URL、获取地址、常用模型，一键复制</p>
+  <p>涵盖 100+ 国内外 AI 平台（2026-09-14 逐家核查）的 Key 格式、鉴权方式、Base URL、获取地址、常用模型，一键复制</p>
   <div class="update-badge">📅 更新至 2026 年 9 月</div>
 </div>
 
@@ -445,6 +445,7 @@
 //   console    获取 Key 的控制台地址
 //   protocol   openai / anthropic / gemini / native / aws
 const platforms = [
+
   // ===================================================================
   // ===== 🌍 国际平台 =====
   // ===================================================================
@@ -455,23 +456,30 @@ const platforms = [
     icon: "🤖",
     iconBg: "linear-gradient(135deg,#6c5ce7,#a29bfe)",
     keyPrefix: "sk-proj- / sk-svcacct- / sk-admin- / sk-",
-    keyFormat: "sk-proj-xxxx（项目 Key，默认）/ sk-svcacct-xxxx（服务账号）/ sk-admin-xxxx（组织管理 Key）/ sk-xxxx（旧版用户 Key）",
+    keyFormat: "sk-proj-xxxx（项目 Key，默认：前缀后 74 或 58 位 [A-Za-z0-9_-] + 固定标记 T3BlbkFJ + 再 74 或 58 位，常见总长 164 字符）/ sk-svcacct-xxxx（服务账号 Key，结构同上）/ sk-admin-xxxx（组织管理 Key，结构同上）/ sk-xxxx（旧版用户 Key：sk- + 20 位字母数字 + T3BlbkFJ + 20 位字母数字，共 51 字符）",
     auth: "Authorization: Bearer <key>",
     baseUrl: "https://api.openai.com/v1",
     console: "https://platform.openai.com/api-keys",
     protocol: ["openai"],
     models: [
-      "gpt-5.5","gpt-5.4","gpt-5.4-mini","gpt-image-2",
-      "gpt-5.2","gpt-5.1","gpt-5","gpt-5-mini","gpt-5-nano",
-      "o3","o3-mini","o1",
-      "gpt-4.1","gpt-4.1-mini","gpt-4.1-nano",
-      "gpt-4o","gpt-4o-mini",
-      "text-embedding-3-large","text-embedding-3-small"
+      "gpt-6-astra",
+      "gpt-5.6-sol",
+      "gpt-5.6-terra",
+      "gpt-5.6-luna",
+      "gpt-5.5",
+      "gpt-5.5-pro",
+      "gpt-5.4",
+      "gpt-5.4-mini",
+      "gpt-5.4-nano",
+      "gpt-5.3-codex",
+      "gpt-image-2.5-sunburst",
+      "gpt-image-2",
+      "gpt-4.1",
+      "gpt-4o",
+      "text-embedding-3-large",
+      "text-embedding-3-small"
     ],
-    notes: [
-      {text:"官方平台，按量计费；Responses API 与 Chat Completions 并存",type:"green"},
-      {text:"sk-admin- 仅用于组织管理 / 用量查询，不能调用模型",type:"dim"}
-    ]
+    notes: [{text:"官方平台；Responses API 为主推，Chat Completions 并存",type:"green"}, {text:"sk-admin- 仅用于组织管理 / 用量查询，不能调用模型；gpt-5 系列与 o1 / o3 系列 2026 年底陆续下线",type:"dim"}]
   },
   {
     name: "Anthropic (Claude)",
@@ -480,19 +488,26 @@ const platforms = [
     icon: "🧠",
     iconBg: "linear-gradient(135deg,#e17055,#fab1a0)",
     keyPrefix: "sk-ant-api03- / sk-ant-admin01- / sk-ant-oat01-",
-    keyFormat: "sk-ant-api03-xxxx（API Key）/ sk-ant-admin01-xxxx（Admin Key，仅管理）/ sk-ant-oat01-xxxx（OAuth Token，Claude Code 登录）",
-    auth: "x-api-key: <key> + anthropic-version: 2023-06-01",
-    baseUrl: "https://api.anthropic.com（SDK 自动拼接 /v1/messages）",
-    console: "https://console.anthropic.com/settings/keys",
+    keyFormat: "sk-ant-api03- + 93 位 [A-Za-z0-9_-] + 固定结尾 AA，共 108 字符（API Key）/ sk-ant-admin01- + 93 位 + AA，共 110 字符（Admin Key，仅管理接口）/ sk-ant-oat01-xxxx（OAuth Token，claude setup-token 生成，仅 Claude Code 可用，Messages API 拒绝）",
+    auth: "Authorization: Bearer <key>（官方主推）或 x-api-key: <key>（旧写法仍支持）+ anthropic-version: 2023-06-01",
+    baseUrl: "https://api.anthropic.com（/v1/messages，SDK 自动拼接）",
+    console: "https://platform.claude.com/settings/keys（原 console.anthropic.com/settings/keys）",
     protocol: ["anthropic"],
     models: [
-      "claude-fable-5-1","claude-opus-5","claude-sonnet-5",
-      "claude-opus-4-8","claude-opus-4-7","claude-opus-4-6",
-      "claude-sonnet-4-6","claude-sonnet-4-5-20250929",
-      "claude-haiku-4-5","claude-fable-5",
+      "claude-fable-5-1",
+      "claude-opus-5",
+      "claude-sonnet-5",
+      "claude-haiku-4-5-20251001",
+      "claude-haiku-4-5",
+      "claude-fable-5",
+      "claude-opus-4-8",
+      "claude-opus-4-7",
+      "claude-opus-4-6",
+      "claude-sonnet-4-6",
+      "claude-sonnet-4-5-20250929",
       "claude-opus-4-5-20251101"
     ],
-    notes: [{text:"非 OpenAI 格式；也提供 OpenAI 兼容层 /v1/chat/completions（功能受限）",type:"dim"}]
+    notes: [{text:"官方文档现主推 Bearer 鉴权，x-api-key 仍兼容；也提供 OpenAI 兼容层 /v1/chat/completions（功能受限）",type:"dim"}]
   },
   {
     name: "Google Gemini (AI Studio)",
@@ -501,19 +516,27 @@ const platforms = [
     icon: "💎",
     iconBg: "linear-gradient(135deg,#4285f4,#34a853,#fbbc05,#ea4335)",
     keyPrefix: "AIza",
-    keyFormat: "AIzaSyxxxxxxxx（39 字符 Google API Key）",
-    auth: "x-goog-api-key: <key>（原生）/ Bearer（OpenAI 兼容端点）",
+    keyFormat: "AIza + 35 位 [A-Za-z0-9_-]，共 39 字符（AI Studio 新建 Key 均为绑定服务账号的 auth key，2026-09 起旧 standard key 被拒）",
+    auth: "x-goog-api-key: <key>（原生）/ Authorization: Bearer <key>（OpenAI 兼容端点）",
     baseUrl: "OpenAI兼容: https://generativelanguage.googleapis.com/v1beta/openai\n原生: https://generativelanguage.googleapis.com/v1beta",
     console: "https://aistudio.google.com/apikey",
-    protocol: ["openai", "gemini"],
+    protocol: ["openai","gemini"],
     models: [
-      "gemini-2.5-flash-image","gemini-3-pro-image-preview",
-      "gemini-3.1-flash-image-preview","gemini-2.5-flash",
-      "gemini-2.5-flash-lite","gemini-2.5-pro",
-      "gemini-3-flash-preview","gemini-3.1-pro-preview",
-      "gemini-3.1-pro-preview-customtools","gemini-3.5-flash",
-      "gemini-embedding-001","gemini-embedding-2-preview",
-      "gemini-flash-latest","gemini-flash-lite-latest","gemini-pro-latest"
+      "gemini-3.8-flash",
+      "gemini-3.7-flash",
+      "gemini-3.6-flash",
+      "gemini-3.5-flash",
+      "gemini-3.5-flash-lite",
+      "gemini-3.1-flash-lite",
+      "gemini-3.1-pro-preview",
+      "gemini-3-flash-preview",
+      "gemini-3.1-flash-image",
+      "gemini-3-pro-image",
+      "gemini-2.5-flash",
+      "gemini-2.5-pro",
+      "gemini-embedding-2",
+      "gemini-embedding-001",
+      "gemini-flash-latest"
     ],
     notes: [{text:"免费层额度充足；同一 AIza Key 也可用于其他 Google API",type:"green"}]
   },
@@ -524,18 +547,26 @@ const platforms = [
     icon: "🚀",
     iconBg: "linear-gradient(135deg,#1da1f2,#aab8c2)",
     keyPrefix: "xai-",
-    keyFormat: "xai-xxxxxxxx（约 84 字符）",
+    keyFormat: "xai- + 80 位 [A-Za-z0-9_]，共 84 字符",
     auth: "Authorization: Bearer <key>",
-    baseUrl: "OpenAI兼容: https://api.x.ai/v1\nAnthropic兼容: https://api.x.ai（/v1/messages）",
-    console: "https://console.x.ai",
-    protocol: ["openai", "anthropic"],
+    baseUrl: "OpenAI兼容: https://api.x.ai/v1（Responses API /v1/responses 为主，/v1/chat/completions 为 legacy）",
+    console: "https://console.x.ai/team/default/api-keys",
+    protocol: ["openai"],
     models: [
-      "grok-4.3","grok-4.20-reasoning","grok-4.20-non-reasoning",
-      "grok-4.20-multi-agent","grok-4-0709",
-      "grok-code-fast-1","grok-build-0.1",
-      "grok-imagine-image-quality"
+      "grok-4.6",
+      "grok-4.5",
+      "grok-4.3",
+      "grok-4.20-0309-reasoning",
+      "grok-4.20-0309-non-reasoning",
+      "grok-4.20-multi-agent-0309",
+      "grok-build-0.1",
+      "grok-imagine-image-2.0",
+      "grok-imagine-image",
+      "grok-imagine-image-quality",
+      "grok-imagine-video-1.5",
+      "grok-voice-think-fast-2.0"
     ],
-    notes: [{text:"Grok 4.3 支持 1M 上下文 + 4 级推理力度",type:"dim"}]
+    notes: [{text:"docs.x.ai 已不再列出 Anthropic 兼容 /v1/messages，仅保留 OpenAI 兼容",type:"dim"}]
   },
   {
     name: "Mistral AI",
@@ -544,16 +575,27 @@ const platforms = [
     icon: "🌊",
     iconBg: "linear-gradient(135deg,#ff7000,#ff9500)",
     keyPrefix: "无固定前缀",
-    keyFormat: "32 位字母数字串（无前缀）",
+    keyFormat: "32 位字母数字串（无前缀；Codestral 专用端点的 Key 为个人级、与主 API Key 不通用）",
     auth: "Authorization: Bearer <key>",
-    baseUrl: "主端点: https://api.mistral.ai/v1\nCodestral 专用: https://codestral.mistral.ai/v1",
-    console: "https://console.mistral.ai/api-keys",
+    baseUrl: "主端点: https://api.mistral.ai/v1\nCodestral 专用: https://codestral.mistral.ai/v1（/chat/completions 与 /fim/completions，需 Codestral 专用 Key）",
+    console: "https://console.mistral.ai/home?profile_dialog=api-keys（个人 Key）/ https://admin.mistral.ai/plateforme/api-keys（组织 Key）",
     protocol: ["openai"],
     models: [
-      "mistral-large-3","mistral-medium-3.5","mistral-small-4",
-      "ministral-3-3b","ministral-3-8b","ministral-3-14b",
-      "codestral","devstral-2","voxtral-4b",
-      "ocr-3","mistral-7b","mixtral-8x7b","mixtral-8x22b"
+      "mistral-large-latest",
+      "mistral-large-2512",
+      "mistral-medium-latest",
+      "mistral-small-latest",
+      "ministral-3-14b-latest",
+      "ministral-3-8b-latest",
+      "ministral-3-3b-latest",
+      "codestral-latest",
+      "codestral-2508",
+      "mistral-ocr-latest",
+      "mistral-embed-latest",
+      "codestral-embed-latest",
+      "voxtral-mini-2602",
+      "voxtral-tts-latest",
+      "zai-glm-5.2"
     ],
     notes: [{text:"Apache 2.0 开源，欧盟数据合规",type:"green"}]
   },
@@ -564,16 +606,27 @@ const platforms = [
     icon: "🟤",
     iconBg: "linear-gradient(135deg,#3c4043,#5f6368)",
     keyPrefix: "无固定前缀",
-    keyFormat: "40 位字母数字串（无前缀）",
+    keyFormat: "40 位字母数字串（无前缀；Trial Key 与 Production Key 格式相同）",
     auth: "Authorization: Bearer <key>",
     baseUrl: "OpenAI兼容: https://api.cohere.ai/compatibility/v1\n原生: https://api.cohere.com/v2",
     console: "https://dashboard.cohere.com/api-keys",
-    protocol: ["openai", "native"],
+    protocol: ["openai","native"],
     models: [
-      "command-a-plus-05-2026","command-r-plus-08-2024",
-      "command-r7b-12-2024","command-r",
-      "embed-v4","rerank-4","cohere-transcribe-03-2026",
-      "tiny-aya-3.35b"
+      "command-a-plus-05-2026",
+      "command-a-03-2025",
+      "command-a-reasoning-08-2025",
+      "command-a-vision-07-2025",
+      "command-a-translate-08-2025",
+      "command-r-plus-08-2024",
+      "command-r-08-2024",
+      "command-r7b-12-2024",
+      "embed-v4.0",
+      "embed-multilingual-v3.0",
+      "rerank-v4.0-pro",
+      "rerank-v4.0-fast",
+      "rerank-v3.5",
+      "cohere-transcribe-03-2026",
+      "tiny-aya-global"
     ],
     notes: [{text:"企业级 RAG 场景强，Trial Key 免费但限速",type:"dim"}]
   },
@@ -587,11 +640,13 @@ const platforms = [
     keyFormat: "LLM|<app_id>|<secret>（竖线分隔三段）",
     auth: "Authorization: Bearer <key>",
     baseUrl: "OpenAI兼容: https://api.llama.com/compat/v1\n原生: https://api.llama.com/v1",
-    console: "https://llama.developer.meta.com",
-    protocol: ["openai", "native"],
+    console: "https://ai.developer.meta.com（原 llama.developer.meta.com，已 302 跳转；Meta 现称 Meta Model API，新入口 https://dev.meta.ai）",
+    protocol: ["openai","native"],
     models: [
-      "Llama-4-Maverick-17B-128E-Instruct-FP8","Llama-4-Scout-17B-16E-Instruct-FP8",
-      "Llama-3.3-70B-Instruct","Llama-3.3-8B-Instruct"
+      "Llama-4-Maverick-17B-128E-Instruct-FP8",
+      "Llama-4-Scout-17B-16E-Instruct-FP8",
+      "Llama-3.3-70B-Instruct",
+      "Llama-3.3-8B-Instruct"
     ],
     notes: [{text:"Meta 官方托管 Llama，需申请预览资格",type:"dim"}]
   },
@@ -605,9 +660,16 @@ const platforms = [
     keyFormat: "字母数字串（无前缀）",
     auth: "Authorization: Bearer <key>",
     baseUrl: "https://api.ai21.com/studio/v1",
-    console: "https://studio.ai21.com/settings/account",
+    console: "https://studio.ai21.com（左下 Settings → API Keys）",
     protocol: ["openai"],
-    models: ["jamba-large-1.7","jamba-mini-1.7","jamba-large","jamba-mini"],
+    models: [
+      "jamba-large",
+      "jamba-mini",
+      "jamba-large-1.7",
+      "jamba-large-1.7-2025-07",
+      "jamba-mini-2",
+      "jamba-mini-2-2026-01"
+    ],
     notes: [{text:"Jamba 为 Mamba+Transformer 混合架构，256K 上下文",type:"dim"}]
   },
   {
@@ -618,11 +680,15 @@ const platforms = [
     iconBg: "linear-gradient(135deg,#7b2cbf,#c77dff)",
     keyPrefix: "无固定前缀",
     keyFormat: "字母数字串（无前缀）",
-    auth: "X-Api-Key: <key>（原生）/ Bearer（OpenAI 兼容）",
-    baseUrl: "https://api.reka.ai/v1",
+    auth: "X-Api-Key: <key>（原生 REST）/ Authorization: Bearer <key>（OpenAI SDK 兼容）",
+    baseUrl: "https://api.reka.ai/v1（OpenAI 兼容，/chat/completions）",
     console: "https://platform.reka.ai",
     protocol: ["openai"],
-    models: ["reka-core","reka-flash-3","reka-flash","reka-edge"],
+    models: [
+      "reka-flash",
+      "reka-edge",
+      "reka-edge-2603"
+    ],
     notes: [{text:"多模态（视频理解）见长",type:"dim"}]
   },
   {
@@ -635,9 +701,13 @@ const platforms = [
     keyFormat: "字母数字串（无前缀）",
     auth: "Authorization: Bearer <key>",
     baseUrl: "https://api.writer.com/v1",
-    console: "https://app.writer.com/aistudio",
+    console: "https://app.writer.com/aistudio（Admin settings → API Keys）",
     protocol: ["openai"],
-    models: ["palmyra-x5","palmyra-x4","palmyra-fin","palmyra-med","palmyra-creative"],
+    models: [
+      "palmyra-x6",
+      "palmyra-x5",
+      "palmyra-x4"
+    ],
     notes: [{text:"企业写作 / 金融医疗垂类模型",type:"dim"}]
   },
   {
@@ -647,16 +717,25 @@ const platforms = [
     icon: "🔎",
     iconBg: "linear-gradient(135deg,#20b2aa,#48d1cc)",
     keyPrefix: "pplx-",
-    keyFormat: "pplx-xxxxxxxx",
+    keyFormat: "pplx- + 48 位字母数字，共 53 字符",
     auth: "Authorization: Bearer <key>",
-    baseUrl: "https://api.perplexity.ai",
-    console: "https://www.perplexity.ai/settings/api",
-    protocol: ["openai"],
+    baseUrl: "Agent API（原生）: https://api.perplexity.ai/v1/agent\nOpenAI兼容(Router): https://api.perplexity.ai/router/v1\n旧版 Chat Completions: https://api.perplexity.ai/chat/completions（Sonar 支持至 2026-09-27）",
+    console: "https://console.perplexity.ai/project/keys",
+    protocol: ["openai","native"],
     models: [
-      "sonar","sonar-pro","sonar-reasoning",
-      "sonar-reasoning-pro","sonar-deep-research"
+      "sonar",
+      "sonar-pro",
+      "sonar-reasoning-pro",
+      "sonar-deep-research",
+      "openai/gpt-5.6-sol",
+      "anthropic/claude-opus-5",
+      "google/gemini-3.8-flash",
+      "xai/grok-4.6",
+      "perplexity/kimi-k3",
+      "perplexity/nemotron-3-ultra-550b-a55b",
+      "perplexity/deepseek-v4-flash-0731"
     ],
-    notes: [{text:"API 仅提供自家 Sonar 联网搜索系列；网页版可选第三方模型但不开放 API",type:"dim"}]
+    notes: [{text:"Router 端点可调 OpenAI / Anthropic / Google 等第三方模型；旧 /chat/completions 仅支持到 2026-09-27",type:"dim"}]
   },
   {
     name: "NVIDIA NIM / Build",
@@ -665,17 +744,27 @@ const platforms = [
     icon: "🟢",
     iconBg: "linear-gradient(135deg,#76b900,#b5e550)",
     keyPrefix: "nvapi-",
-    keyFormat: "nvapi-xxxxxxxx",
+    keyFormat: "nvapi-xxxxxxxx（前缀后为长随机串，官方未公布定长）",
     auth: "Authorization: Bearer <key>",
     baseUrl: "https://integrate.api.nvidia.com/v1",
     console: "https://build.nvidia.com/settings/api-keys",
     protocol: ["openai"],
     models: [
-      "nvidia/llama-3.1-70b-instruct","nvidia/llama-3.3-70b-instruct",
-      "nvidia/llama-4-scout-17b","nvidia/llama-4-maverick-17b",
       "nvidia/nemotron-3-ultra-550b-a55b",
-      "nvidia/deepseek-v4-pro","nvidia/kimi-k2.6","nvidia/glm-5.1",
-      "nvidia/qwen3-32b","nvidia/mistral-7b-instruct"
+      "nvidia/nemotron-3-super-120b-a12b",
+      "nvidia/nemotron-3.5-lightning-30b-a3b",
+      "nvidia/nemotron-nano-3-30b-a3b",
+      "nvidia/llama-3.1-nemotron-ultra-253b-v1",
+      "nvidia/llama-3.1-nemotron-70b-instruct",
+      "deepseek-ai/deepseek-v4-pro-0813",
+      "deepseek-ai/deepseek-v4-flash-0731",
+      "moonshotai/kimi-k3",
+      "moonshotai/kimi-k2.6",
+      "z-ai/glm-5.3-flash",
+      "openai/gpt-oss-20b",
+      "google/gemma-4-31b-it",
+      "mistralai/mistral-large-2-instruct",
+      "nvidia/nemotron-3-embed-1b"
     ],
     notes: [{text:"免费额度 + 按量计费，开源模型托管",type:"green"}]
   },
@@ -686,18 +775,25 @@ const platforms = [
     icon: "⚡",
     iconBg: "linear-gradient(135deg,#fdcb6e,#ffeaa7)",
     keyPrefix: "gsk_",
-    keyFormat: "gsk_xxxxxxxx（下划线）",
+    keyFormat: "gsk_ + 52 位大小写字母数字，共 56 字符（下划线）",
     auth: "Authorization: Bearer <key>",
     baseUrl: "https://api.groq.com/openai/v1",
     console: "https://console.groq.com/keys",
     protocol: ["openai"],
     models: [
-      "llama-3.1-8b-instant","llama-3.3-70b-versatile",
-      "llama-4-scout-17b","llama-4-maverick-17b",
-      "qwen3-32b","qwq-32b","gpt-oss-20b","gpt-oss-120b",
-      "llama-3.2-11b-vision","whisper-large-v3"
+      "openai/gpt-oss-120b",
+      "openai/gpt-oss-20b",
+      "qwen/qwen3.8-27b",
+      "qwen/qwen3.6-27b",
+      "minimaxai/minimax-m2.7",
+      "groq/compound",
+      "groq/compound-mini",
+      "openai/gpt-oss-safeguard-20b",
+      "meta-llama/llama-prompt-guard-2-86m",
+      "whisper-large-v3",
+      "whisper-large-v3-turbo"
     ],
-    notes: [{text:"极速推理，LPU 硬件加速，有免费层",type:"green"}]
+    notes: [{text:"LPU 极速推理，有免费层",type:"green"}, {text:"llama-3.1 / 3.3 与 qwen3-32b 等已于 2026-08 下线；gpt-oss 需 openai/ 前缀",type:"dim"}]
   },
   {
     name: "Cerebras",
@@ -706,16 +802,16 @@ const platforms = [
     icon: "💨",
     iconBg: "linear-gradient(135deg,#f15a29,#f7931e)",
     keyPrefix: "csk-",
-    keyFormat: "csk-xxxxxxxx",
+    keyFormat: "csk-xxxxxxxx（官方未公布定长）",
     auth: "Authorization: Bearer <key>",
     baseUrl: "https://api.cerebras.ai/v1",
-    console: "https://cloud.cerebras.ai/platform",
+    console: "https://cloud.cerebras.ai",
     protocol: ["openai"],
     models: [
-      "llama-3.3-70b","llama3.1-8b","llama-4-scout-17b",
-      "qwen-3-32b","qwen-3-235b-a22b","gpt-oss-120b"
+      "gpt-oss-120b",
+      "qwen-3.8-27b"
     ],
-    notes: [{text:"晶圆级芯片推理，速度比 Groq 更快，有免费额度",type:"green"}]
+    notes: [{text:"公开端点当前仅 gpt-oss-120b 与 qwen-3.8-27b 两款",type:"dim"}]
   },
   {
     name: "SambaNova Cloud",
@@ -724,14 +820,19 @@ const platforms = [
     icon: "🌸",
     iconBg: "linear-gradient(135deg,#ee4c7c,#f9a1bc)",
     keyPrefix: "无固定前缀（UUID）",
-    keyFormat: "UUID 形式 xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    keyFormat: "UUID 形式 xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx（共 36 字符）",
     auth: "Authorization: Bearer <key>",
     baseUrl: "https://api.sambanova.ai/v1",
     console: "https://cloud.sambanova.ai/apis",
     protocol: ["openai"],
     models: [
-      "DeepSeek-V3.1","DeepSeek-R1-0528","Llama-4-Maverick-17B-128E-Instruct",
-      "Meta-Llama-3.3-70B-Instruct","Qwen3-32B","gpt-oss-120b"
+      "MiniMax-M2.7",
+      "DeepSeek-V3.1",
+      "Meta-Llama-3.3-70B-Instruct",
+      "gpt-oss-120b",
+      "MiniMax-M3",
+      "DeepSeek-V3.2",
+      "gemma-4-31B-it"
     ],
     notes: [{text:"RDU 芯片推理，DeepSeek 全血版速度快，有免费额度",type:"green"}]
   },
@@ -744,19 +845,26 @@ const platforms = [
     keyPrefix: "无固定前缀",
     keyFormat: "64 位十六进制串（无前缀）",
     auth: "Authorization: Bearer <key>",
-    baseUrl: "https://api.together.xyz/v1",
-    console: "https://api.together.ai/settings/api-keys",
+    baseUrl: "https://api.together.ai/v1\n旧域名（仍可用）: https://api.together.xyz/v1",
+    console: "https://api.together.ai/settings/projects/~current/api-keys",
     protocol: ["openai"],
     models: [
-      "meta-llama/Llama-4-Maverick","meta-llama/Llama-4-Scout",
-      "meta-llama/Llama-3.3-70B-Instruct","meta-llama/Llama-3.1-405B",
-      "deepseek-ai/DeepSeek-V4-Pro","deepseek-ai/DeepSeek-V3.1",
-      "deepseek-ai/DeepSeek-R1-0528","Qwen/Qwen3.5-397B",
-      "Qwen/Qwen3-Coder-480B","moonshotai/Kimi-K2",
-      "zai-org/GLM-4.7","mistralai/Mixtral-8x22B",
-      "black-forest-labs/FLUX.1-schnell"
+      "MiniMaxAI/MiniMax-M3",
+      "moonshotai/Kimi-K3",
+      "zai-org/GLM-5.3",
+      "zai-org/GLM-5.3-Flash",
+      "deepseek-ai/DeepSeek-V4-Pro-0813",
+      "deepseek-ai/DeepSeek-V4-Flash-0731",
+      "deepseek-ai/DeepSeek-V4.1-Flash",
+      "Qwen/Qwen3.8-2.4T-A95B",
+      "Qwen/Qwen3.7-Max",
+      "Qwen/Qwen3.6-Plus",
+      "Qwen/Qwen3.5-9B",
+      "openai/gpt-oss-120b",
+      "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+      "black-forest-labs/FLUX.2-pro"
     ],
-    notes: [{text:"200+ 开源模型，Llama 4 支持 10M 上下文",type:"green"}]
+    notes: [{text:"主域名已改为 api.together.ai，api.together.xyz 为旧域名仍可用",type:"dim"}]
   },
   {
     name: "Fireworks AI",
@@ -764,21 +872,27 @@ const platforms = [
     cat: "international",
     icon: "🎆",
     iconBg: "linear-gradient(135deg,#ef4444,#f97316)",
-    keyPrefix: "fw_ / fw-",
-    keyFormat: "fw_xxxxxxxx（新版下划线）/ fw-xxxxxxxx（旧版）",
+    keyPrefix: "fw_",
+    keyFormat: "fw_xxxxxxxx（下划线；官方未公布定长）",
     auth: "Authorization: Bearer <key>",
-    baseUrl: "https://api.fireworks.ai/inference/v1",
+    baseUrl: "OpenAI兼容: https://api.fireworks.ai/inference/v1\nAnthropic兼容: https://api.fireworks.ai/inference",
     console: "https://app.fireworks.ai/settings/users/api-keys",
-    protocol: ["openai"],
+    protocol: ["openai","anthropic"],
     models: [
-      "deepseek-v3.2","deepseek-v4-pro","deepseek-r1-0528",
-      "minimax-m2.7","kimi-k2.6","kimi-k2.5",
-      "glm-5","glm-5.1","qwen3.6-plus",
-      "gemma-4-31b-it","gemma-4-26b-a4b-it",
-      "openai/gpt-oss-20b","FLUX.1-kontext-pro",
-      "whisper-v3-large"
+      "accounts/fireworks/models/deepseek-v4-pro-0813",
+      "accounts/fireworks/models/deepseek-v4-flash-0731",
+      "accounts/fireworks/models/kimi-k3",
+      "accounts/fireworks/models/kimi-k2p6",
+      "accounts/fireworks/models/glm-5p2",
+      "accounts/fireworks/models/minimax-m3",
+      "accounts/fireworks/models/qwen3p7-plus",
+      "accounts/fireworks/models/gpt-oss-120b",
+      "accounts/fireworks/models/qwen3-8b",
+      "accounts/fireworks/models/gemma-4-31b-it",
+      "accounts/fireworks/models/qwen3-embedding-8b",
+      "accounts/fireworks/models/qwen3-reranker-8b"
     ],
-    notes: [{text:"完整模型 ID 为 accounts/fireworks/models/<name>",type:"dim"}]
+    notes: [{text:"完整模型 ID 为 accounts/fireworks/models/<id>，版本号中的点写作 p（如 glm-5p2）",type:"dim"}]
   },
   {
     name: "DeepInfra",
@@ -789,13 +903,23 @@ const platforms = [
     keyPrefix: "无固定前缀",
     keyFormat: "32 位字母数字串（无前缀）",
     auth: "Authorization: Bearer <key>",
-    baseUrl: "https://api.deepinfra.com/v1/openai",
+    baseUrl: "OpenAI兼容: https://api.deepinfra.com/v1/openai\n原生: https://api.deepinfra.com/v1/inference/<model>",
     console: "https://deepinfra.com/dash/api_keys",
     protocol: ["openai"],
     models: [
-      "meta-llama/Llama-4-Maverick","meta-llama/Llama-3.3-70B-Instruct",
-      "deepseek-ai/DeepSeek-V3.2","deepseek-ai/DeepSeek-R1",
-      "Qwen/Qwen3-32B","moonshotai/Kimi-K2.5","zai-org/GLM-4.7"
+      "deepseek-ai/DeepSeek-V4.1-Flash",
+      "deepseek-ai/DeepSeek-V4-Pro-0813",
+      "deepseek-ai/DeepSeek-V4-Flash-0731",
+      "deepseek-ai/DeepSeek-V3.2",
+      "zai-org/GLM-5.3",
+      "zai-org/GLM-5.3-Flash",
+      "moonshotai/Kimi-K3",
+      "moonshotai/Kimi-K2.7-Code",
+      "Qwen/Qwen3.8-2.4T-A95B",
+      "Qwen/Qwen3.6-35B-A3B",
+      "google/gemma-4-31B-it",
+      "nvidia/NVIDIA-Nemotron-3-Super-120B-A12B",
+      "black-forest-labs/FLUX-2-klein-4b"
     ],
     notes: [{text:"开源模型托管，按 token 计费价格极低",type:"green"}]
   },
@@ -806,17 +930,26 @@ const platforms = [
     icon: "🤗",
     iconBg: "linear-gradient(135deg,#ff9d00,#ff6d00)",
     keyPrefix: "hf_",
-    keyFormat: "hf_xxxxxxxx（37 字符 Access Token）",
+    keyFormat: "hf_ + 34 位字母，共 37 字符（User Access Token，建议用 fine-grained 并勾选 Make calls to Inference Providers）",
     auth: "Authorization: Bearer <token>",
     baseUrl: "https://router.huggingface.co/v1",
     console: "https://huggingface.co/settings/tokens",
     protocol: ["openai"],
     models: [
-      "deepseek-ai/DeepSeek-R1","deepseek-ai/DeepSeek-V3.2",
-      "Qwen/Qwen3-32B","Qwen/Qwen3-8B",
-      "meta-llama/Llama-3.3-70B-Instruct","meta-llama/Llama-3.1-8B-Instruct",
-      "zai-org/GLM-4.7","moonshotai/Kimi-K2.5",
-      "openai/gpt-oss-120b","mistralai/Mistral-7B-Instruct-v0.3"
+      "deepseek-ai/DeepSeek-V4.1-Flash",
+      "deepseek-ai/DeepSeek-V4-Pro",
+      "deepseek-ai/DeepSeek-R1",
+      "Qwen/Qwen3.8-27B",
+      "Qwen/Qwen3-8B",
+      "zai-org/GLM-5.3",
+      "zai-org/GLM-5.3-Flash",
+      "moonshotai/Kimi-K3",
+      "moonshotai/Kimi-K2-Instruct",
+      "meta-llama/Llama-3.3-70B-Instruct",
+      "meta-llama/Llama-3.1-8B-Instruct",
+      "google/gemma-4-31B-it",
+      "openai/gpt-oss-120b",
+      "MiniMaxAI/MiniMax-M3"
     ],
     notes: [{text:"Router 自动路由到 Together / Fireworks / Novita 等 Inference Provider，模型名可加 :provider 后缀",type:"dim"}]
   },
@@ -827,18 +960,15 @@ const platforms = [
     icon: "🐙",
     iconBg: "linear-gradient(135deg,#24292e,#6e7681)",
     keyPrefix: "github_pat_ / ghp_",
-    keyFormat: "github_pat_xxxx（细粒度 PAT）/ ghp_xxxx（经典 PAT）",
+    keyFormat: "github_pat_ + 82 位字符（细粒度 PAT，共 93 字符）/ ghp_ + 36 位字母数字（经典 PAT，共 40 字符）",
     auth: "Authorization: Bearer <token>",
-    baseUrl: "https://models.github.ai/inference",
+    baseUrl: "已停服（2026-07-30）: https://models.github.ai/inference",
     console: "https://github.com/settings/personal-access-tokens",
     protocol: ["openai"],
     models: [
-      "openai/gpt-5.5","openai/gpt-5.4-mini",
-      "meta/llama-4-maverick","deepseek/deepseek-v3.2",
-      "microsoft/phi-4","mistral-ai/mistral-large-3",
-      "xai/grok-4.3"
+      "已停服（2026-07-30）"
     ],
-    notes: [{text:"GitHub 账号即有免费额度，适合开发测试（有速率限制）",type:"green"}]
+    notes: [{text:"GitHub Models 推理 API 已于 2026-07-30 停止服务，此卡片仅作历史记录",type:"danger"}]
   },
   {
     name: "Nebius Token Factory",
@@ -849,15 +979,26 @@ const platforms = [
     keyPrefix: "eyJ（JWT）",
     keyFormat: "eyJhbGci... JWT 长串（无 sk- 前缀）",
     auth: "Authorization: Bearer <key>",
-    baseUrl: "https://api.studio.nebius.com/v1",
-    console: "https://studio.nebius.com/settings/api-keys",
+    baseUrl: "https://api.tokenfactory.nebius.com/v1",
+    console: "https://tokenfactory.nebius.com/project/api-keys",
     protocol: ["openai"],
     models: [
-      "deepseek-ai/DeepSeek-V3-0324","deepseek-ai/DeepSeek-R1-0528",
-      "meta-llama/Llama-3.3-70B-Instruct","Qwen/Qwen3-235B-A22B",
-      "openai/gpt-oss-120b"
+      "deepseek-ai/DeepSeek-V4-Pro",
+      "deepseek-ai/DeepSeek-V4-Flash-0731",
+      "deepseek-ai/DeepSeek-R1-0528",
+      "moonshotai/Kimi-K3",
+      "moonshotai/Kimi-K2.7-Code",
+      "zai-org/GLM-5.2",
+      "zai-org/GLM-5.3-Flash",
+      "MiniMaxAI/MiniMax-M3",
+      "Qwen/Qwen3.5-397B-A17B",
+      "Qwen/Qwen3-235B-A22B-Instruct-2507",
+      "Qwen/Qwen3-30B-A3B-Instruct-2507",
+      "openai/gpt-oss-120b",
+      "nvidia/Nemotron-3-Ultra-550b-a55b",
+      "Qwen/Qwen3-Embedding-8B"
     ],
-    notes: [{text:"欧洲 GPU 云，开源模型价格低",type:"dim"}]
+    notes: [{text:"已由 AI Studio 更名为 Token Factory，端点迁至 api.tokenfactory.nebius.com",type:"dim"}]
   },
   {
     name: "Hyperbolic",
@@ -869,12 +1010,16 @@ const platforms = [
     keyFormat: "eyJhbGci... JWT 长串",
     auth: "Authorization: Bearer <key>",
     baseUrl: "https://api.hyperbolic.xyz/v1",
-    console: "https://app.hyperbolic.xyz/settings",
+    console: "https://app.hyperbolic.ai/settings/api-keys",
     protocol: ["openai"],
     models: [
-      "deepseek-ai/DeepSeek-V3","deepseek-ai/DeepSeek-R1",
-      "meta-llama/Llama-3.3-70B-Instruct","Qwen/Qwen3-235B-A22B",
-      "moonshotai/Kimi-K2-Instruct"
+      "meta-llama/Meta-Llama-3.1-8B-Instruct",
+      "meta-llama/Meta-Llama-3.1-70B-Instruct",
+      "Qwen/Qwen2.5-7B-Instruct",
+      "Qwen/Qwen2.5-72B-Instruct",
+      "deepseek-ai/deepseek-v2.5",
+      "NousResearch/Hermes-3-Llama-3.1-70B",
+      "mistralai/Mistral-7B-Instruct-v0.3"
     ],
     notes: [{text:"去中心化 GPU 市场，注册送额度",type:"dim"}]
   },
@@ -888,14 +1033,20 @@ const platforms = [
     keyFormat: "secret_<名称>_xxxxxxxx",
     auth: "Authorization: Bearer <key>",
     baseUrl: "https://api.lambda.ai/v1",
-    console: "https://cloud.lambda.ai/api-keys",
+    console: "https://cloud.lambda.ai/user/api-keys",
     protocol: ["openai"],
     models: [
-      "deepseek-r1-671b","deepseek-v3-0324",
-      "llama-4-maverick-17b-128e-instruct-fp8","llama3.3-70b-instruct-fp8",
-      "qwen3-32b-fp8","hermes-3-llama-3.1-405b-fp8"
+      "deepseek-r1-671b",
+      "deepseek-r1-0528",
+      "deepseek-v3-0324",
+      "llama-4-maverick-17b-128e-instruct-fp8",
+      "llama-4-scout-17b-16e-instruct",
+      "llama3.3-70b-instruct-fp8",
+      "llama3.1-8b-instruct",
+      "qwen3-32b-fp8",
+      "hermes3-405b"
     ],
-    notes: [{text:"GPU 云厂商附带的 Serverless 推理",type:"dim"}]
+    notes: [{text:"Lambda 官方已宣布 Inference API 逐步关停（winding down），不建议新接入",type:"danger"}]
   },
   {
     name: "Baseten",
@@ -903,18 +1054,29 @@ const platforms = [
     cat: "international",
     icon: "🔟",
     iconBg: "linear-gradient(135deg,#f59e0b,#fbbf24)",
-    keyPrefix: "无固定前缀",
-    keyFormat: "字母数字串（无前缀）",
-    auth: "Authorization: Api-Key <key>（注意是 Api-Key 不是 Bearer）",
-    baseUrl: "Model APIs: https://inference.baseten.co/v1\n自部署: https://model-<id>.api.baseten.co/environments/production/sync/v1",
+    keyPrefix: "无固定前缀（含 . 分隔）",
+    keyFormat: "<8 位可见前缀>.<34 位字母数字>（官方示例 abcd1234.ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef01，共 43 字符）",
+    auth: "Authorization: Bearer <key>（旧版 Authorization: Api-Key <key> 所有端点仍接受）",
+    baseUrl: "OpenAI兼容 Model APIs: https://inference.baseten.co/v1\nAnthropic兼容: https://inference.baseten.co\n自部署: https://model-<id>.api.baseten.co/environments/production/sync/v1",
     console: "https://app.baseten.co/settings/api_keys",
-    protocol: ["openai"],
+    protocol: ["openai","anthropic"],
     models: [
-      "deepseek-ai/DeepSeek-V3.1","deepseek-ai/DeepSeek-R1-0528",
-      "moonshotai/Kimi-K2-Instruct","openai/gpt-oss-120b",
-      "Qwen/Qwen3-Coder-480B-A35B-Instruct","zai-org/GLM-4.5"
+      "deepseek-ai/DeepSeek-V4-Pro",
+      "deepseek-ai/DeepSeek-V4-Pro-0813",
+      "deepseek-ai/DeepSeek-V4-Flash-0731",
+      "deepseek-ai/DeepSeek-V4.1-Flash",
+      "zai-org/GLM-5.3",
+      "zai-org/GLM-5.3-Fast",
+      "zai-org/GLM-5.3-Flash",
+      "zai-org/GLM-5.2",
+      "moonshotai/Kimi-K3",
+      "moonshotai/Kimi-K2.6",
+      "moonshotai/Kimi-K2.7-Code",
+      "thinkingmachines/inkling",
+      "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B",
+      "openai/gpt-oss-120b"
     ],
-    notes: [{text:"OpenAI SDK 需把 api_key 传为 'Api-Key xxx' 或改 header",type:"danger"}]
+    notes: [{text:"官方文档现用 Authorization: Bearer，旧 Api-Key 头仍接受",type:"dim"}]
   },
   {
     name: "Upstage (Solar)",
@@ -923,16 +1085,25 @@ const platforms = [
     icon: "☀️",
     iconBg: "linear-gradient(135deg,#805ad5,#b794f4)",
     keyPrefix: "up_",
-    keyFormat: "up_xxxxxxxx",
+    keyFormat: "up_xxxxxxxx（官方文档未公开长度）",
     auth: "Authorization: Bearer <key>",
     baseUrl: "https://api.upstage.ai/v1",
     console: "https://console.upstage.ai/api-keys",
     protocol: ["openai"],
     models: [
-      "solar-pro2","solar-pro","solar-mini",
-      "embedding-query","embedding-passage","document-parse"
+      "solar-pro4",
+      "solar-pro3",
+      "solar-pro2",
+      "solar-mini",
+      "solar-embedding-2-query",
+      "solar-embedding-2-passage",
+      "embedding-query",
+      "embedding-passage",
+      "document-parse",
+      "information-extract",
+      "document-ocr"
     ],
-    notes: [{text:"Solar 系列 + 文档解析 OCR",type:"dim"}]
+    notes: [{text:"旧 embedding-query / embedding-passage 将于 2026-12-31 停服",type:"dim"}]
   },
   {
     name: "FriendliAI",
@@ -941,14 +1112,24 @@ const platforms = [
     icon: "🤝",
     iconBg: "linear-gradient(135deg,#2563eb,#60a5fa)",
     keyPrefix: "flp_",
-    keyFormat: "flp_xxxxxxxx",
+    keyFormat: "flp_xxxxxxxx（Personal API Key，官方文档示例 flp_XXX，未公开长度）",
     auth: "Authorization: Bearer <key>",
-    baseUrl: "https://api.friendli.ai/serverless/v1",
-    console: "https://friendli.ai/suite/setting/tokens",
-    protocol: ["openai"],
+    baseUrl: "OpenAI兼容: https://api.friendli.ai/serverless/v1\nAnthropic兼容: https://api.friendli.ai/serverless/v1",
+    console: "https://friendli.ai/suite/~/setting/keys",
+    protocol: ["openai","anthropic"],
     models: [
-      "meta-llama-3.3-70b-instruct","meta-llama-3.1-8b-instruct",
-      "deepseek-r1","Qwen3-235B-A22B"
+      "zai-org/GLM-5.3",
+      "zai-org/GLM-5.3-Flash",
+      "zai-org/GLM-5.2",
+      "deepseek-ai/DeepSeek-V4-Pro",
+      "deepseek-ai/DeepSeek-V4-Flash",
+      "deepseek-ai/DeepSeek-V4-Flash-0731",
+      "Qwen/Qwen3.8-27B",
+      "moonshotai/Kimi-K2.7-Code",
+      "openai/gpt-oss-120b",
+      "google/gemma-4-31B-it",
+      "MiniMaxAI/MiniMax-M3",
+      "meta-llama/Llama-3.1-8B-Instruct"
     ],
     notes: [{text:"Serverless / Dedicated 两种模式",type:"dim"}]
   },
@@ -959,14 +1140,25 @@ const platforms = [
     icon: "🪶",
     iconBg: "linear-gradient(135deg,#0d9488,#5eead4)",
     keyPrefix: "rc_",
-    keyFormat: "rc_xxxxxxxx",
+    keyFormat: "rc_ + 64 位小写十六进制，共 67 字符（据公开代码样本，官方未说明）",
     auth: "Authorization: Bearer <key>",
     baseUrl: "https://api.featherless.ai/v1",
     console: "https://featherless.ai/account/api-keys",
     protocol: ["openai"],
     models: [
-      "deepseek-ai/DeepSeek-R1-0528","Qwen/Qwen3-32B",
-      "meta-llama/Llama-3.3-70B-Instruct","mistralai/Mistral-Small-3.2-24B-Instruct-2506"
+      "deepseek-ai/DeepSeek-V4.1-Flash",
+      "deepseek-ai/DeepSeek-V4-Pro",
+      "Qwen/Qwen3.8-27B",
+      "Qwen/Qwen3-32B",
+      "zai-org/GLM-5.3",
+      "zai-org/GLM-5.3-Flash",
+      "moonshotai/Kimi-K3",
+      "moonshotai/Kimi-K2-Instruct",
+      "openai/gpt-oss-120b",
+      "openai/gpt-oss-20b",
+      "google/gemma-4-31B-it",
+      "meta-llama/Llama-3.1-8B-Instruct",
+      "mistralai/Mistral-7B-Instruct-v0.3"
     ],
     notes: [{text:"订阅制包月，可跑数千款 HuggingFace 开源模型",type:"green"}]
   },
@@ -977,17 +1169,28 @@ const platforms = [
     icon: "🪂",
     iconBg: "linear-gradient(135deg,#1e1b4b,#6d28d9)",
     keyPrefix: "cpk_",
-    keyFormat: "cpk_xxxxxxxx",
-    auth: "Authorization: Bearer <key>",
-    baseUrl: "https://llm.chutes.ai/v1",
+    keyFormat: "cpk_xxxxxxxx（官方未公开长度）",
+    auth: "Authorization: Bearer <key>（推理仅支持 Bearer，不支持 X-API-Key）",
+    baseUrl: "OpenAI兼容: https://llm.chutes.ai/v1\n管理API: https://api.chutes.ai",
     console: "https://chutes.ai/app/api",
     protocol: ["openai"],
     models: [
-      "deepseek-ai/DeepSeek-V3.1","deepseek-ai/DeepSeek-R1-0528",
-      "moonshotai/Kimi-K2-Instruct","zai-org/GLM-4.5-Air",
-      "Qwen/Qwen3-235B-A22B-Instruct-2507"
+      "deepseek-ai/DeepSeek-V4-Flash-0731-TEE",
+      "deepseek-ai/DeepSeek-V3.2-TEE",
+      "moonshotai/Kimi-K3-TEE",
+      "moonshotai/Kimi-K2.6-TEE",
+      "zai-org/GLM-5.2-TEE",
+      "zai-org/GLM-5.1-TEE",
+      "Qwen/Qwen3.8-27B-TEE",
+      "Qwen/Qwen3.6-27B-TEE",
+      "Qwen/Qwen3.5-397B-A17B-TEE",
+      "Qwen/Qwen3-235B-A22B-Thinking-2507-TEE",
+      "Qwen/Qwen3-32B-TEE",
+      "google/gemma-4-31B-turbo-TEE",
+      "unsloth/Mistral-Nemo-Instruct-2407-TEE",
+      "Nemotron-3-Nano-Omni-30B-TEE"
     ],
-    notes: [{text:"去中心化算力，价格极低但稳定性一般",type:"dim"}]
+    notes: [{text:"当前模型 ID 全部带 -TEE 后缀（可信执行环境）；仅接受 Bearer",type:"dim"}]
   },
   {
     name: "Venice AI",
@@ -995,15 +1198,27 @@ const platforms = [
     cat: "international",
     icon: "🎭",
     iconBg: "linear-gradient(135deg,#b91c1c,#f87171)",
-    keyPrefix: "无固定前缀",
-    keyFormat: "字母数字串（无前缀）",
+    keyPrefix: "vapi_",
+    keyFormat: "vapi_xxxxxxxx（分 Inference / Admin 两类 Key，官方未公开长度）",
     auth: "Authorization: Bearer <key>",
     baseUrl: "https://api.venice.ai/api/v1",
     console: "https://venice.ai/settings/api",
     protocol: ["openai"],
     models: [
-      "llama-3.3-70b","qwen3-235b","deepseek-r1-671b",
-      "venice-uncensored","mistral-31-24b"
+      "zai-org-glm-5",
+      "z-ai-glm-5-3",
+      "kimi-k2-6",
+      "kimi-k3",
+      "deepseek-v4-pro",
+      "deepseek-v4-flash",
+      "qwen-3-8-max",
+      "qwen3-coder-480b-a35b-instruct-turbo",
+      "venice-uncensored-1-2",
+      "claude-opus-4-8",
+      "openai-gpt-55",
+      "llama-3.3-70b",
+      "mistral-small-3-2-24b-instruct",
+      "text-embedding-qwen3-8b"
     ],
     notes: [{text:"主打隐私 / 无审查，Pro 订阅或 VVV 代币抵扣",type:"dim"}]
   },
@@ -1013,15 +1228,16 @@ const platforms = [
     cat: "international",
     icon: "🦉",
     iconBg: "linear-gradient(135deg,#374151,#9ca3af)",
-    keyPrefix: "无固定前缀",
-    keyFormat: "字母数字串（无前缀）",
+    keyPrefix: "sk-nous-",
+    keyFormat: "sk-nous-xxxxxxxx（Portal 生成的 API Key；官方未公开长度）",
     auth: "Authorization: Bearer <key>",
     baseUrl: "https://inference-api.nousresearch.com/v1",
     console: "https://portal.nousresearch.com",
     protocol: ["openai"],
     models: [
-      "Hermes-4-405B","Hermes-4-70B",
-      "Hermes-3-Llama-3.1-405B","DeepHermes-3-Mistral-24B-Preview"
+      "Hermes-4.3-36B",
+      "Hermes-4-70B",
+      "Hermes-4-405B"
     ],
     notes: [{text:"Hermes 系列官方推理",type:"dim"}]
   },
@@ -1031,14 +1247,18 @@ const platforms = [
     cat: "international",
     icon: "🌀",
     iconBg: "linear-gradient(135deg,#0f766e,#2dd4bf)",
-    keyPrefix: "sk_",
-    keyFormat: "sk_xxxxxxxx（下划线）",
+    keyPrefix: "sk-inception-",
+    keyFormat: "sk-inception-xxxxxxxx（官方未公开长度）",
     auth: "Authorization: Bearer <key>",
     baseUrl: "https://api.inceptionlabs.ai/v1",
-    console: "https://platform.inceptionlabs.ai",
+    console: "https://platform.inceptionlabs.ai/dashboard/api-keys",
     protocol: ["openai"],
-    models: ["mercury","mercury-coder","mercury-2"],
-    notes: [{text:"扩散式 LLM（dLLM），出字速度极快",type:"dim"}]
+    models: [
+      "mercury-2.5",
+      "mercury-2",
+      "mercury-edit-2"
+    ],
+    notes: [{text:"扩散式 LLM（dLLM），出字速度极快；旧 mercury / mercury-coder 已归旧版",type:"dim"}]
   },
   {
     name: "Ollama Cloud",
@@ -1047,16 +1267,27 @@ const platforms = [
     icon: "🦙",
     iconBg: "linear-gradient(135deg,#374151,#111827)",
     keyPrefix: "无固定前缀",
-    keyFormat: "字母数字串（无前缀）",
+    keyFormat: "字母数字串（无前缀；官方未公开格式，仅创建时显示一次）",
     auth: "Authorization: Bearer <key>",
     baseUrl: "OpenAI兼容: https://ollama.com/v1\n原生: https://ollama.com/api",
     console: "https://ollama.com/settings/keys",
-    protocol: ["openai", "native"],
+    protocol: ["openai","native"],
     models: [
-      "gpt-oss:120b","gpt-oss:20b","deepseek-v3.1:671b",
-      "qwen3-coder:480b","kimi-k2:1t","glm-4.6"
+      "gpt-oss:120b",
+      "gpt-oss:20b",
+      "deepseek-v4-pro",
+      "deepseek-v4-flash",
+      "kimi-k3",
+      "kimi-k2.7-code",
+      "glm-5.3",
+      "glm-5.3-flash",
+      "qwen3.5:397b",
+      "gemma4:31b",
+      "minimax-m3",
+      "mistral-large-3:675b",
+      "nemotron-3-ultra"
     ],
-    notes: [{text:"本地 ollama 命令加 -cloud 后缀即可用云端算力跑大模型",type:"green"}]
+    notes: [{text:"直连 ollama.com 时模型名不带 -cloud 后缀；本地 ollama 命令加 -cloud 后缀走云端",type:"green"}]
   },
   {
     name: "Voyage AI (Embedding)",
@@ -1065,14 +1296,24 @@ const platforms = [
     icon: "🧭",
     iconBg: "linear-gradient(135deg,#0ea5e9,#6366f1)",
     keyPrefix: "pa-",
-    keyFormat: "pa-xxxxxxxx",
+    keyFormat: "pa- + base64url 字符（≥24 位，实际约 35 字符；MongoDB Atlas 内创建的 Key 前缀为 al-、al-eu-）",
     auth: "Authorization: Bearer <key>",
     baseUrl: "https://api.voyageai.com/v1",
-    console: "https://dashboard.voyageai.com",
+    console: "https://dashboard.voyageai.com/organization/api-keys",
     protocol: ["openai"],
     models: [
-      "voyage-3.5","voyage-3.5-lite","voyage-3-large",
-      "voyage-code-3","voyage-multimodal-3","rerank-2.5"
+      "voyage-4-large",
+      "voyage-4",
+      "voyage-4-lite",
+      "voyage-code-4",
+      "voyage-context-4",
+      "voyage-multimodal-3.5",
+      "voyage-finance-2",
+      "voyage-law-2",
+      "rerank-3",
+      "rerank-3-lite",
+      "rerank-2.5",
+      "rerank-2.5-lite"
     ],
     notes: [{text:"Anthropic 官方推荐的 Embedding 服务，无对话模型",type:"dim"}]
   },
@@ -1083,14 +1324,23 @@ const platforms = [
     icon: "🔗",
     iconBg: "linear-gradient(135deg,#009191,#4fd1c5)",
     keyPrefix: "jina_",
-    keyFormat: "jina_xxxxxxxx",
+    keyFormat: "jina_ + base64url 字符（≥40 位）",
     auth: "Authorization: Bearer <key>",
-    baseUrl: "Embedding: https://api.jina.ai/v1\nReader: https://r.jina.ai/<url>\nSearch: https://s.jina.ai/<query>",
+    baseUrl: "Embedding/Rerank: https://api.jina.ai/v1\nReader: https://r.jina.ai/<url>\nSearch: https://s.jina.ai/<query>",
     console: "https://jina.ai/api-dashboard",
     protocol: ["openai"],
     models: [
-      "jina-embeddings-v4","jina-embeddings-v3",
-      "jina-reranker-v2-base-multilingual","jina-clip-v2"
+      "jina-embeddings-v5-text-small",
+      "jina-embeddings-v5-text-nano",
+      "jina-embeddings-v5-omni-small",
+      "jina-embeddings-v5-omni-nano",
+      "jina-embeddings-v4",
+      "jina-code-embeddings-1.5b",
+      "jina-reranker-v3.5",
+      "jina-reranker-v3",
+      "jina-reranker-m0",
+      "jina-clip-v2",
+      "jina-colbert-v2"
     ],
     notes: [{text:"Embedding / Rerank / 网页抓取 Reader，注册送 1000 万 token",type:"green"}]
   },
@@ -1105,21 +1355,17 @@ const platforms = [
     icon: "🔍",
     iconBg: "linear-gradient(135deg,#4facfe,#00f2fe)",
     keyPrefix: "sk-",
-    keyFormat: "sk- + 32 位小写字母数字（定长 35 字符）",
+    keyFormat: "sk- + 32 位小写十六进制（定长 35 字符；官方文档未写明位数，为第三方检测规则/教程一致说法）",
     auth: "Authorization: Bearer <key>（Anthropic 端点用 x-api-key）",
-    baseUrl: "OpenAI兼容: https://api.deepseek.com/v1（或不带 /v1）\nAnthropic兼容: https://api.deepseek.com/anthropic",
+    baseUrl: "OpenAI兼容: https://api.deepseek.com（可写 https://api.deepseek.com/v1）\nAnthropic兼容: https://api.deepseek.com/anthropic",
     console: "https://platform.deepseek.com/api_keys",
-    protocol: ["openai", "anthropic"],
+    protocol: ["openai","anthropic"],
     models: [
-      "deepseek-chat","deepseek-reasoner",
-      "deepseek-v4","deepseek-v4-flash","deepseek-v4-pro",
-      "deepseek-v3.2","deepseek-v3.1",
-      "deepseek-r1","deepseek-r1-0528"
+      "deepseek-flash",
+      "deepseek-v4-pro",
+      "deepseek-v4-flash"
     ],
-    notes: [
-      {text:"国产之光，性价比极高；同形态 sk-+32 位也可能是中转站签发，需看 Base URL",type:"green"},
-      {text:"deepseek-chat / deepseek-reasoner 为官方通用别名，自动指向最新版本",type:"dim"}
-    ]
+    notes: [{text:"deepseek-chat / deepseek-reasoner 别名已于 2026-07-24 停用，改用 deepseek-flash / deepseek-v4-pro",type:"danger"}, {text:"同形态 sk-+32 位也可能是中转站签发，需看 Base URL",type:"dim"}]
   },
   {
     name: "智谱 AI (GLM / Z.ai)",
@@ -1127,21 +1373,27 @@ const platforms = [
     cat: "domestic",
     icon: "🔬",
     iconBg: "linear-gradient(135deg,#667eea,#764ba2)",
-    keyPrefix: "AQ. / xxxx.xxxx",
-    keyFormat: "AQ.xxxx.xxxx（新版）/ <id>.<secret>（旧版 32位.16位）",
+    keyPrefix: "无固定前缀（<id>.<secret>）",
+    keyFormat: "<id>.<secret>：32 位小写十六进制 + 「.」 + 16 位大小写字母数字，共 49 字符（官方 JWT 示例以 apikey.split(\".\") 拆为 id / secret）",
     auth: "Authorization: Bearer <key>（Anthropic 端点用 x-api-key）",
-    baseUrl: "OpenAI兼容: https://open.bigmodel.cn/api/paas/v4\nAnthropic兼容: https://open.bigmodel.cn/api/anthropic\nCoding Plan: https://open.bigmodel.cn/api/coding/paas/v4\n国际 Z.ai: https://api.z.ai/api/paas/v4",
+    baseUrl: "OpenAI兼容: https://open.bigmodel.cn/api/paas/v4\nAnthropic兼容: https://open.bigmodel.cn/api/anthropic\nCoding Plan (OpenAI Chat): https://open.bigmodel.cn/api/coding/paas/v4\nCoding Plan (OpenAI Responses): https://open.bigmodel.cn/api/v1\nCoding Plan (Anthropic): https://open.bigmodel.cn/api/anthropic\n国际 Z.ai: https://api.z.ai/api/paas/v4\n国际 Z.ai Anthropic: https://api.z.ai/api/anthropic\n国际 Z.ai Coding: https://api.z.ai/api/coding/paas/v4",
     console: "https://open.bigmodel.cn/usercenter/apikeys",
-    protocol: ["openai", "anthropic"],
+    protocol: ["openai","anthropic"],
     models: [
-      "glm-5","glm-5.1","glm-4.7","glm-4.6v",
-      "glm-4-plus","glm-4-air","glm-4-flash",
-      "glm-3-6b","cogview-3-plus"
+      "glm-5.3",
+      "glm-5.3-flash",
+      "glm-5.2",
+      "glm-5-turbo",
+      "glm-4.7",
+      "glm-4.7-flash",
+      "glm-5v-turbo",
+      "glm-ocr",
+      "glm-image",
+      "cogvideox-3",
+      "embedding-3",
+      "glm-asr-2512"
     ],
-    notes: [
-      {text:"按量与 Coding Plan 共用同一 Key，仅 Base URL 不同",type:"dim"},
-      {text:"支持 OpenAI + Anthropic 双协议；glm-4-flash 免费",type:"green"}
-    ]
+    notes: [{text:"支持 OpenAI + Anthropic 双协议，按量与 Coding Plan 共用同一 Key",type:"green"}, {text:"官方 Key 仅有 id.secret 一种格式；AQ. 开头的 Key 属于 Google Cloud（Vertex AI Express），不是智谱",type:"dim"}]
   },
   {
     name: "MiniMax",
@@ -1149,23 +1401,29 @@ const platforms = [
     cat: "domestic",
     icon: "🎯",
     iconBg: "linear-gradient(135deg,#fa709a,#fee140)",
-    keyPrefix: "sk- / sk-cp- / eyJ",
-    keyFormat: "sk-xxxx（按量新版）/ sk-cp-xxxx（Coding Plan）/ eyJ... JWT 长串（旧版）",
-    auth: "Authorization: Bearer <key>",
-    baseUrl: "OpenAI兼容: https://api.minimaxi.com/v1\nAnthropic兼容: https://api.minimaxi.com/anthropic\n国际站: https://api.minimax.io/v1",
+    keyPrefix: "sk-api- / sk-cp- / eyJ",
+    keyFormat: "sk-api-xxxx（按量 API Key）/ sk-cp-xxxx（Token Plan / Coding Plan 订阅 Key，与按量 Key 不互通）/ eyJ... JWT 长串（旧版）；国内站与国际站 Key 不互通",
+    auth: "Authorization: Bearer <key>（Anthropic 端点用 x-api-key）",
+    baseUrl: "OpenAI兼容: https://api.minimaxi.com/v1\nAnthropic兼容: https://api.minimaxi.com/anthropic\n国际站 OpenAI: https://api.minimax.io/v1\n国际站 Anthropic: https://api.minimax.io/anthropic",
     console: "https://platform.minimaxi.com/user-center/basic-information/interface-key",
-    protocol: ["openai", "anthropic"],
+    protocol: ["openai","anthropic"],
     models: [
-      "MiniMax-M3","MiniMax-M2.7","MiniMax-M2.7-highspeed",
-      "MiniMax-M2.5","MiniMax-M2.5-highspeed",
-      "MiniMax-M2.1","MiniMax-M2.1-highspeed",
-      "MiniMax-M2","MiniMax-M1","MiniMax-Text-01",
-      "MiniMax-VL-01","MiniMax-Hailuo-2.3","speech-02-hd"
+      "MiniMax-M3",
+      "MiniMax-M2.7",
+      "MiniMax-M2.7-highspeed",
+      "MiniMax-M2.5",
+      "MiniMax-M2.5-highspeed",
+      "MiniMax-M2.1",
+      "MiniMax-M2.1-highspeed",
+      "MiniMax-M2",
+      "MiniMax-H3",
+      "MiniMax-H3-Max",
+      "speech-2.8-hd",
+      "speech-2.8-turbo",
+      "image-01",
+      "music-3.0"
     ],
-    notes: [
-      {text:"sk-cp- 为 Coding Plan 套餐专属 Key",type:"dim"},
-      {text:"支持图像/视频（Hailuo）/音乐/语音多模态生成",type:"green"}
-    ]
+    notes: [{text:"sk-cp- 为 Token Plan / Coding Plan 订阅 Key，与按量 sk-api- 不互通；国内站与国际站 Key 不互通",type:"dim"}, {text:"支持图像 / 视频（Hailuo）/ 音乐 / 语音多模态生成",type:"green"}]
   },
   {
     name: "Kimi / Moonshot",
@@ -1174,16 +1432,22 @@ const platforms = [
     icon: "🌙",
     iconBg: "linear-gradient(135deg,#a18cd1,#fbc2eb)",
     keyPrefix: "sk- / sk-kimi-",
-    keyFormat: "sk-xxxx（开放平台按量）/ sk-kimi-xxxx（Kimi Code 会员）",
-    auth: "Authorization: Bearer <key>（Anthropic 端点用 x-api-key）",
-    baseUrl: "OpenAI兼容: https://api.moonshot.cn/v1\nAnthropic兼容: https://api.moonshot.cn/anthropic\nKimi Code: https://api.kimi.com/coding/v1\n国际站: https://api.moonshot.ai/v1",
-    console: "https://platform.moonshot.cn/console/api-keys",
-    protocol: ["openai", "anthropic"],
+    keyFormat: "sk-xxxx（Kimi 开放平台按量，长度官方未说明）/ sk-kimi-xxxx（Kimi Code 会员专用，只能走 api.kimi.com/coding）",
+    auth: "Authorization: Bearer <key>（Anthropic 兼容 Messages 端点官方示例同样用 Bearer）",
+    baseUrl: "OpenAI兼容: https://api.moonshot.cn/v1\nAnthropic兼容: https://api.moonshot.cn/anthropic\nKimi Code OpenAI: https://api.kimi.com/coding/v1\nKimi Code Anthropic: https://api.kimi.com/coding（SDK 自动补 /v1/messages，勿再加 /v1）\n国际站: https://api.moonshot.ai/v1",
+    console: "https://platform.kimi.com/console/api-keys",
+    protocol: ["openai","anthropic"],
     models: [
-      "kimi-k2.6","kimi-k2.5","kimi-k2","kimi-k2-thinking",
-      "kimi-k2-0905","moonshot-v1-128k","moonshot-v1-8k"
+      "kimi-k3",
+      "kimi-k2.7-code",
+      "kimi-k2.7-code-highspeed",
+      "kimi-k2.6",
+      "k3",
+      "k3-256k",
+      "kimi-for-coding",
+      "kimi-for-coding-highspeed"
     ],
-    notes: [{text:"长上下文专家，K2.6 支持 256K 上下文 + 视觉",type:"green"}]
+    notes: [{text:"kimi-k2.5 与 moonshot-v1 系列已于 2026-08-31 下线；sk-kimi- 只能走 api.kimi.com/coding",type:"dim"}]
   },
   {
     name: "百度千帆（文心）",
@@ -1192,17 +1456,30 @@ const platforms = [
     icon: "🐝",
     iconBg: "linear-gradient(135deg,#3385ff,#00b4ff)",
     keyPrefix: "bce-v3/ALTAK-",
-    keyFormat: "bce-v3/ALTAK-xxxx/xxxx（v2 API Key，含斜杠）",
+    keyFormat: "bce-v3/ALTAK-<AccessKey>/<Hash>（含两个斜杠；官方示例 bce-v3/ALTAK-DaI**2UEDIWx1EF/1c518f0576wee39s49109qq8ciq37，末段约 32 位）",
     auth: "Authorization: Bearer <key>",
-    baseUrl: "https://qianfan.baidubce.com/v2",
+    baseUrl: "OpenAI兼容: https://qianfan.baidubce.com/v2",
     console: "https://console.bce.baidu.com/iam/#/iam/apikey/list",
     protocol: ["openai"],
     models: [
-      "ernie-5.1","ernie-5.0","ernie-x1.1","ernie-x1-turbo",
-      "ernie-4.0-turbo","ernie-3.5-8k","ernie-speed-128k",
-      "deepseek-v3.2","qwen3-235b"
+      "ernie-5.1",
+      "ernie-5.0",
+      "ernie-5.0-thinking-latest",
+      "ernie-5.0-thinking-preview",
+      "ernie-4.5-turbo-128k",
+      "ernie-4.5-turbo-32k",
+      "ernie-4.5-turbo-vl",
+      "deepseek-v4-pro",
+      "deepseek-v4-flash",
+      "deepseek-v3.2",
+      "qwen3-coder-480b-a35b-instruct",
+      "qwen3-vl-32b-instruct",
+      "embedding-v1",
+      "bge-large-zh",
+      "tao-8k",
+      "bce-reranker-base"
     ],
-    notes: [{text:"旧版 AK/SK + access_token 鉴权已淘汰，统一用 bce-v3 API Key",type:"dim"}]
+    notes: [{text:"统一用 bce-v3 API Key（Bearer），旧版 AK/SK + access_token 已淘汰",type:"dim"}]
   },
   {
     name: "腾讯混元 (Hunyuan)",
@@ -1211,17 +1488,26 @@ const platforms = [
     icon: "🐧",
     iconBg: "linear-gradient(135deg,#0052d9,#00a4ff)",
     keyPrefix: "sk-",
-    keyFormat: "sk-xxxxxxxx",
+    keyFormat: "sk-xxxxxxxx（长度官方未说明）",
     auth: "Authorization: Bearer <key>",
-    baseUrl: "https://api.hunyuan.cloud.tencent.com/v1",
-    console: "https://console.cloud.tencent.com/hunyuan/api-key",
+    baseUrl: "OpenAI兼容: https://api.hunyuan.cloud.tencent.com/v1",
+    console: "https://console.cloud.tencent.com/hunyuan/start",
     protocol: ["openai"],
     models: [
-      "hunyuan-turbo-s","hunyuan-t1","hunyuan-large",
-      "hunyuan-standard","hunyuan-lite","hunyuan-vision",
-      "hunyuan-embedding"
+      "hunyuan-turbos-latest",
+      "hunyuan-t1-latest",
+      "hunyuan-2.0-thinking-20251109",
+      "hunyuan-2.0-instruct-20251111",
+      "hunyuan-a13b",
+      "hunyuan-lite",
+      "hunyuan-turbos-vision",
+      "hunyuan-t1-vision",
+      "hunyuan-vision-1.5-instruct",
+      "hunyuan-embedding",
+      "hunyuan-translation",
+      "hunyuan-role-latest"
     ],
-    notes: [{text:"hunyuan-lite 免费调用；T1 为深度思考模型",type:"green"}]
+    notes: [{text:"官方提示正迁移至 TokenHub；T1 为深度思考模型",type:"dim"}]
   },
   {
     name: "讯飞星火 (Spark)",
@@ -1230,16 +1516,22 @@ const platforms = [
     icon: "⭐",
     iconBg: "linear-gradient(135deg,#0052d9,#4a90d9)",
     keyPrefix: "非单一 Key",
-    keyFormat: "OpenAI兼容: APIPassword（Bearer）/ 原生 WebSocket: AppId + APIKey + APISecret 三元组",
+    keyFormat: "OpenAI兼容: APIPassword（控制台 HTTP 服务鉴权信息，作 Bearer；也可把 WebSocket 的 APIKey:APISecret 按 AK:SK 拼接作 Bearer）/ 原生 WebSocket: AppId + APIKey + APISecret 三元组 / 星辰 MaaS 与 Coding Plan: 各自独立 API Key",
     auth: "Authorization: Bearer <APIPassword>",
-    baseUrl: "OpenAI兼容: https://spark-api-open.xf-yun.com/v1\nWebSocket: wss://spark-api.xf-yun.com",
-    console: "https://console.xfyun.cn",
-    protocol: ["openai", "native"],
+    baseUrl: "Spark X2 (OpenAI兼容): https://spark-api-open.xf-yun.com/x2\nSpark X1.5 (OpenAI兼容): https://spark-api-open.xf-yun.com/v2\n旧版 Lite/Pro/Max/4.0Ultra (OpenAI兼容): https://spark-api-open.xf-yun.com/v1\n星辰 MaaS (OpenAI兼容): https://maas-api.cn-huabei-1.xf-yun.com/v2（2026-01-10 前发布的服务用 /v1）\nAstron Coding Plan OpenAI: https://maas-coding-api.cn-huabei-1.xf-yun.com/v2\nAstron Coding Plan Anthropic: https://maas-coding-api.cn-huabei-1.xf-yun.com/anthropic\nWebSocket: wss://spark-api.xf-yun.com",
+    console: "https://console.xfyun.cn/services/bmx1",
+    protocol: ["openai","anthropic","native"],
     models: [
-      "spark-x2-lite","spark-x2-pro","spark-x2-max","spark-x2-ultra",
-      "spark-v4.0","spark-v3.5","spark-v2.0"
+      "spark-x",
+      "4.0Ultra",
+      "generalv3.5",
+      "max-32k",
+      "generalv3",
+      "pro-128k",
+      "lite",
+      "astron-code-latest"
     ],
-    notes: [{text:"推荐用 OpenAI 兼容 HTTP 端点（APIPassword 鉴权）；WebSocket 原生协议需三元组",type:"dim"}]
+    notes: [{text:"X2 系列走 /x2 路径且 model 统一填 spark-x；X1.5 走 /v2；旧版 Lite / Pro / Max / 4.0Ultra 走 /v1",type:"danger"}]
   },
   {
     name: "硅基流动 (SiliconFlow)",
@@ -1248,18 +1540,30 @@ const platforms = [
     icon: "🔬",
     iconBg: "linear-gradient(135deg,#0ea5e9,#38bdf8)",
     keyPrefix: "sk-",
-    keyFormat: "sk-xxxxxxxx（约 51 字符）",
-    auth: "Authorization: Bearer <key>",
-    baseUrl: "OpenAI兼容: https://api.siliconflow.cn/v1\nAnthropic兼容: https://api.siliconflow.cn\n国际站: https://api.siliconflow.com/v1",
+    keyFormat: "sk-xxxxxxxx（约 51 字符，官方未说明）",
+    auth: "Authorization: Bearer <key>（Anthropic 兼容 /v1/messages 亦用 Bearer）",
+    baseUrl: "OpenAI兼容: https://api.siliconflow.cn/v1\nAnthropic兼容: https://api.siliconflow.cn（端点 /v1/messages）\n国际站: https://api.siliconflow.com/v1",
     console: "https://cloud.siliconflow.cn/account/ak",
-    protocol: ["openai", "anthropic"],
+    protocol: ["openai","anthropic"],
     models: [
-      "zai/glm-5","zai/glm-4.7","moonshotai/kimi-k2.5",
-      "deepseek/deepseek-v4-pro","deepseek/deepseek-v3.2",
-      "Qwen/qwen3.6-plus","MiniMax/minimax-m2.7",
-      "BAAI/bge-m3","FunAudioLLM/CosyVoice2-0.5B"
+      "zai-org/GLM-5.3",
+      "zai-org/GLM-5.3-Flash",
+      "zai-org/GLM-5.2",
+      "Pro/zai-org/GLM-5.2",
+      "deepseek-ai/DeepSeek-V4-Pro",
+      "deepseek-ai/DeepSeek-V4-Flash",
+      "deepseek-ai/DeepSeek-V3.2",
+      "moonshotai/Kimi-K3",
+      "moonshotai/Kimi-K2.7-Code",
+      "moonshotai/Kimi-K2.6",
+      "Pro/moonshotai/Kimi-K2.6",
+      "MiniMaxAI/MiniMax-M3",
+      "Qwen/Qwen3.6-27B",
+      "Qwen/Qwen3.6-35B-A3B",
+      "Qwen/Qwen3-Embedding-8B",
+      "FunAudioLLM/CosyVoice2-0.5B"
     ],
-    notes: [{text:"聚合 DeepSeek / GLM / Kimi / Qwen 等国产模型，小模型免费",type:"green"}]
+    notes: [{text:"聚合 DeepSeek / GLM / Kimi / Qwen 等国产模型",type:"green"}, {text:"模型 ID 需带命名空间且区分大小写，如 zai-org/GLM-5.3",type:"dim"}]
   },
   {
     name: "阶跃星辰 (StepFun)",
@@ -1268,16 +1572,23 @@ const platforms = [
     icon: "🪜",
     iconBg: "linear-gradient(135deg,#10b981,#06b6d4)",
     keyPrefix: "无固定前缀",
-    keyFormat: "字母数字串（无前缀）",
+    keyFormat: "字母数字串（无前缀，官方未说明长度）",
     auth: "Authorization: Bearer <key>",
-    baseUrl: "https://api.stepfun.com/v1",
+    baseUrl: "OpenAI兼容: https://api.stepfun.com/v1\nAnthropic兼容: https://api.stepfun.com（端点 /v1/messages）\nStep Plan: https://api.stepfun.com/step_plan（Anthropic 端点 /step_plan/v1/messages）\n国际站: https://api.stepfun.ai/v1",
     console: "https://platform.stepfun.com/interface-key",
-    protocol: ["openai"],
+    protocol: ["openai","anthropic"],
     models: [
-      "step-3","step-2-16k","step-2-mini",
-      "step-1o-turbo-vision","step-1x-medium","step-r1-v-mini"
+      "step-3.7-flash",
+      "step-3.5-flash",
+      "step-3.5-flash-2603",
+      "step-router-v1",
+      "step-1o-turbo-vision",
+      "stepaudio-2.5-tts",
+      "step-tts-mini",
+      "stepaudio-2.5-asr",
+      "step-asr"
     ],
-    notes: [{text:"多模态见长，step-1x 系列为图像生成",type:"dim"}]
+    notes: [{text:"多模态见长；Anthropic 兼容与 Step Plan 端点见 Base URL",type:"dim"}]
   },
   {
     name: "百川智能 (Baichuan)",
@@ -1286,16 +1597,21 @@ const platforms = [
     icon: "⛰️",
     iconBg: "linear-gradient(135deg,#f97316,#fbbf24)",
     keyPrefix: "sk-",
-    keyFormat: "sk-xxxxxxxx",
+    keyFormat: "sk-xxxxxxxx（长度未公开）",
     auth: "Authorization: Bearer <key>",
     baseUrl: "https://api.baichuan-ai.com/v1",
     console: "https://platform.baichuan-ai.com/console/apikey",
     protocol: ["openai"],
     models: [
-      "Baichuan4-Turbo","Baichuan4-Air","Baichuan4",
-      "Baichuan3-Turbo","Baichuan3-Turbo-128k","Baichuan2-Turbo"
+      "Baichuan-M3-Plus",
+      "Baichuan-M3",
+      "Baichuan-M2-Plus",
+      "Baichuan4-Turbo",
+      "Baichuan4-Air",
+      "Baichuan4",
+      "Baichuan2-Turbo"
     ],
-    notes: [{text:"深耕医疗领域，模型名首字母大写",type:"dim"}]
+    notes: [{text:"已转向医疗领域，主推 Baichuan-M3 系列",type:"dim"}]
   },
   {
     name: "零一万物 (Yi)",
@@ -1304,15 +1620,15 @@ const platforms = [
     icon: "壹",
     iconBg: "linear-gradient(135deg,#e74c3c,#e67e22)",
     keyPrefix: "sk-",
-    keyFormat: "sk-xxxxxxxx",
+    keyFormat: "sk-xxxxxxxx（平台已停服）",
     auth: "Authorization: Bearer <key>",
-    baseUrl: "https://api.lingyiwanwu.com/v1",
+    baseUrl: "https://api.lingyiwanwu.com/v1（2026-09-03 24:00 起已停止 API 调用）",
     console: "https://platform.lingyiwanwu.com/apikeys",
     protocol: ["openai"],
     models: [
-      "yi-large","yi-medium","yi-large-rag","yi-large-turbo","yi-lightning"
+      "已停服（2026-09-03）"
     ],
-    notes: [{text:"2025 年起转向企业方案，公开 API 逐步收缩",type:"dim"}]
+    notes: [{text:"2026-08-10 公告：2026-09-03 24:00 起停止 API 调用，退款申请截止 2026-12-03",type:"danger"}]
   },
   {
     name: "商汤日日新 (SenseNova)",
@@ -1321,16 +1637,25 @@ const platforms = [
     icon: "🌅",
     iconBg: "linear-gradient(135deg,#7c3aed,#ec4899)",
     keyPrefix: "sk- / AK+SK",
-    keyFormat: "sk-xxxx（新版 API Key）/ AccessKey + SecretKey 自签 JWT（旧版）",
+    keyFormat: "sk-xxxx（新版 platform.sensenova.cn API Key，长度未公开，仅创建时完整显示一次）/ 旧版大装置 AccessKeyID + SecretAccessKey 自签 JWT 或 API_TOKEN",
     auth: "Authorization: Bearer <key 或 JWT>",
-    baseUrl: "https://api.sensenova.cn/compatible-mode/v1",
-    console: "https://console.sensecore.cn/aistudio",
+    baseUrl: "OpenAI兼容(新版): https://token.sensenova.cn/v1\nOpenAI兼容(旧版大装置): https://api.sensenova.cn/compatible-mode/v2",
+    console: "https://platform.sensenova.cn/console",
     protocol: ["openai"],
     models: [
-      "SenseNova-V6-5-Pro","SenseNova-V6-Pro","SenseNova-V6-Turbo",
-      "SenseNova-V6-Reasoner","SenseChat-5"
+      "sensenova-6.8-flash-lite",
+      "sensenova-6.7-flash-lite",
+      "sensenova-u1-fast",
+      "sensenova-v6-pro",
+      "sensenova-v6-reasoner",
+      "sensenova-v6-omni",
+      "sensenova-v6-video",
+      "deepseek-v4-flash",
+      "SenseNova-V6.5-Pro",
+      "SenseNova-V6.5-Turbo",
+      "SenseChat-5"
     ],
-    notes: [{text:"多模态原生融合模型，视频理解强",type:"dim"}]
+    notes: [{text:"新版平台端点 token.sensenova.cn 用 sk- Key；旧版大装置为 AK/SK 自签 JWT",type:"dim"}]
   },
   {
     name: "360 智脑",
@@ -1339,12 +1664,17 @@ const platforms = [
     icon: "🛡️",
     iconBg: "linear-gradient(135deg,#00b894,#55efc4)",
     keyPrefix: "无固定前缀",
-    keyFormat: "字母数字串（无前缀）",
+    keyFormat: "字母数字串（无前缀，长度未公开）",
     auth: "Authorization: Bearer <key>",
     baseUrl: "https://api.360.cn/v1",
-    console: "https://ai.360.com",
+    console: "https://ai.360.com/platform/keys",
     protocol: ["openai"],
-    models: ["360gpt2-o1","360gpt2-pro","360gpt-turbo","360gpt-pro"],
+    models: [
+      "360gpt2-o1",
+      "360gpt2-pro",
+      "360gpt-pro",
+      "360gpt-turbo"
+    ],
     notes: [{text:"OpenAI 兼容接口",type:"dim"}]
   },
   {
@@ -1353,14 +1683,22 @@ const platforms = [
     cat: "domestic",
     icon: "📱",
     iconBg: "linear-gradient(135deg,#ff6900,#ffb347)",
-    keyPrefix: "无固定前缀",
-    keyFormat: "字母数字串（无前缀）",
-    auth: "Authorization: Bearer <key>",
-    baseUrl: "https://api.xiaomimimo.com/v1",
-    console: "https://platform.xiaomimimo.com",
-    protocol: ["openai"],
-    models: ["mimo-v2-flash","mimo-vl-7b-rl","mimo-7b-rl"],
-    notes: [{text:"MiMo-V2-Flash 为 MoE 推理模型，开源权重",type:"dim"}]
+    keyPrefix: "sk- / tp-",
+    keyFormat: "sk-xxxxx（按量计费 Key）/ tp-xxxxx（Token Plan Key），长度未公开",
+    auth: "api-key: <key>（自定义头，OpenAI / Anthropic 兼容端点均用此头）",
+    baseUrl: "OpenAI兼容: https://api.xiaomimimo.com/v1\nAnthropic兼容: https://api.xiaomimimo.com/anthropic\nToken Plan OpenAI兼容: https://token-plan-cn.xiaomimimo.com/v1\nToken Plan Anthropic兼容: https://token-plan-cn.xiaomimimo.com/anthropic",
+    console: "https://platform.xiaomimimo.com/#/console/api-keys",
+    protocol: ["openai","anthropic"],
+    models: [
+      "mimo-v2.5-pro",
+      "mimo-v2.5",
+      "mimo-v2.5-asr",
+      "mimo-v2-pro",
+      "mimo-v2-omni",
+      "mimo-v2-flash",
+      "mimo-v2-flash-0204"
+    ],
+    notes: [{text:"鉴权头为 api-key: <key>，不是 Authorization: Bearer",type:"danger"}]
   },
   {
     name: "美团 LongCat",
@@ -1369,13 +1707,15 @@ const platforms = [
     icon: "🐈",
     iconBg: "linear-gradient(135deg,#ffc300,#ff8c00)",
     keyPrefix: "ak_",
-    keyFormat: "ak_xxxxxxxx",
-    auth: "Authorization: Bearer <key>（Anthropic 端点用 x-api-key）",
+    keyFormat: "ak_xxxxxxxx（系统生成，仅创建时显示一次，长度未公开）",
+    auth: "Authorization: Bearer <key>（OpenAI / Anthropic 端点同一 Key、同一写法）",
     baseUrl: "OpenAI兼容: https://api.longcat.chat/openai/v1\nAnthropic兼容: https://api.longcat.chat/anthropic",
     console: "https://longcat.chat/platform/api_keys",
-    protocol: ["openai", "anthropic"],
-    models: ["LongCat-Flash-Chat","LongCat-Flash-Thinking","LongCat-Flash-Lite"],
-    notes: [{text:"每日免费额度，560B MoE 开源",type:"green"}]
+    protocol: ["openai","anthropic"],
+    models: [
+      "LongCat-2.0"
+    ],
+    notes: [{text:"LongCat-Flash 系列已于 2026-05-29 全部下线，当前仅 LongCat-2.0",type:"dim"}, {text:"每日有免费额度",type:"green"}]
   },
   {
     name: "快手 StreamLake (KAT-Coder)",
@@ -1384,13 +1724,17 @@ const platforms = [
     icon: "🎬",
     iconBg: "linear-gradient(135deg,#ff4906,#ffa62b)",
     keyPrefix: "sk-kwaipilot-",
-    keyFormat: "sk-kwaipilot-xxxxxxxx",
-    auth: "x-api-key: <key>（Anthropic 格式）",
-    baseUrl: "https://wanqing.streamlakeapi.com/api/gateway/v1/endpoints/<ep-id>/claude-code-proxy",
-    console: "https://www.streamlake.ai",
-    protocol: ["anthropic"],
-    models: ["KAT-Coder-Pro-V1","KAT-Coder-Air-V1","KAT-Coder-Exp-72B"],
-    notes: [{text:"需在控制台创建接入点（ep-id）后拼入 URL，主要面向 Claude Code",type:"dim"}]
+    keyFormat: "sk-kwaipilot-xxxxxxxx（长度未公开）",
+    auth: "Authorization: Bearer <key>（Claude Code 走 ANTHROPIC_AUTH_TOKEN）",
+    baseUrl: "Anthropic兼容(按量): https://wanqing.streamlakeapi.com/api/gateway/v1/endpoints/<ep-id>/claude-code-proxy\nAnthropic兼容(Coding Plan): https://wanqing.streamlakeapi.com/api/gateway/coding/kat-coder-pro-v2.5/claude-code-proxy\nOpenAI兼容(按量): https://wanqing.streamlakeapi.com/api/gateway/v1/endpoints\nOpenAI兼容(Coding Plan): https://wanqing.streamlakeapi.com/api/gateway/coding/v1\n国际站: https://vanchin.streamlake.ai/api/gateway/…（路径同上）",
+    console: "https://console.streamlake.com/console/wanqing/api-key",
+    protocol: ["openai","anthropic"],
+    models: [
+      "kat-coder-pro-v2.5",
+      "kat-coder-pro-v2",
+      "kat-coder-air-v1"
+    ],
+    notes: [{text:"按量需先在控制台创建接入点（ep-id）拼入 URL；Coding Plan 走固定网关，主要面向 Claude Code",type:"dim"}]
   },
   {
     name: "字节 Coze (扣子)",
@@ -1399,13 +1743,15 @@ const platforms = [
     icon: "🧩",
     iconBg: "linear-gradient(135deg,#4d53e8,#8b90f7)",
     keyPrefix: "pat_",
-    keyFormat: "pat_xxxxxxxx（个人访问令牌）",
+    keyFormat: "pat_ + 字母数字串（个人访问令牌，有效期 1~30 天，长度未公开）",
     auth: "Authorization: Bearer <pat>",
     baseUrl: "国内: https://api.coze.cn\n国际: https://api.coze.com",
-    console: "https://www.coze.cn/open/api",
+    console: "https://www.coze.cn/open/oauth/pats",
     protocol: ["native"],
-    models: ["按 bot_id 调用智能体，不直接暴露模型名"],
-    notes: [{text:"Agent 平台 API，非裸模型接口",type:"dim"}]
+    models: [
+      "按 bot_id 调用智能体（POST /v3/chat），不直接暴露模型名"
+    ],
+    notes: [{text:"Agent 平台 API，非裸模型接口；PAT 有效期 1~30 天",type:"dim"}]
   },
 
   // ===================================================================
@@ -1418,18 +1764,30 @@ const platforms = [
     icon: "☁️",
     iconBg: "linear-gradient(135deg,#ff6a00,#ee0979)",
     keyPrefix: "sk-",
-    keyFormat: "sk-xxxxxxxx（35 字符）",
-    auth: "Authorization: Bearer <key>（Anthropic 端点用 x-api-key）",
-    baseUrl: "OpenAI兼容: https://dashscope.aliyuncs.com/compatible-mode/v1\nAnthropic兼容: https://dashscope.aliyuncs.com/apps/anthropic\n原生: https://dashscope.aliyuncs.com/api/v1\n国际站: https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
-    console: "https://bailian.console.aliyun.com/?tab=model#/api-key",
-    protocol: ["openai", "anthropic", "native"],
+    keyFormat: "sk- + 32 位小写十六进制，共 35 字符（官方示例 sk-ee166797fe40xxx；另有临时 API Key，最长 1800 秒）",
+    auth: "Authorization: Bearer <key>（Anthropic 端点 x-api-key 或 Bearer 均可）",
+    baseUrl: "OpenAI兼容: https://dashscope.aliyuncs.com/compatible-mode/v1\nAnthropic兼容: https://dashscope.aliyuncs.com/apps/anthropic\n原生: https://dashscope.aliyuncs.com/api/v1\n国际站(新加坡): https://dashscope-intl.aliyuncs.com/compatible-mode/v1\n业务空间形式: https://{WorkspaceId}.cn-beijing.maas.aliyuncs.com/compatible-mode/v1（/apps/anthropic、/api/v1 同理；ap-southeast-1、us-east-1 换地域）",
+    console: "https://bailian.console.aliyun.com/cn-beijing/model/settings/api-key",
+    protocol: ["openai","anthropic","native"],
     models: [
-      "qwen3.7-max","qwen3.7-plus","qwen3.6-35b-a3b",
-      "qwen3.5","qwen3-32b","qwen2.5-72b",
-      "qwen3-coder-plus","qwen-vl-max","qwen-image",
-      "deepseek-v4-pro","glm-5","kimi-k2.6"
+      "qwen3.8-max",
+      "qwen3.7-max",
+      "qwen3.7-plus",
+      "qwen3.8-flash",
+      "qwen3.6-flash",
+      "qwen3-coder-plus",
+      "qwen3-coder-next",
+      "qwen3.5-omni-plus",
+      "qwen3.7-text-embedding",
+      "qwen3-vl-embedding",
+      "qwen-image-3.0-pro",
+      "deepseek-v4-pro",
+      "deepseek-v4.1-flash",
+      "kimi-k3",
+      "glm-5.2",
+      "MiniMax-M2.5"
     ],
-    notes: [{text:"150+ 模型，含 Qwen 全系 + 第三方模型，新用户送百万 token",type:"green"}]
+    notes: [{text:"150+ 模型，含 Qwen 全系 + 第三方模型",type:"green"}, {text:"另有临时 API Key（最长 1800 秒）",type:"dim"}]
   },
   {
     name: "阿里云百炼 (Coding Plan)",
@@ -1438,14 +1796,22 @@ const platforms = [
     icon: "☁️",
     iconBg: "linear-gradient(135deg,#ff6a00,#ee0979)",
     keyPrefix: "sk-sp-",
-    keyFormat: "sk-sp-xxxxxxxx",
-    auth: "Authorization: Bearer <key>（Anthropic 端点用 x-api-key）",
-    baseUrl: "OpenAI兼容: https://coding.dashscope.aliyuncs.com/v1\nAnthropic兼容: https://coding.dashscope.aliyuncs.com/apps/anthropic",
-    console: "https://bailian.console.aliyun.com/cn-beijing/?tab=codingplan",
-    protocol: ["openai", "anthropic"],
+    keyFormat: "sk-sp-xxxxx（Coding Plan 专用 Key，与按量 sk- Key 不通用，长度未公开）",
+    auth: "Authorization: Bearer <key>（Anthropic 端点 x-api-key 或 Bearer 均可）",
+    baseUrl: "OpenAI兼容: https://coding.dashscope.aliyuncs.com/v1\nAnthropic兼容: https://coding.dashscope.aliyuncs.com/apps/anthropic\n国际站 OpenAI兼容: https://coding-intl.dashscope.aliyuncs.com/v1\n国际站 Anthropic兼容: https://coding-intl.dashscope.aliyuncs.com/apps/anthropic",
+    console: "https://bailian.console.aliyun.com/cn-beijing/subscription/coding-plan",
+    protocol: ["openai","anthropic"],
     models: [
-      "qwen3-coder-plus","qwen3-coder-next","qwen3.7-max",
-      "glm-5","kimi-k2.6","minimax-m2.7"
+      "qwen3.7-plus",
+      "qwen3.6-plus",
+      "qwen3.5-plus",
+      "qwen3-max-2026-01-23",
+      "qwen3-coder-next",
+      "qwen3-coder-plus",
+      "kimi-k2.5",
+      "glm-5",
+      "glm-4.7",
+      "MiniMax-M2.5"
     ],
     notes: [{text:"sk-sp- 为套餐专属 Key，与按量不互通",type:"danger"}]
   },
@@ -1456,19 +1822,24 @@ const platforms = [
     icon: "🌋",
     iconBg: "linear-gradient(135deg,#ff2e63,#ff8a00)",
     keyPrefix: "无固定前缀（UUID）",
-    keyFormat: "UUID 形式 API Key xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    keyFormat: "UUID 形式 API Key xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx（36 字符，复制时勿带首尾空格）",
     auth: "Authorization: Bearer <key>",
-    baseUrl: "OpenAI兼容: https://ark.cn-beijing.volces.com/api/v3\nAnthropic兼容: https://ark.cn-beijing.volces.com/api/v3（/messages）\nCoding Plan: https://ark.cn-beijing.volces.com/api/coding/v3",
+    baseUrl: "OpenAI兼容: https://ark.cn-beijing.volces.com/api/v3\nAnthropic兼容: https://ark.cn-beijing.volces.com/api/v3（/messages）\nCoding Plan Anthropic兼容: https://ark.cn-beijing.volces.com/api/coding\nCoding Plan OpenAI兼容: https://ark.cn-beijing.volces.com/api/coding/v3\nAgent Plan Anthropic兼容: https://ark.cn-beijing.volces.com/api/plan\nAgent Plan OpenAI兼容: https://ark.cn-beijing.volces.com/api/plan/v3",
     console: "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey",
-    protocol: ["openai", "anthropic"],
+    protocol: ["openai","anthropic"],
     models: [
-      "doubao-seed-2-0","doubao-seed-2-0-lite-260215",
-      "doubao-seed-1-6-250615","doubao-seed-1-6-thinking-250715",
-      "doubao-seedream-4-0","doubao-seedance-1-0-pro",
-      "deepseek-v3-1-250821","kimi-k2-250905",
-      "doubao-embedding-large","doubao-vision-pro"
+      "doubao-seed-2-1-pro",
+      "doubao-seed-2-0-pro",
+      "doubao-seed-2-0-lite",
+      "doubao-seed-2-0-mini-260428",
+      "doubao-seed-code-preview-latest",
+      "ark-code-latest",
+      "doubao-seed-1-6-251015",
+      "doubao-embedding-large-text-240915",
+      "kimi-k2-thinking",
+      "glm-4.7"
     ],
-    notes: [{text:"model 字段可填 ep-xxxx 接入点 ID，也可直接填模型名（需先在控制台开通）",type:"dim"}]
+    notes: [{text:"model 字段可填 ep-xxxx 接入点 ID，也可直接填模型名；Coding Plan 的 Anthropic 端点为 /api/coding（不加 /v3）",type:"dim"}]
   },
   {
     name: "华为云 ModelArts MaaS",
@@ -1477,16 +1848,24 @@ const platforms = [
     icon: "🌺",
     iconBg: "linear-gradient(135deg,#c7000b,#ff6b6b)",
     keyPrefix: "无固定前缀",
-    keyFormat: "字母数字长串（API Key）",
+    keyFormat: "字母数字长串（API Key，每账号最多 30 个，创建后需等几分钟生效，长度未公开）",
     auth: "Authorization: Bearer <key>",
-    baseUrl: "https://api.modelarts-maas.com/v1",
+    baseUrl: "OpenAI兼容: https://api.modelarts-maas.com/openai/v1\n原生(MaaS Standard API V2): https://api.modelarts-maas.com/v2\n旧版 V1: https://api.modelarts-maas.com/v1",
     console: "https://console.huaweicloud.com/modelarts/?region=cn-southwest-2#/model-studio/authmanage",
     protocol: ["openai"],
     models: [
-      "DeepSeek-V3.2","DeepSeek-R1","Qwen3-235B-A22B",
-      "Qwen3-32B","glm-4.5","kimi-k2"
+      "DeepSeek-V4-Pro",
+      "DeepSeek-V4-Flash",
+      "openPangu-2.0-Pro",
+      "openPangu-2.0-Flash",
+      "GLM-5.2",
+      "Kimi-K2.6",
+      "Qwen3-235B-A22B",
+      "Qwen3-32B",
+      "Qwen2.5-VL-72B",
+      "Qwen-Image"
     ],
-    notes: [{text:"昇腾算力托管，新用户送免费 token",type:"green"}]
+    notes: [{text:"OpenAI SDK 请用 /openai/v1；原生接口为 /v2，旧 /v1 降级保留",type:"dim"}, {text:"昇腾算力托管，新用户送免费 token",type:"green"}]
   },
   {
     name: "AWS Bedrock",
@@ -1494,20 +1873,30 @@ const platforms = [
     cat: "cloud",
     icon: "🟠",
     iconBg: "linear-gradient(135deg,#ff9900,#ffc107)",
-    keyPrefix: "ABSK / AKIA / ASIA",
-    keyFormat: "ABSK... Bedrock API Key（base64 长串约 132 字符）/ AKIA+SecretKey 长期凭证 / ASIA 临时凭证 + SessionToken",
-    auth: "Bearer <ABSK Key> 或 AWS SigV4 签名（boto3）",
-    baseUrl: "原生: https://bedrock-runtime.<region>.amazonaws.com\nOpenAI兼容: https://bedrock-runtime.<region>.amazonaws.com/openai/v1",
+    keyPrefix: "ABSK（长期 Key）/ bedrock-api-key-（短期 Key）/ AKIA / ASIA",
+    keyFormat: "长期 Bedrock API Key：ABSK + base64 串（gitleaks 正则 ABSK[A-Za-z0-9+/]{109,269}={0,2}，常见总长 132 字符，固定含 ABSKQmVkcm9ja0FQSUtleS）；短期 Key（≤12h）：bedrock-api-key- + base64（固定含 YmVkcm9jay5hbWF6b25hd3MuY29t）；长期 IAM 凭证：AKIA + 16 位大写字母数字（共 20 位）+ 40 位 SecretKey；ASIA 临时凭证 + SessionToken",
+    auth: "Authorization: Bearer <Bedrock API Key>（Anthropic 兼容路径亦接受 x-api-key）或 AWS SigV4 签名（boto3 / AKIA+Secret）",
+    baseUrl: "原生: https://bedrock-runtime.<region>.amazonaws.com\nOpenAI兼容: https://bedrock-runtime.<region>.amazonaws.com/openai/v1\nAnthropic兼容: https://bedrock-runtime.<region>.amazonaws.com/anthropic\nMantle-OpenAI兼容: https://bedrock-mantle.<region>.api.aws/v1\nMantle-Anthropic兼容: https://bedrock-mantle.<region>.api.aws/anthropic",
     console: "https://console.aws.amazon.com/bedrock/home#/api-keys",
-    protocol: ["aws", "openai"],
+    protocol: ["aws","openai","anthropic"],
     models: [
-      "anthropic.claude-opus-4-8","anthropic.claude-sonnet-4-6",
-      "anthropic.claude-haiku-4-5","amazon.nova-pro",
-      "amazon.titan-embed-text-v2","cohere.command-r-plus",
-      "meta.llama4-maverick","meta.llama3-70b","deepseek-r1",
-      "minimax.m2","ai21.jamba-1.5-large","openai.gpt-oss-120b"
+      "anthropic.claude-fable-5-1",
+      "global.anthropic.claude-fable-5-1",
+      "anthropic.claude-opus-5",
+      "anthropic.claude-sonnet-5",
+      "anthropic.claude-opus-4-8",
+      "us.anthropic.claude-sonnet-4-6",
+      "anthropic.claude-haiku-4-5-20251001-v1:0",
+      "amazon.nova-2-lite-v1:0",
+      "amazon.nova-pro-v1:0",
+      "amazon.titan-embed-text-v2:0",
+      "deepseek.v3.2",
+      "minimax.minimax-m2.5",
+      "qwen.qwen3-coder-next",
+      "meta.llama4-maverick-17b-instruct-v1:0",
+      "openai.gpt-oss-120b"
     ],
-    notes: [{text:"跨区推理需加 us. / eu. / apac. 前缀；ABSK Key 可直接当 Bearer 用",type:"dim"}]
+    notes: [{text:"跨区推理需加 us. / eu. / global. 前缀；ABSK Key 可直接当 Bearer 用，也可走 Mantle 端点",type:"dim"}]
   },
   {
     name: "Azure OpenAI",
@@ -1515,19 +1904,30 @@ const platforms = [
     cat: "cloud",
     icon: "🔷",
     iconBg: "linear-gradient(135deg,#0078d4,#00bcf2)",
-    keyPrefix: "无前缀（32 位 hex）",
-    keyFormat: "KEY1 / KEY2：32 位十六进制（无前缀），必须配套资源端点",
-    auth: "api-key: <key>（或 Entra ID Bearer）",
-    baseUrl: "v1 统一端点: https://<resource>.openai.azure.com/openai/v1\n旧版: https://<resource>.openai.azure.com/openai/deployments/<deploy>/chat/completions?api-version=2024-10-21",
-    console: "https://portal.azure.com",
+    keyPrefix: "无前缀",
+    keyFormat: "KEY1 / KEY2：旧版资源为 32 位小写十六进制（trufflehog 正则 [a-f0-9]{32}）；2025 年起新建资源发放 84 位字母数字长 Key；必须配套资源端点使用，model 字段填部署名",
+    auth: "api-key: <key>（v1 路径亦接受 Authorization: Bearer <key>；Entra ID 用 Bearer token，scope https://ai.azure.com/.default）",
+    baseUrl: "v1 统一端点: https://<resource>.openai.azure.com/openai/v1（亦可 https://<resource>.services.ai.azure.com/openai/v1，无需 api-version）\n旧版: https://<resource>.openai.azure.com/openai/deployments/<deploy>/chat/completions?api-version=2024-10-21",
+    console: "https://portal.azure.com（资源 → Keys and Endpoint）/ https://ai.azure.com",
     protocol: ["openai"],
     models: [
-      "gpt-5.5","gpt-5.4","gpt-5.4-mini","gpt-5.4-nano",
-      "gpt-5.2","gpt-5.1","gpt-5","gpt-5-mini",
-      "gpt-4o","gpt-4o-mini","o3","o3-mini",
-      "gpt-4.1","gpt-4.1-mini","gpt-image-1"
+      "gpt-6-astra",
+      "gpt-5.6-sol",
+      "gpt-5.6-terra",
+      "gpt-5.6-luna",
+      "gpt-5.5",
+      "gpt-5.4",
+      "gpt-5.4-mini",
+      "gpt-5.4-nano",
+      "gpt-5.3-codex",
+      "gpt-5.1",
+      "gpt-5-mini",
+      "gpt-4.1",
+      "gpt-4o",
+      "gpt-image-2",
+      "text-embedding-3-large"
     ],
-    notes: [{text:"Key 单独无用，必须配 https://<资源名>.openai.azure.com 端点；model 填部署名",type:"danger"}]
+    notes: [{text:"Key 单独无用，必须配套 https://<资源名>.openai.azure.com 端点；model 填部署名；2025 年后新建资源 Key 为 84 位",type:"danger"}]
   },
   {
     name: "Azure AI Foundry",
@@ -1536,14 +1936,27 @@ const platforms = [
     icon: "🏭",
     iconBg: "linear-gradient(135deg,#5c2d91,#8661c5)",
     keyPrefix: "无固定前缀",
-    keyFormat: "长字母数字串（无前缀），配套项目端点",
-    auth: "api-key: <key> 或 Authorization: Bearer <key>",
-    baseUrl: "https://<resource>.services.ai.azure.com/models\nOpenAI 路径: https://<resource>.services.ai.azure.com/openai/v1",
+    keyFormat: "Foundry 资源 API Key（无前缀长字母数字串：新建资源 84 位，旧资源 32 位 hex），配套资源端点；Agents/Evaluations 等仅支持 Entra ID，生产建议 Entra ID",
+    auth: "api-key: <key> 或 Authorization: Bearer <key>（Entra token scope https://ai.azure.com/.default）",
+    baseUrl: "OpenAI兼容: https://<resource>.services.ai.azure.com/openai/v1（或 https://<resource>.openai.azure.com/openai/v1，DeepSeek/Grok/Llama 等第三方模型同样走此路径，model 填部署名）\n模型推理(旧): https://<resource>.services.ai.azure.com/models",
     console: "https://ai.azure.com",
     protocol: ["openai"],
     models: [
-      "DeepSeek-V3.2","DeepSeek-R1","Llama-4-Maverick-17B-128E-Instruct-FP8",
-      "Phi-4","mistral-large-3","grok-4.3","gpt-5.5"
+      "DeepSeek-V4-Pro",
+      "DeepSeek-V4-Flash",
+      "DeepSeek-V3.2",
+      "Llama-4-Maverick-17B-128E-Instruct-FP8",
+      "Llama-3.3-70B-Instruct",
+      "Mistral-Large-3",
+      "mistral-medium-3-5",
+      "Ministral-3B",
+      "grok-4.6",
+      "grok-4.3",
+      "grok-code-fast-1",
+      "Kimi-K2.7-Code",
+      "MAI-Thinking-1",
+      "gpt-oss-120b",
+      "gpt-5.5"
     ],
     notes: [{text:"Azure 上的第三方模型（DeepSeek / Llama / Grok / Mistral）走此入口",type:"dim"}]
   },
@@ -1553,19 +1966,28 @@ const platforms = [
     cat: "cloud",
     icon: "🟡",
     iconBg: "linear-gradient(135deg,#4285f4,#34a853)",
-    keyPrefix: "AQ.（Express）/ 无",
-    keyFormat: "服务账号 JSON → OAuth access_token（标准）/ AQ.xxxx API Key（Express 模式）",
-    auth: "Authorization: Bearer <access_token> 或 x-goog-api-key: AQ.xxx",
-    baseUrl: "原生: https://<region>-aiplatform.googleapis.com/v1\nOpenAI兼容: https://<region>-aiplatform.googleapis.com/v1/projects/<project>/locations/<region>/endpoints/openapi\nExpress: https://aiplatform.googleapis.com/v1",
+    keyPrefix: "AQ.（Express 模式 API Key）/ 无（OAuth token）",
+    keyFormat: "标准模式：服务账号 JSON / gcloud ADC → OAuth2 access_token（ya29. 开头，1h 过期）；Express 模式：Google Cloud API Key（AQ. 开头，官方未公布定长），仅支持部分功能",
+    auth: "Authorization: Bearer <access_token>；Express 模式 x-goog-api-key: <key> 或 URL ?key=<key>",
+    baseUrl: "原生: https://<region>-aiplatform.googleapis.com/v1/projects/<project>/locations/<region>\n全局端点: https://aiplatform.googleapis.com/v1/projects/<project>/locations/global\nOpenAI兼容: https://<region>-aiplatform.googleapis.com/v1/projects/<project>/locations/<region>/endpoints/openapi（model 写 google/gemini-...）\nExpress: https://aiplatform.googleapis.com/v1/publishers/google/models/<model>:generateContent?key=<key>\nClaude: https://aiplatform.googleapis.com/v1/projects/<project>/locations/global/publishers/anthropic/models/<model>:rawPredict（body 带 anthropic_version=vertex-2023-10-16）",
     console: "https://console.cloud.google.com/vertex-ai",
-    protocol: ["openai", "gemini", "anthropic"],
+    protocol: ["openai","gemini","anthropic"],
     models: [
-      "gemini-3.1-pro-preview","gemini-3.5-flash","gemini-3-flash-preview",
-      "gemini-2.5-pro","gemini-2.5-flash",
-      "claude-opus-4-8","claude-sonnet-4-6",
-      "llama-4-maverick-17b-128e-instruct-maas","text-embedding-005"
+      "gemini-3.1-pro",
+      "gemini-3.8-flash",
+      "gemini-3.5-flash",
+      "gemini-3.5-flash-lite",
+      "gemini-2.5-pro",
+      "gemini-2.5-flash",
+      "gemini-embedding-2",
+      "claude-fable-5-1",
+      "claude-opus-5",
+      "claude-sonnet-5",
+      "claude-opus-4-8",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5@20251001"
     ],
-    notes: [{text:"Model Garden 可调 Claude / Llama / Mistral；AQ. 前缀与智谱新版 Key 相同，需看域名区分",type:"dim"}]
+    notes: [{text:"Model Garden 可调 Claude / Llama / Mistral；AQ. 前缀为 Google Cloud API Key，仅 Express 模式可用",type:"dim"}]
   },
   {
     name: "Cloudflare Workers AI",
@@ -1573,19 +1995,26 @@ const platforms = [
     cat: "cloud",
     icon: "🌩️",
     iconBg: "linear-gradient(135deg,#f38020,#faad3f)",
-    keyPrefix: "无固定前缀",
-    keyFormat: "Cloudflare API Token（40 位字母数字，Bearer）",
+    keyPrefix: "cfut_ / cfat_ / cfk_（2026 新格式）/ 无（旧 40 位 Token）",
+    keyFormat: "新格式：cfut_（用户 Token）/ cfat_（账户 Token）+ 40 位字母数字 + 8 位 hex 校验（前缀后共 48 字符）；cfk_ 为 Global API Key；旧格式用户/账户 Token 为 40 位字母数字无前缀，旧 Global API Key 为 37–45 位小写 hex，旧 Token 仍可用",
     auth: "Authorization: Bearer <token>",
-    baseUrl: "https://api.cloudflare.com/client/v4/accounts/<account_id>/ai/v1",
+    baseUrl: "OpenAI兼容: https://api.cloudflare.com/client/v4/accounts/<account_id>/ai/v1（/chat/completions、/embeddings）\n原生: https://api.cloudflare.com/client/v4/accounts/<account_id>/ai/run/<model>",
     console: "https://dash.cloudflare.com/profile/api-tokens",
     protocol: ["openai"],
     models: [
-      "@cf/meta/llama-4-scout-17b","@cf/meta/llama-3.3-70b-instruct",
-      "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b",
-      "@cf/qwen/qwq-32b","@cf/google/gemma-3-12b-it",
-      "@cf/mistral/mistral-7b-instruct","@cf/openai/gpt-oss-120b"
+      "@cf/meta/llama-4-scout-17b-16e-instruct",
+      "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "@cf/openai/gpt-oss-120b",
+      "@cf/qwen/qwen3-30b-a3b-fp8",
+      "@cf/google/gemma-4-26b-a4b-it",
+      "@cf/deepseek-ai/deepseek-v4-pro-0813",
+      "@cf/mistralai/mistral-small-3.1-24b-instruct",
+      "@cf/zai-org/glm-5.3",
+      "@cf/baai/bge-m3",
+      "@cf/baai/bge-large-en-v1.5",
+      "@cf/google/embeddinggemma-300m"
     ],
-    notes: [{text:"边缘网络推理，每日有免费额度，模型名带 @cf/ 前缀",type:"green"}]
+    notes: [{text:"边缘推理，每日有免费额度，模型名带 @cf/ 前缀",type:"green"}, {text:"新 Token 带 cfut_ / cfat_ 前缀，旧 40 位无前缀 Token 仍可用",type:"dim"}]
   },
   {
     name: "IBM watsonx.ai",
@@ -1594,14 +2023,22 @@ const platforms = [
     icon: "🔵",
     iconBg: "linear-gradient(135deg,#0f62fe,#4589ff)",
     keyPrefix: "无固定前缀",
-    keyFormat: "IAM API Key（44 位字母数字）→ 换取 IAM Bearer token",
-    auth: "Authorization: Bearer <iam_token>（API Key 先换 token）",
-    baseUrl: "https://us-south.ml.cloud.ibm.com/ml/v1（需 project_id）",
+    keyFormat: "IBM Cloud IAM API Key（44 位字母数字，无前缀）→ POST https://iam.cloud.ibm.com/identity/token（grant_type=urn:ibm:params:oauth:grant-type:apikey）换 IAM Bearer token",
+    auth: "Authorization: Bearer <iam_token>（API Key 先换 token）；Model Gateway 可直接 Bearer <IBM Cloud API Key>",
+    baseUrl: "原生: https://us-south.ml.cloud.ibm.com/ml/v1/text/chat?version=2024-05-31（body 需 model_id + project_id）\nOpenAI兼容(Model Gateway): https://us-south.ml.cloud.ibm.com/ml/gateway/v1\n其它区域: eu-de / eu-gb .ml.cloud.ibm.com；jp-tok .dataplatform.cloud.ibm.com；au-syd / ca-tor .dai.cloud.ibm.com",
     console: "https://cloud.ibm.com/iam/apikeys",
-    protocol: ["native"],
+    protocol: ["native","openai"],
     models: [
-      "ibm/granite-4-h-small","ibm/granite-3-3-8b-instruct",
-      "meta-llama/llama-4-maverick-17b-128e-instruct-fp8","mistralai/mistral-large-2"
+      "ibm/granite-4-h-small",
+      "ibm/granite-3-3-8b-instruct",
+      "meta-llama/llama-4-maverick-17b-128e-instruct-fp8",
+      "meta-llama/llama-4-scout-17b-16e-instruct-fp8-dynamic",
+      "meta-llama/llama-3-3-70b-instruct",
+      "mistralai/mistral-medium-2508",
+      "mistralai/mistral-small-3-2-24b-instruct-2506",
+      "openai/gpt-oss-120b",
+      "ibm/granite-embedding-278m-multilingual",
+      "ibm/slate-125m-english-rtrvr-v2"
     ],
     notes: [{text:"企业合规向，Granite 系列开源",type:"dim"}]
   },
@@ -1611,17 +2048,28 @@ const platforms = [
     cat: "cloud",
     icon: "🟥",
     iconBg: "linear-gradient(135deg,#c74634,#f80000)",
-    keyPrefix: "无（签名密钥）",
-    keyFormat: "OCI API 签名密钥（~/.oci/config + PEM 私钥），无单一 Key",
-    auth: "OCI 请求签名（SDK 自动处理）",
-    baseUrl: "https://inference.generativeai.<region>.oci.oraclecloud.com",
-    console: "https://cloud.oracle.com",
-    protocol: ["native"],
+    keyPrefix: "sk-（Generative AI API Key）/ 无（OCI 签名密钥）",
+    keyFormat: "Generative AI API Key：sk- 开头长串（每个 Key 含 key-one / key-two 两个 secret，默认 3 个月过期，需与模型同区域，每租户上限 100 个）；或 OCI IAM API 签名密钥（~/.oci/config + PEM 私钥，SDK 自动签名）",
+    auth: "Authorization: Bearer sk-...（Generative AI API Key）或 OCI 请求签名（SDK 自动处理）",
+    baseUrl: "原生: https://inference.generativeai.<region>.oci.oraclecloud.com/20231130/actions/chat\nOpenAI兼容: https://inference.generativeai.<region>.oci.oraclecloud.com/openai/v1（/chat/completions、/responses）",
+    console: "https://cloud.oracle.com（Analytics & AI → Generative AI → API keys）",
+    protocol: ["native","openai"],
     models: [
-      "cohere.command-a-03-2025","cohere.command-r-plus-08-2024",
-      "meta.llama-4-maverick-17b-128e-instruct-fp8","xai.grok-4"
+      "cohere.command-a-03-2025",
+      "cohere.command-a-reasoning",
+      "cohere.command-a-vision",
+      "meta.llama-4-maverick-17b-128e-instruct-fp8",
+      "meta.llama-4-scout-17b-16e-instruct",
+      "meta.llama-3.3-70b-instruct",
+      "xai.grok-4.6",
+      "xai.grok-4.3",
+      "google.gemini-2.5-pro",
+      "google.gemini-2.5-flash",
+      "openai.gpt-oss-120b",
+      "cohere.embed-v4.0",
+      "cohere.rerank-4"
     ],
-    notes: [{text:"Cohere / Llama / Grok 托管，企业专用",type:"dim"}]
+    notes: [{text:"新增 sk- 开头的 Generative AI API Key（Bearer，3 个月过期），也可用 OCI 签名密钥",type:"dim"}]
   },
   {
     name: "Databricks Model Serving",
@@ -1630,16 +2078,29 @@ const platforms = [
     icon: "🧱",
     iconBg: "linear-gradient(135deg,#ff3621,#ff7a5c)",
     keyPrefix: "dapi",
-    keyFormat: "dapixxxxxxxx（个人访问令牌）",
+    keyFormat: "dapi + 32 位小写十六进制，共 36 字符（个人访问令牌 PAT，已标为 legacy，生产建议 OAuth M2M token）",
     auth: "Authorization: Bearer <token>",
-    baseUrl: "https://<workspace>.cloud.databricks.com/serving-endpoints",
+    baseUrl: "OpenAI兼容(Model Serving): https://<workspace>.cloud.databricks.com/serving-endpoints（model 填 databricks-* 端点名）\nOpenAI兼容(Unity Gateway): https://<workspace>.cloud.databricks.com/ai-gateway/mlflow/v1（model 填 system.ai.<模型名>）\n原生: https://<workspace>.cloud.databricks.com/serving-endpoints/<endpoint>/invocations",
     console: "https://<workspace>.cloud.databricks.com/settings/user/developer/access-tokens",
     protocol: ["openai"],
     models: [
-      "databricks-claude-sonnet-4-6","databricks-meta-llama-3-3-70b-instruct",
-      "databricks-gemma-3-12b","databricks-gte-large-en"
+      "databricks-claude-fable-5-1",
+      "databricks-claude-opus-5",
+      "databricks-claude-sonnet-5",
+      "databricks-claude-opus-4-8",
+      "databricks-claude-sonnet-4-6",
+      "databricks-claude-haiku-4-5",
+      "databricks-llama-4-maverick",
+      "databricks-meta-llama-3-3-70b-instruct",
+      "databricks-gpt-oss-120b",
+      "databricks-gemma-3-12b",
+      "databricks-qwen35-122b-a10b",
+      "databricks-qwen3-next-80b-a3b-instruct",
+      "databricks-deepseek-v4-1-flash",
+      "databricks-gte-large-en",
+      "databricks-qwen3-embedding-0-6b"
     ],
-    notes: [{text:"Foundation Model API 按 token 计费，模型名带 databricks- 前缀",type:"dim"}]
+    notes: [{text:"PAT 已标 legacy，生产建议 OAuth；Unity Gateway 的 model 填 system.ai.<名>",type:"dim"}]
   },
   {
     name: "Modal",
@@ -1648,12 +2109,14 @@ const platforms = [
     icon: "🟩",
     iconBg: "linear-gradient(135deg,#7fee64,#3ecf3e)",
     keyPrefix: "ak- / as-",
-    keyFormat: "ak-xxxx（token-id）+ as-xxxx（token-secret）成对使用",
-    auth: "Modal SDK 环境变量 MODAL_TOKEN_ID / MODAL_TOKEN_SECRET",
-    baseUrl: "https://<workspace>--<app>.modal.run/v1（自部署 vLLM / SGLang 端点）",
+    keyFormat: "ak- + ≥20 位混合大小写字母数字（token-id）与 as- + ≥20 位（token-secret）成对使用，官方未公布定长",
+    auth: "Modal SDK/CLI 环境变量 MODAL_TOKEN_ID / MODAL_TOKEN_SECRET（或 modal token set）；自部署推理端点的鉴权自行定义，可用 Proxy Auth Token（settings/proxy-auth-tokens）",
+    baseUrl: "https://<workspace>--<app>-<function>.modal.run/v1（自部署 vLLM / SGLang 端点；有环境后缀时为 https://<workspace>-<env>--<app>-<function>.modal.run）",
     console: "https://modal.com/settings/tokens",
     protocol: ["openai"],
-    models: ["自部署任意开源模型（vLLM / SGLang 容器）"],
+    models: [
+      "自部署任意开源模型（vLLM / SGLang 容器）"
+    ],
     notes: [{text:"Serverless GPU 平台，非模型商店；端点鉴权自定义",type:"dim"}]
   },
 
@@ -1667,21 +2130,30 @@ const platforms = [
     icon: "🔀",
     iconBg: "linear-gradient(135deg,#00cec9,#81ecec)",
     keyPrefix: "sk-or-v1-",
-    keyFormat: "sk-or-v1-xxxxxxxx（64 位 hex）",
+    keyFormat: "sk-or-v1- + 64 位小写十六进制，共 73 字符",
     auth: "Authorization: Bearer <key>",
     baseUrl: "https://openrouter.ai/api/v1",
     console: "https://openrouter.ai/settings/keys",
     protocol: ["openai"],
     models: [
-      "anthropic/claude-opus-4-8","anthropic/claude-sonnet-4-6",
-      "deepseek/deepseek-v4-pro","deepseek/deepseek-v3.2",
-      "openai/gpt-5.5","openai/gpt-5.4",
-      "google/gemini-3.1-pro-preview","google/gemini-3.5-flash",
-      "xai/grok-4.3","minimax/minimax-m3",
-      "qwen/qwen3.7-max","mistralai/mistral-large-3",
+      "anthropic/claude-fable-5.1",
+      "anthropic/claude-opus-5",
+      "anthropic/claude-sonnet-5",
+      "openai/gpt-6-astra",
+      "openai/gpt-6-astra-pro",
+      "google/gemini-3.8-flash",
+      "google/gemini-3.5-flash-lite",
+      "deepseek/deepseek-v4.1-flash",
+      "deepseek/deepseek-v4-pro-0813",
+      "x-ai/grok-4.6",
+      "qwen/qwen3.8-max-0902",
+      "z-ai/glm-5.3",
+      "moonshotai/kimi-k3",
+      "minimax/minimax-m3",
+      "mistralai/mistral-medium-3-5",
       "meta-llama/llama-4-maverick"
     ],
-    notes: [{text:"聚合 300+ 模型，一个 Key 通吃所有；模型名加 :free 后缀有免费版",type:"green"}]
+    notes: [{text:"聚合 300+ 模型，一个 Key 通吃；模型名加 :free 后缀有免费版",type:"green"}, {text:"xAI 的 slug 是 x-ai/ 不是 xai/",type:"dim"}]
   },
   {
     name: "Vercel AI Gateway",
@@ -1690,16 +2162,27 @@ const platforms = [
     icon: "▲",
     iconBg: "linear-gradient(135deg,#000000,#444444)",
     keyPrefix: "vck_",
-    keyFormat: "vck_xxxxxxxx",
-    auth: "Authorization: Bearer <key>（Anthropic 端点用 x-api-key）",
+    keyFormat: "vck_ + base62 随机串（长度官方未公开）",
+    auth: "Authorization: Bearer <key>（Anthropic 端点亦可用 x-api-key；Vercel 部署内可用 OIDC token）",
     baseUrl: "OpenAI兼容: https://ai-gateway.vercel.sh/v1\nAnthropic兼容: https://ai-gateway.vercel.sh",
-    console: "https://vercel.com/dashboard/ai-gateway",
-    protocol: ["openai", "anthropic"],
+    console: "https://vercel.com/d?to=%2F%5Bteam%5D%2F%7E%2Fai-gateway%2Fapi-keys",
+    protocol: ["openai","anthropic"],
     models: [
-      "openai/gpt-5.5","anthropic/claude-opus-4-8","google/gemini-3.5-flash",
-      "xai/grok-4.3","deepseek/deepseek-v4","moonshotai/kimi-k2.6"
+      "anthropic/claude-opus-5",
+      "anthropic/claude-sonnet-5",
+      "anthropic/claude-fable-5.1",
+      "openai/gpt-6-astra",
+      "google/gemini-3.8-flash",
+      "google/gemini-3.5-flash-lite",
+      "spacexai/grok-4.6",
+      "deepseek/deepseek-v4.1-flash",
+      "deepseek/deepseek-v4-pro",
+      "moonshotai/kimi-k3",
+      "zai/glm-5.3",
+      "minimax/minimax-m3",
+      "alibaba/qwen3.8-max"
     ],
-    notes: [{text:"官价零加价，统一计费 + 自动故障转移",type:"green"}]
+    notes: [{text:"官价零加价，统一计费 + 自动故障转移",type:"green"}, {text:"xAI 模型 slug 为 spacexai/，Qwen 在 alibaba/ 下",type:"dim"}]
   },
   {
     name: "Cloudflare AI Gateway",
@@ -1708,12 +2191,14 @@ const platforms = [
     icon: "🌩️",
     iconBg: "linear-gradient(135deg,#f38020,#f6821f)",
     keyPrefix: "上游 Key + cf-aig-authorization",
-    keyFormat: "透传上游厂商 Key；开启鉴权网关时另加 cf-aig-authorization: Bearer <CF Token>",
-    auth: "上游厂商原鉴权 + 可选 cf-aig-authorization 头",
-    baseUrl: "https://gateway.ai.cloudflare.com/v1/<account_id>/<gateway>/<provider>\n统一入口: https://gateway.ai.cloudflare.com/v1/<account_id>/<gateway>/compat",
+    keyFormat: "透传上游厂商 Key（Authorization / x-api-key / x-goog-api-key 按上游）；鉴权网关或托管 Key（BYOK / Unified Billing）时加 cf-aig-authorization: Bearer <CF AIG Token>，此时可省略上游 Key",
+    auth: "上游厂商原鉴权头 + cf-aig-authorization: Bearer <token>（鉴权网关 / 托管 Key 时必需）",
+    baseUrl: "Provider原生: https://gateway.ai.cloudflare.com/v1/<account_id>/<gateway_id>/<provider>（openai / anthropic / google-ai-studio / workers-ai …）\nOpenAI兼容统一入口: https://gateway.ai.cloudflare.com/v1/<account_id>/<gateway_id>/compat",
     console: "https://dash.cloudflare.com/?to=/:account/ai/ai-gateway",
-    protocol: ["openai", "anthropic", "gemini"],
-    models: ["透传上游（openai / anthropic / google-ai-studio / workers-ai 等 provider 路径）"],
+    protocol: ["openai","anthropic","gemini"],
+    models: [
+      "透传上游；统一入口用 provider/model，官方示例：openai/gpt-5.2、anthropic/claude-4-5-sonnet、google/gemini-2.5-pro、grok/grok-4、workers-ai/@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    ],
     notes: [{text:"免费缓存 / 限流 / 日志 / 故障转移，不改上游 Key",type:"green"}]
   },
   {
@@ -1723,13 +2208,15 @@ const platforms = [
     icon: "🔑",
     iconBg: "linear-gradient(135deg,#6b21a8,#a855f7)",
     keyPrefix: "无固定前缀",
-    keyFormat: "字母数字串（Portkey API Key）+ 虚拟 Key / Provider 头",
-    auth: "x-portkey-api-key: <key> + x-portkey-provider 或 x-portkey-virtual-key",
+    keyFormat: "字母数字随机串，无前缀（官方 Admin API 示例返回 \"key\": \"abssofjosfjs\"，长度未公开）+ Provider 头",
+    auth: "x-portkey-api-key: <key> + x-portkey-provider: @<provider_slug>（x-portkey-virtual-key 已弃用仅向后兼容；也可用 x-portkey-config）",
     baseUrl: "https://api.portkey.ai/v1",
     console: "https://app.portkey.ai/api-keys",
     protocol: ["openai"],
-    models: ["透传上游（@provider/model 形式）"],
-    notes: [{text:"企业级 LLM 网关：可观测 / 缓存 / 守护规则",type:"dim"}]
+    models: [
+      "透传上游，格式 @provider_slug/model_name，如 @openai-prod/gpt-4o、@anthropic/claude-3-sonnet"
+    ],
+    notes: [{text:"x-portkey-virtual-key 已弃用，改用 x-portkey-provider: @slug 或 model 填 @slug/model",type:"dim"}]
   },
   {
     name: "Helicone AI Gateway",
@@ -1737,13 +2224,26 @@ const platforms = [
     cat: "aggregate",
     icon: "📊",
     iconBg: "linear-gradient(135deg,#0ea5e9,#2563eb)",
-    keyPrefix: "sk-helicone-",
-    keyFormat: "sk-helicone-xxxxxxxx",
-    auth: "Authorization: Bearer <helicone_key>（上游 Key 在后台托管）",
-    baseUrl: "https://ai-gateway.helicone.ai/v1",
+    keyPrefix: "sk-helicone- / pk-helicone- / eu-",
+    keyFormat: "sk-helicone-xxxxxxx-xxxxxxx-xxxxxxx-xxxxxxx（4 段各 7 位字母数字；只读 Key 以 sk- 开头，可写 Key 以 pk- 开头，欧盟区加 eu- 前缀）",
+    auth: "Authorization: Bearer <helicone_key>（上游 Key 在 Providers 页托管）",
+    baseUrl: "OpenAI兼容: https://ai-gateway.helicone.ai（官方示例不带 /v1，带 /v1 亦可）",
     console: "https://us.helicone.ai/settings/api-keys",
     protocol: ["openai"],
-    models: ["gpt-5.5","claude-opus-4-8","gemini-3.5-flash","deepseek-v4"],
+    models: [
+      "gpt-5.4",
+      "gpt-5.2-pro",
+      "claude-4.6-opus",
+      "claude-4.6-sonnet",
+      "claude-4.5-haiku",
+      "gemini-3.1-pro-preview",
+      "gemini-3.1-flash-lite-preview",
+      "deepseek-v3.2",
+      "grok-4-1-fast-reasoning",
+      "kimi-k2.5",
+      "glm-4.7",
+      "qwen3-coder"
+    ],
     notes: [{text:"可观测性 + 统一网关，一个 Key 路由 100+ 模型",type:"dim"}]
   },
   {
@@ -1752,14 +2252,25 @@ const platforms = [
     cat: "aggregate",
     icon: "🛣️",
     iconBg: "linear-gradient(135deg,#059669,#34d399)",
-    keyPrefix: "无固定前缀",
-    keyFormat: "字母数字串（无前缀）",
-    auth: "Authorization: Bearer <key>",
+    keyPrefix: "sk-",
+    keyFormat: "sk- + 随机串（官方 Quickstart 示例 REQUESTY_API_KEY=\"sk-...\"，长度未公开）",
+    auth: "Authorization: Bearer <key>（也接受 X-Api-Key）",
     baseUrl: "https://router.requesty.ai/v1",
     console: "https://app.requesty.ai/api-keys",
     protocol: ["openai"],
-    models: ["openai/gpt-5.5","anthropic/claude-sonnet-4-6","google/gemini-3.5-flash","deepseek/deepseek-v4"],
-    notes: [{text:"面向 Cline / Roo Code 等编码工具的路由",type:"dim"}]
+    models: [
+      "openai/gpt-6-astra",
+      "openai/gpt-5.6-luna",
+      "anthropic/claude-fable-5.1",
+      "anthropic/claude-opus-5",
+      "anthropic/claude-sonnet-5",
+      "google/gemini-3.8-flash",
+      "deepseek/deepseek-v4.1-flash",
+      "xai/grok-4.6",
+      "moonshot/kimi-k3",
+      "zai/glm-5.3"
+    ],
+    notes: [{text:"Key 以 sk- 开头，也接受 X-Api-Key 头；面向 Cline / Roo Code 等编码工具",type:"dim"}]
   },
   {
     name: "Novita AI",
@@ -1767,18 +2278,23 @@ const platforms = [
     cat: "aggregate",
     icon: "🔮",
     iconBg: "linear-gradient(135deg,#8b5cf6,#a78bfa)",
-    keyPrefix: "sk_ / nv-",
-    keyFormat: "sk_xxxx-xxxx-xxxx（新版下划线）/ nv-xxxx（旧版）",
-    auth: "Authorization: Bearer <key>",
-    baseUrl: "OpenAI兼容: https://api.novita.ai/openai/v1\n旧路径: https://api.novita.ai/v3/openai",
+    keyPrefix: "sk_",
+    keyFormat: "sk_ + 随机串（官方：每个 Key 以 sk_ 开头；长度未公开；未见 nv- 前缀）",
+    auth: "Authorization: Bearer <key>（Anthropic 兼容端点同样用 Bearer）",
+    baseUrl: "OpenAI兼容: https://api.novita.ai/openai/v1（OpenAI SDK 官方示例 base_url 填 https://api.novita.ai/openai）\nAnthropic兼容: https://api.novita.ai/anthropic\n旧路径: https://api.novita.ai/v3/openai（仍可用）",
     console: "https://novita.ai/settings/key-management",
-    protocol: ["openai"],
+    protocol: ["openai","anthropic"],
     models: [
-      "moonshotai/kimi-k2.5","zai-org/glm-5.1",
-      "minimax/minimax-m2.7","deepseek/deepseek-v3.2",
-      "google/gemma-4-31b-it"
+      "moonshotai/kimi-k3",
+      "moonshotai/kimi-k2.7-code",
+      "zai-org/glm-5.3",
+      "zai-org/glm-5.3-flash",
+      "minimax/minimax-m3",
+      "deepseek/deepseek-v4.1-flash",
+      "deepseek/deepseek-v4-pro-0813",
+      "qwen/qwen3.8-flash"
     ],
-    notes: [{text:"200+ 开源模型 + 图像/视频生成，支持工具调用",type:"dim"}]
+    notes: [{text:"官方仅定义 sk_ 前缀；已提供 Anthropic 兼容端点",type:"dim"}]
   },
   {
     name: "Parasail",
@@ -1787,14 +2303,23 @@ const platforms = [
     icon: "🪁",
     iconBg: "linear-gradient(135deg,#0284c7,#7dd3fc)",
     keyPrefix: "psk-",
-    keyFormat: "psk-xxxxxxxx",
+    keyFormat: "psk-xxxxxxxx（前缀未能从官方文档核实；Key 创建时仅显示一次）",
     auth: "Authorization: Bearer <key>",
     baseUrl: "https://api.parasail.io/v1",
-    console: "https://www.saas.parasail.io",
+    console: "https://www.saas.parasail.io/keys",
     protocol: ["openai"],
     models: [
-      "parasail-deepseek-v3.1","parasail-deepseek-r1-0528",
-      "parasail-kimi-k2-instruct","parasail-glm-4.5-air"
+      "parasail-deepseek-v41-flash",
+      "parasail-deepseek-v4-pro",
+      "parasail-kimi-k3",
+      "parasail-kimi-k26",
+      "parasail-glm-53",
+      "parasail-glm-53-flash",
+      "parasail-minimax-m3",
+      "parasail-qwen38-27b",
+      "parasail-gpt-oss-120b",
+      "parasail-llama-4-maverick-instruct-fp8",
+      "parasail-gemma-4-31b-it"
     ],
     notes: [{text:"按量 Serverless + 专用部署，价格低",type:"dim"}]
   },
@@ -1806,12 +2331,23 @@ const platforms = [
     iconBg: "linear-gradient(135deg,#5d5fef,#a5a6f6)",
     keyPrefix: "无固定前缀",
     keyFormat: "字母数字串（无前缀）",
-    auth: "Authorization: Bearer <key>",
-    baseUrl: "https://api.poe.com/v1",
-    console: "https://poe.com/api_key",
-    protocol: ["openai"],
-    models: ["GPT-5.5","Claude-Opus-4.8","Gemini-3.5-Flash","Grok-4.3","DeepSeek-V4"],
-    notes: [{text:"Poe 订阅积分直接当 API 用；模型名为 Poe 上的 bot 名",type:"dim"}]
+    auth: "Authorization: Bearer <key>（Anthropic 端点亦可用 x-api-key）",
+    baseUrl: "OpenAI兼容: https://api.poe.com/v1\nAnthropic兼容: https://api.poe.com",
+    console: "https://poe.com/api_keys",
+    protocol: ["openai","anthropic"],
+    models: [
+      "gpt-5.4",
+      "gpt-5.4-pro",
+      "gpt-5.4-mini",
+      "claude-opus-4.8",
+      "claude-sonnet-4.6",
+      "claude-haiku-4.5",
+      "gemini-3.8-flash",
+      "gemini-3.1-pro",
+      "grok-4.6",
+      "kimi-k3"
+    ],
+    notes: [{text:"Poe 订阅积分直接当 API 用；模型 ID 为小写 bot 名；另有 Anthropic 兼容端点",type:"dim"}]
   },
   {
     name: "AiHubMix",
@@ -1820,13 +2356,27 @@ const platforms = [
     icon: "🧃",
     iconBg: "linear-gradient(135deg,#f43f5e,#fb7185)",
     keyPrefix: "sk-",
-    keyFormat: "sk-xxxxxxxx",
-    auth: "Authorization: Bearer <key>（Anthropic / Gemini 端点用各自原生头）",
-    baseUrl: "OpenAI兼容: https://aihubmix.com/v1\nAnthropic兼容: https://aihubmix.com\nGemini原生: https://aihubmix.com/gemini",
+    keyFormat: "sk- + 随机串（官方示例 sk-***，长度未公开）",
+    auth: "Authorization: Bearer <key>（Anthropic 端点用 x-api-key + anthropic-version；Gemini 用 SDK api_key）",
+    baseUrl: "OpenAI兼容: https://aihubmix.com/v1\nAnthropic兼容: https://aihubmix.com（/v1/messages）\nGemini原生: https://aihubmix.com/gemini\n备用域名: https://api.inferera.com",
     console: "https://aihubmix.com/token",
-    protocol: ["openai", "anthropic", "gemini"],
-    models: ["gpt-5.5","claude-opus-4-8","gemini-3.5-flash","deepseek-v4","qwen3.7-max"],
-    notes: [{text:"国内可直连的官转聚合，支持三种原生协议",type:"green"}]
+    protocol: ["openai","anthropic","gemini"],
+    models: [
+      "gpt-6-astra",
+      "gpt-5.5",
+      "gpt-5.4",
+      "claude-opus-5",
+      "claude-sonnet-5",
+      "claude-fable-5-1",
+      "gemini-3.8-flash",
+      "deepseek-v4.1-flash",
+      "deepseek-v4-pro",
+      "grok-4.6",
+      "qwen3.8-flash",
+      "kimi-k3",
+      "glm-5.3"
+    ],
+    notes: [{text:"国内可直连的官转聚合，支持三种原生协议；备用域名 api.inferera.com",type:"green"}]
   },
   {
     name: "ZenMux (蚂蚁百灵)",
@@ -1835,16 +2385,25 @@ const platforms = [
     icon: "🐜",
     iconBg: "linear-gradient(135deg,#1677ff,#69b1ff)",
     keyPrefix: "sk-ai-v1-",
-    keyFormat: "sk-ai-v1-xxxxxxxx",
-    auth: "Authorization: Bearer <key>（Anthropic 端点用 x-api-key）",
-    baseUrl: "OpenAI兼容: https://zenmux.ai/api/v1\nAnthropic兼容: https://zenmux.ai/api/anthropic",
-    console: "https://zenmux.ai/settings/keys",
-    protocol: ["openai", "anthropic"],
+    keyFormat: "sk-ai-v1-xxxxxxxx（前缀未能从官方文档核实）",
+    auth: "Authorization: Bearer <key>（Anthropic 端点用 x-api-key + anthropic-version: 2023-06-01）",
+    baseUrl: "OpenAI兼容: https://zenmux.ai/api/v1\nAnthropic兼容: https://zenmux.ai/api/anthropic\nGemini兼容: https://zenmux.ai/api/vertex-ai",
+    console: "https://zenmux.ai/platform/pay-as-you-go",
+    protocol: ["openai","anthropic","gemini"],
     models: [
-      "inclusionai/ling-1t","inclusionai/ring-1t",
-      "anthropic/claude-sonnet-4-6","openai/gpt-5.5","deepseek/deepseek-v4"
+      "inclusionai/ling-3.0-flash",
+      "inclusionai/ling-2.6-1t",
+      "inclusionai/ring-2.6-1t",
+      "anthropic/claude-fable-5.1",
+      "anthropic/claude-opus-5",
+      "openai/gpt-6-astra",
+      "deepseek/deepseek-v4.1-flash",
+      "google/gemini-3.8-flash",
+      "moonshotai/kimi-k3",
+      "z-ai/glm-5.3-flash",
+      "qwen/qwen3.8-max-0902"
     ],
-    notes: [{text:"蚂蚁百灵 Ling / Ring 系列官方 API 入口，兼做聚合",type:"dim"}]
+    notes: [{text:"蚂蚁百灵 Ling / Ring 系列官方入口，兼做聚合；旧 ling-1t / ring-1t 已改为 2.6 版",type:"dim"}]
   },
   {
     name: "PPIO 派欧云",
@@ -1853,17 +2412,22 @@ const platforms = [
     icon: "🥧",
     iconBg: "linear-gradient(135deg,#3b82f6,#93c5fd)",
     keyPrefix: "sk_",
-    keyFormat: "sk_xxxxxxxx（下划线）",
-    auth: "Authorization: Bearer <key>",
-    baseUrl: "https://api.ppinfra.com/v3/openai",
+    keyFormat: "sk_ + 随机串（官方：每个 API 密钥以 sk_ 开头；长度未公开）",
+    auth: "Authorization: Bearer <key>（Anthropic 兼容端点同样用 Bearer）",
+    baseUrl: "OpenAI兼容: https://api.ppio.com/openai/v1（OpenAI SDK 官方示例 base_url 填 https://api.ppio.com/openai）\nAnthropic兼容: https://api.ppio.com/anthropic\n旧域名: https://api.ppinfra.com/v3/openai（仍可用）",
     console: "https://ppio.com/settings/key-management",
-    protocol: ["openai"],
+    protocol: ["openai","anthropic"],
     models: [
-      "deepseek/deepseek-v3.1","deepseek/deepseek-r1-0528",
-      "moonshotai/kimi-k2-instruct","zai-org/glm-4.5",
-      "qwen/qwen3-235b-a22b-instruct-2507"
+      "deepseek/deepseek-v4.1-flash",
+      "moonshotai/kimi-k3",
+      "moonshotai/kimi-k2.7-code",
+      "zai-org/glm-5.3",
+      "zai-org/glm-5.3-flash",
+      "minimax/minimax-m3",
+      "qwen/qwen3.8-flash",
+      "qwen/qwen3.8-27b"
     ],
-    notes: [{text:"国内开源模型算力平台，注册送额度",type:"green"}]
+    notes: [{text:"主域名已迁到 api.ppio.com，旧 api.ppinfra.com 仍可用；注册送额度",type:"green"}]
   },
   {
     name: "无问芯穹 (Infini-AI)",
@@ -1871,18 +2435,24 @@ const platforms = [
     cat: "aggregate",
     icon: "♾️",
     iconBg: "linear-gradient(135deg,#0ea5e9,#06b6d4)",
-    keyPrefix: "sk-cp- / sk-",
-    keyFormat: "sk-cp-xxxx（Coding Plan）/ sk-xxxx（按量）",
-    auth: "Authorization: Bearer <key>（Anthropic 端点用 x-api-key）",
-    baseUrl: "按量: https://cloud.infini-ai.com/maas/v1\nCoding OpenAI: https://cloud.infini-ai.com/maas/coding/v1\nCoding Anthropic: https://cloud.infini-ai.com/maas/coding",
-    console: "https://cloud.infini-ai.com/platform/ai",
-    protocol: ["openai", "anthropic"],
+    keyPrefix: "sk- / sk-cp-",
+    keyFormat: "sk-xxxx（GenStudio 按量）/ sk-cp-xxxx（Coding Plan 专用，最多 5 个）；长度未公开",
+    auth: "Authorization: Bearer <key>（Anthropic 兼容端点同样用 Bearer，Claude Code 配 ANTHROPIC_AUTH_TOKEN）",
+    baseUrl: "按量 OpenAI兼容: https://cloud.infini-ai.com/maas/v1\n按量 Anthropic兼容: https://cloud.infini-ai.com/maas\nCoding OpenAI: https://cloud.infini-ai.com/maas/coding/v1\nCoding Anthropic: https://cloud.infini-ai.com/maas/coding",
+    console: "https://cloud.infini-ai.com/iam/secret/key",
+    protocol: ["openai","anthropic"],
     models: [
-      "deepseek-v3.2","deepseek-v3.2-thinking",
-      "kimi-k2.5","minimax-m2.1","minimax-m2.5","minimax-m2.7",
-      "glm-4.7","glm-5","glm-5.1"
+      "deepseek-v4-pro",
+      "deepseek-v4-flash",
+      "glm-5.2",
+      "glm-5.1",
+      "kimi-k2.6",
+      "kimi-k2.7-code",
+      "minimax-m2.7",
+      "qwen3.6-35b-a3b",
+      "qwen3.6-27b"
     ],
-    notes: [{text:"Coding Plan 专属 Key (sk-cp-)，支持双协议",type:"dim"}]
+    notes: [{text:"2026-08-28 起下线多款旧模型；Coding Plan 专属 Key (sk-cp-)，支持双协议",type:"dim"}]
   },
   {
     name: "Vector Engine",
@@ -1891,15 +2461,19 @@ const platforms = [
     icon: "🎯",
     iconBg: "linear-gradient(135deg,#6366f1,#a855f7)",
     keyPrefix: "sk-",
-    keyFormat: "sk-xxxxxxxx",
+    keyFormat: "sk-xxxxxxxx（未能从官方文档核实）",
     auth: "Authorization: Bearer <key>",
-    baseUrl: "https://api.vectorengine.ai/v1",
+    baseUrl: "OpenAI兼容: https://api.vectorengine.ai/v1\nAnthropic兼容: https://api.vectorengine.ai\n国内域名: https://api.vectorengine.cn/v1",
     console: "https://vectorengine.ai",
-    protocol: ["openai"],
+    protocol: ["openai","anthropic"],
     models: [
-      "gpt-4o","gpt-4o-mini","claude-sonnet-4-6",
-      "deepseek-v3.2","gemini-2.5-pro",
-      "qwen3-32b","llama-3.3-70b"
+      "claude-fable-5",
+      "claude-opus-4-8",
+      "claude-sonnet-4-6",
+      "gpt-5.6-sol",
+      "gpt-5.5",
+      "gpt-5.4",
+      "gemini-3.1-pro-preview"
     ],
     notes: [{text:"国内中转聚合，一个 Key 调多个平台",type:"dim"}]
   },
@@ -1910,16 +2484,15 @@ const platforms = [
     icon: "🔧",
     iconBg: "linear-gradient(135deg,#22c55e,#16a34a)",
     keyPrefix: "sk-",
-    keyFormat: "sk-xxxxxxxx（后台令牌页生成，48 位）",
-    auth: "Authorization: Bearer <key>（Anthropic / Gemini 端点用各自原生头）",
-    baseUrl: "OpenAI兼容: http://localhost:3000/v1\nAnthropic兼容: http://localhost:3000\nGemini原生: http://localhost:3000（/v1beta）",
-    console: "http://localhost:3000/console/token",
-    protocol: ["openai", "anthropic", "gemini"],
-    models: ["取决于后台配置的上游渠道（可映射任意模型名）"],
-    notes: [
-      {text:"开源网关：统一管理多平台 Key，支持额度、分组、计费、模型重定向",type:"green"},
-      {text:"NEW API 为 One API 二开分支，额外支持 Anthropic / Gemini / Responses 协议转发",type:"dim"}
-    ]
+    keyFormat: "sk- + 48 位随机字母数字（0-9a-zA-Z），共 51 字符（common/utils.go GenerateKey）",
+    auth: "Authorization: Bearer <key>（Anthropic /v1/messages 用 x-api-key，Gemini /v1beta 用 x-goog-api-key 或 ?key=）",
+    baseUrl: "OpenAI兼容: http://localhost:3000/v1\nAnthropic兼容: http://localhost:3000（/v1/messages）\nGemini原生: http://localhost:3000（/v1beta/models/...）",
+    console: "http://localhost:3000/keys",
+    protocol: ["openai","anthropic","gemini"],
+    models: [
+      "取决于后台配置的上游渠道（可映射任意模型名）"
+    ],
+    notes: [{text:"开源网关：统一管理多平台 Key，支持额度、分组、计费、模型重定向",type:"green"}, {text:"令牌为 sk- + 48 位字母数字共 51 字符；新版令牌页路径为 /keys",type:"dim"}]
   },
   {
     name: "LiteLLM Proxy (自建)",
@@ -1928,13 +2501,15 @@ const platforms = [
     icon: "🚂",
     iconBg: "linear-gradient(135deg,#1d4ed8,#60a5fa)",
     keyPrefix: "sk-",
-    keyFormat: "sk-xxxxxxxx（虚拟 Key，后台生成）/ master key 自定义",
-    auth: "Authorization: Bearer <key>",
-    baseUrl: "http://localhost:4000/v1（默认端口 4000）",
+    keyFormat: "sk- + 22 位 URL-safe base64 随机串，共 25 字符（如 sk-tXL0wt5-lOOVK9sfY2UacA；LENGTH_OF_LITELLM_GENERATED_KEY 默认 16）/ master key 自定义但必须以 sk- 开头",
+    auth: "Authorization: Bearer <key>（/v1/messages 亦可用 x-api-key）",
+    baseUrl: "OpenAI兼容: http://localhost:4000/v1（默认端口 4000，/v1 可省略）\nAnthropic兼容: http://localhost:4000（/v1/messages）",
     console: "http://localhost:4000/ui",
-    protocol: ["openai", "anthropic"],
-    models: ["config.yaml 中配置的 100+ 上游（provider/model 形式）"],
-    notes: [{text:"Python 网关，支持预算 / 限流 / 回退，Anthropic 格式 /v1/messages 透传",type:"dim"}]
+    protocol: ["openai","anthropic"],
+    models: [
+      "config.yaml 中配置的 100+ 上游（provider/model 形式）"
+    ],
+    notes: [{text:"虚拟 Key 为 sk- + 22 位共 25 字符；/v1/messages 也接受 x-api-key",type:"dim"}]
   },
 
   // ===================================================================
@@ -1947,14 +2522,22 @@ const platforms = [
     icon: "🎙️",
     iconBg: "linear-gradient(135deg,#000000,#5b5b5b)",
     keyPrefix: "sk_",
-    keyFormat: "sk_xxxxxxxx（下划线，新版）/ 32 位 hex（旧版）",
+    keyFormat: "sk_ + 48 位小写十六进制，共 51 字符（新版，trufflehog 正则 sk_[a-f0-9]{48}）/ 32 位 hex 无前缀（旧版）",
     auth: "xi-api-key: <key>",
     baseUrl: "https://api.elevenlabs.io/v1",
     console: "https://elevenlabs.io/app/settings/api-keys",
     protocol: ["native"],
     models: [
-      "eleven_v3","eleven_multilingual_v2","eleven_flash_v2_5",
-      "eleven_turbo_v2_5","scribe_v1"
+      "eleven_v3",
+      "eleven_v3_conversational",
+      "eleven_multilingual_v2",
+      "eleven_flash_v2_5",
+      "eleven_flash_v2",
+      "eleven_multilingual_sts_v2",
+      "scribe_v2",
+      "scribe_v2_realtime",
+      "scribe_v2_medical",
+      "music_v2"
     ],
     notes: [{text:"TTS / 克隆 / 转写（Scribe），注意与短横 sk- 区分",type:"dim"}]
   },
@@ -1965,12 +2548,21 @@ const platforms = [
     icon: "🎧",
     iconBg: "linear-gradient(135deg,#13ef93,#0d9e5f)",
     keyPrefix: "无前缀（40 位 hex）",
-    keyFormat: "40 位十六进制串",
+    keyFormat: "40 位小写十六进制串，共 40 字符（trufflehog / secrets-patterns-db 正则 [0-9a-z]{40}）",
     auth: "Authorization: Token <key>（注意是 Token 不是 Bearer）",
     baseUrl: "https://api.deepgram.com/v1",
     console: "https://console.deepgram.com",
     protocol: ["native"],
-    models: ["nova-3","nova-2","aura-2","whisper-large"],
+    models: [
+      "nova-3",
+      "nova-3-medical",
+      "nova-2",
+      "flux-general-en",
+      "flux-general-multi",
+      "aura-2-thalia-en",
+      "aura-2-andromeda-en",
+      "whisper-large"
+    ],
     notes: [{text:"STT / TTS，注册送 $200 额度",type:"green"}]
   },
   {
@@ -1980,13 +2572,18 @@ const platforms = [
     icon: "📝",
     iconBg: "linear-gradient(135deg,#2545d3,#7b8cff)",
     keyPrefix: "无前缀（32 位 hex）",
-    keyFormat: "32 位十六进制串",
+    keyFormat: "32 位小写字母数字串，共 32 字符（trufflehog / secrets-patterns-db 正则 [0-9a-z]{32}，实际为 hex）",
     auth: "authorization: <key>（裸 Key，无 Bearer）",
-    baseUrl: "https://api.assemblyai.com/v2",
-    console: "https://www.assemblyai.com/app/api-keys",
+    baseUrl: "美区: https://api.assemblyai.com/v2\n欧区: https://api.eu.assemblyai.com/v2",
+    console: "https://www.assemblyai.com/dashboard/api-keys",
     protocol: ["native"],
-    models: ["universal","slam-1","best","nano"],
-    notes: [{text:"语音转写 + 说话人分离 + 摘要",type:"dim"}]
+    models: [
+      "universal-3-5-pro",
+      "universal-3-pro",
+      "universal-2",
+      "slam-1"
+    ],
+    notes: [{text:"现用 speech_models 数组参数指定模型；另有欧区端点",type:"dim"}]
   },
   {
     name: "Cartesia (语音)",
@@ -1994,14 +2591,24 @@ const platforms = [
     cat: "media",
     icon: "🗣️",
     iconBg: "linear-gradient(135deg,#ff4f00,#ffb199)",
-    keyPrefix: "sk_car_",
-    keyFormat: "sk_car_xxxxxxxx",
-    auth: "X-API-Key: <key> + Cartesia-Version: 2025-04-16",
+    keyPrefix: "sk_car_ / sk_car_admin_",
+    keyFormat: "sk_car_xxxxxxxx（普通 Key，后续长度官方未公开）/ sk_car_admin_xxxxxxxx（管理 Key，仅限管理接口）",
+    auth: "X-API-Key: <key>（或 Authorization: Bearer <key>）+ Cartesia-Version: 2026-08-14",
     baseUrl: "https://api.cartesia.ai",
     console: "https://play.cartesia.ai/keys",
     protocol: ["native"],
-    models: ["sonic-3","sonic-2","ink-whisper"],
-    notes: [{text:"超低延迟 TTS（Sonic），状态空间模型",type:"dim"}]
+    models: [
+      "sonic-3.6",
+      "sonic-3.6-2026-08-27",
+      "sonic-preview",
+      "sonic-3.5",
+      "sonic-3",
+      "sonic-2",
+      "ink-2",
+      "ink-preview",
+      "ink-whisper"
+    ],
+    notes: [{text:"必须带 Cartesia-Version: 2026-08-14 版本头",type:"danger"}]
   },
   {
     name: "Fish Audio (语音)",
@@ -2010,13 +2617,19 @@ const platforms = [
     icon: "🐟",
     iconBg: "linear-gradient(135deg,#0891b2,#67e8f9)",
     keyPrefix: "无固定前缀",
-    keyFormat: "字母数字串（无前缀）",
-    auth: "Authorization: Bearer <key>",
+    keyFormat: "字母数字串（无前缀，长度官方未公开）",
+    auth: "Authorization: Bearer <key> + model: <model_id>（模型通过请求头 model 指定，缺省为 s2.1-pro）",
     baseUrl: "https://api.fish.audio/v1",
-    console: "https://fish.audio/go-api/api-keys",
+    console: "https://fish.audio/app/api-keys",
     protocol: ["native"],
-    models: ["s1","speech-1.6","speech-1.5"],
-    notes: [{text:"中文 TTS / 声音克隆效果好",type:"dim"}]
+    models: [
+      "s2.1-pro",
+      "s2.1-pro-free",
+      "s2-pro",
+      "s1",
+      "drama-3-preview"
+    ],
+    notes: [{text:"模型通过请求头 model 指定；speech-1.5 / 1.6 已于 2026-02 弃用",type:"dim"}]
   },
   {
     name: "Stability AI (图像)",
@@ -2027,14 +2640,23 @@ const platforms = [
     keyPrefix: "sk-",
     keyFormat: "sk-xxxxxxxx",
     auth: "Authorization: Bearer <key>",
-    baseUrl: "https://api.stability.ai/v2beta",
+    baseUrl: "v2beta: https://api.stability.ai/v2beta\n旧版 v1（SDXL 1.0，仍可用）: https://api.stability.ai/v1",
     console: "https://platform.stability.ai/account/keys",
     protocol: ["native"],
     models: [
-      "stable-image-ultra","stable-image-core",
-      "sd3.5-large","sd3.5-medium","stable-video-diffusion"
+      "stable-image/generate/ultra",
+      "stable-image/generate/core",
+      "stable-image/generate/sd3（model=sd3.5-large）",
+      "stable-image/generate/sd3（model=sd3.5-large-turbo）",
+      "stable-image/generate/sd3（model=sd3.5-medium）",
+      "stable-image/generate/sd3（model=sd3.5-flash）",
+      "stable-image/upscale/fast",
+      "stable-image/edit/inpaint",
+      "stable-image/control/structure",
+      "3d/stable-fast-3d",
+      "audio/stable-audio-2/text-to-audio（model=stable-audio-2.5 / stable-audio-2）"
     ],
-    notes: [{text:"Stable Diffusion 官方 API，按积分计费",type:"dim"}]
+    notes: [{text:"v2beta 无统一 model 字段，模型由端点路径决定（sd3 端点用 model 参数选 sd3.5-*）",type:"dim"}]
   },
   {
     name: "Black Forest Labs (FLUX)",
@@ -2042,17 +2664,27 @@ const platforms = [
     cat: "media",
     icon: "🌲",
     iconBg: "linear-gradient(135deg,#1a1a1a,#4a4a4a)",
-    keyPrefix: "无前缀（UUID）",
-    keyFormat: "UUID 形式 xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    keyPrefix: "bfl_（新）/ 无前缀 UUID（旧）",
+    keyFormat: "新版（2025-12 起，按 Project 签发）bfl_ + 32 位随机串，共 36 字符；旧版 Key 为 UUID xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx，仍可用",
     auth: "x-key: <key>",
-    baseUrl: "https://api.bfl.ai/v1",
+    baseUrl: "全球: https://api.bfl.ai/v1\n欧洲: https://api.eu.bfl.ai/v1\n美国: https://api.us.bfl.ai/v1",
     console: "https://dashboard.bfl.ai",
     protocol: ["native"],
     models: [
-      "flux-kontext-pro","flux-kontext-max",
-      "flux-pro-1.1-ultra","flux-pro-1.1","flux-dev"
+      "flux-2-max",
+      "flux-2-pro",
+      "flux-2-flex",
+      "flux-2-klein-9b",
+      "flux-2-klein-4b",
+      "flux-kontext-pro",
+      "flux-kontext-max",
+      "flux-pro-1.1-ultra",
+      "flux-pro-1.1",
+      "flux-dev",
+      "flux-pro-1.0-fill",
+      "flux-3-video"
     ],
-    notes: [{text:"FLUX 官方 API，异步轮询取结果",type:"dim"}]
+    notes: [{text:"2025-12 起新 Key 为 bfl_ 前缀（按 Project 签发），旧 UUID Key 仍可用；异步轮询取结果",type:"dim"}]
   },
   {
     name: "Replicate",
@@ -2061,16 +2693,29 @@ const platforms = [
     icon: "🔁",
     iconBg: "linear-gradient(135deg,#000000,#3b3b3b)",
     keyPrefix: "r8_",
-    keyFormat: "r8_xxxxxxxx（40 字符）",
-    auth: "Authorization: Bearer <token>",
+    keyFormat: "r8_ + 37 位 [A-Za-z0-9_-]，共 40 字符",
+    auth: "Authorization: Bearer <token>（旧写法 Authorization: Token <token> 仍可用）",
     baseUrl: "https://api.replicate.com/v1",
     console: "https://replicate.com/account/api-tokens",
     protocol: ["native"],
     models: [
-      "black-forest-labs/flux-1.1-pro","stability-ai/sdxl",
-      "meta/llama-4-maverick-instruct","openai/whisper","minimax/video-01"
+      "black-forest-labs/flux-2-pro",
+      "black-forest-labs/flux-1.1-pro",
+      "black-forest-labs/flux-kontext-pro",
+      "black-forest-labs/flux-schnell",
+      "google/nano-banana-pro",
+      "openai/gpt-image-1.5",
+      "google/veo-3.1",
+      "kwaivgi/kling-v2.1",
+      "bytedance/seedance-1-pro",
+      "minimax/video-01",
+      "meta/llama-4-maverick-instruct",
+      "anthropic/claude-4.5-sonnet",
+      "openai/gpt-5",
+      "openai/whisper",
+      "stability-ai/sdxl"
     ],
-    notes: [{text:"按秒计费的模型市场，图像/视频/音频/LLM 都有",type:"dim"}]
+    notes: [{text:"官方明确 Token 为 40 字符且以 r8_ 开头；按秒计费的模型市场",type:"dim"}]
   },
   {
     name: "fal.ai",
@@ -2081,12 +2726,25 @@ const platforms = [
     keyPrefix: "<key_id>:<key_secret>",
     keyFormat: "UUID:xxxxxxxx（冒号分隔 id 与 secret）",
     auth: "Authorization: Key <key_id>:<key_secret>",
-    baseUrl: "同步: https://fal.run\n队列: https://queue.fal.run",
+    baseUrl: "同步: https://fal.run\n队列: https://queue.fal.run\n平台管理 API: https://api.fal.ai/v1",
     console: "https://fal.ai/dashboard/keys",
     protocol: ["native"],
     models: [
-      "fal-ai/flux-pro/kontext","fal-ai/flux/dev",
-      "fal-ai/kling-video/v2.1/master","fal-ai/minimax/hailuo-02","fal-ai/wan/v2.2"
+      "fal-ai/flux-pro/kontext",
+      "fal-ai/flux-pro/kontext/max",
+      "fal-ai/flux/dev",
+      "fal-ai/flux/schnell",
+      "fal-ai/flux-2-pro",
+      "fal-ai/flux-2-max",
+      "fal-ai/nano-banana-pro",
+      "fal-ai/kling-video/v2.1/master/text-to-video",
+      "fal-ai/kling-video/v2.6/pro/text-to-video",
+      "fal-ai/minimax/hailuo-02/standard/text-to-video",
+      "fal-ai/wan/v2.2-a14b/text-to-video",
+      "fal-ai/veo3.1",
+      "fal-ai/bytedance/seedream/v4/text-to-image",
+      "fal-ai/gpt-image-1.5",
+      "fal-ai/whisper"
     ],
     notes: [{text:"生成式媒体推理最快的平台之一，模型名带 fal-ai/ 前缀",type:"green"}]
   },
@@ -2097,12 +2755,25 @@ const platforms = [
     icon: "🎥",
     iconBg: "linear-gradient(135deg,#111111,#666666)",
     keyPrefix: "key_",
-    keyFormat: "key_xxxxxxxx",
+    keyFormat: "key_ + 30 位字母数字（官方示例 key_123456789012345678901234567890，共 34 字符）",
     auth: "Authorization: Bearer <key> + X-Runway-Version: 2024-11-06",
     baseUrl: "https://api.dev.runwayml.com/v1",
     console: "https://dev.runwayml.com",
     protocol: ["native"],
-    models: ["gen4_turbo","gen4_aleph","gen4_image","gen3a_turbo"],
+    models: [
+      "gen4.5",
+      "gen4_turbo",
+      "aleph2",
+      "gen4_image",
+      "gen4_image_turbo",
+      "act_two",
+      "veo3.1",
+      "veo3.1_fast",
+      "seedance2",
+      "gemini_omni_flash",
+      "magnific_video_upscaler_creative",
+      "magnific_precision_upscaler_v2"
+    ],
     notes: [{text:"必须带 X-Runway-Version 版本头",type:"danger"}]
   },
   {
@@ -2111,14 +2782,22 @@ const platforms = [
     cat: "media",
     icon: "🌠",
     iconBg: "linear-gradient(135deg,#0f172a,#38bdf8)",
-    keyPrefix: "luma-",
-    keyFormat: "luma-xxxx-xxxx-xxxx",
+    keyPrefix: "luma-api- / luma-",
+    keyFormat: "luma-api-xxxx（新 Agents API，官方仅说明前缀）/ luma-xxxx（旧 Dream Machine API，OpenAPI 标为 JWT bearer，未公布定长）",
     auth: "Authorization: Bearer <key>",
-    baseUrl: "https://api.lumalabs.ai/dream-machine/v1",
-    console: "https://lumalabs.ai/dream-machine/api/keys",
+    baseUrl: "Agents API(新): https://agents.lumalabs.ai/v1\nDream Machine(旧): https://api.lumalabs.ai/dream-machine/v1",
+    console: "https://platform.lumalabs.ai",
     protocol: ["native"],
-    models: ["ray-2","ray-flash-2","ray-1.6","photon-1","photon-flash-1"],
-    notes: [{text:"Dream Machine 视频 + Photon 图像",type:"dim"}]
+    models: [
+      "ray-3.2",
+      "uni-1",
+      "uni-1-max",
+      "ray-2",
+      "ray-flash-2",
+      "photon-1",
+      "photon-flash-1"
+    ],
+    notes: [{text:"新 Agents API（luma-api- Key）与旧 Dream Machine API（luma- Key）并存，控制台已迁至 platform.lumalabs.ai",type:"dim"}]
   },
   {
     name: "Ideogram (图像)",
@@ -2127,13 +2806,20 @@ const platforms = [
     icon: "🔤",
     iconBg: "linear-gradient(135deg,#f97316,#fde047)",
     keyPrefix: "无固定前缀",
-    keyFormat: "字母数字串（无前缀）",
+    keyFormat: "字母数字串（无前缀，创建时仅完整显示一次）",
     auth: "Api-Key: <key>",
-    baseUrl: "https://api.ideogram.ai",
+    baseUrl: "https://api.ideogram.ai（v4: /v1/ideogram-v4/generate，v3: /v1/ideogram-v3/generate，旧版: /generate）",
     console: "https://ideogram.ai/manage-api",
     protocol: ["native"],
-    models: ["V_3","V_2","V_2_TURBO"],
-    notes: [{text:"文字渲染最强的图像模型",type:"dim"}]
+    models: [
+      "ideogram-v4",
+      "ideogram-v3",
+      "V_2",
+      "V_2_TURBO",
+      "V_2A",
+      "V_2A_TURBO"
+    ],
+    notes: [{text:"v3 / v4 端点无 model 字段，模型由路径决定；旧版 /generate 才用 V_2 系列 model 值",type:"dim"}]
   },
   {
     name: "Recraft (图像)",
@@ -2145,9 +2831,20 @@ const platforms = [
     keyFormat: "字母数字串（无前缀）",
     auth: "Authorization: Bearer <key>",
     baseUrl: "https://external.api.recraft.ai/v1",
-    console: "https://www.recraft.ai/profile/api",
+    console: "https://app.recraft.ai/profile/api",
     protocol: ["openai"],
-    models: ["recraftv3","recraftv2","recraft-vector"],
+    models: [
+      "recraftv4_1",
+      "recraftv4_1_pro",
+      "recraftv4_1_vector",
+      "recraftv4_1_utility",
+      "recraftv4",
+      "recraftv4_pro",
+      "recraftv4_styles",
+      "recraftv3",
+      "recraftv3_vector",
+      "recraftv2"
+    ],
     notes: [{text:"OpenAI images 格式兼容，支持矢量 SVG 输出",type:"dim"}]
   },
   {
@@ -2156,14 +2853,24 @@ const platforms = [
     cat: "media",
     icon: "🎞️",
     iconBg: "linear-gradient(135deg,#ff4906,#ff8f3f)",
-    keyPrefix: "无（AK/SK → JWT）",
-    keyFormat: "AccessKey + SecretKey → 自签 JWT（HS256，iss=AK，exp 30 分钟）",
-    auth: "Authorization: Bearer <JWT>",
-    baseUrl: "国内: https://api-beijing.klingai.com\n国际: https://api-singapore.klingai.com",
+    keyPrefix: "无（新版 API Key / 旧版 AK+SK → JWT）",
+    keyFormat: "新版：控制台生成 API Key，直接作 Bearer（长度未公开）；旧版：AccessKey + SecretKey 自签 JWT（HS256，header {alg:HS256,typ:JWT}，iss=AK，exp=now+1800s，nbf=now-5s，官方上限 30 分钟）",
+    auth: "Authorization: Bearer <API Key 或 JWT>",
+    baseUrl: "国际: https://api-singapore.klingai.com\n国内: https://api-beijing.klingai.com",
     console: "https://app.klingai.com/cn/dev/",
     protocol: ["native"],
-    models: ["kling-v2-1-master","kling-v2-1","kling-v2-master","kling-v1-6","kling-image-v2"],
-    notes: [{text:"视频生成头部；每次请求需用 SK 现签 JWT",type:"dim"}]
+    models: [
+      "kling-v3",
+      "kling-v2-6",
+      "kling-v2-5-turbo",
+      "kling-v2-1-master",
+      "kling-v2-1",
+      "kling-v2-master",
+      "kling-v1-6",
+      "kling-v2-new",
+      "kling-v2"
+    ],
+    notes: [{text:"官方现以控制台 API Key 直接 Bearer 为标准方式，AK/SK 自签 JWT 为旧方式",type:"dim"}]
   },
   {
     name: "生数 Vidu (视频)",
@@ -2171,14 +2878,25 @@ const platforms = [
     cat: "media",
     icon: "🎦",
     iconBg: "linear-gradient(135deg,#6d28d9,#c4b5fd)",
-    keyPrefix: "无固定前缀",
-    keyFormat: "字母数字串（无前缀）",
-    auth: "Authorization: Token <key>",
-    baseUrl: "https://api.vidu.cn/ent/v2",
+    keyPrefix: "vda_",
+    keyFormat: "vda_ + 字母数字串（后段长度未公开）",
+    auth: "Authorization: Token <key>（注意是 Token 不是 Bearer）",
+    baseUrl: "国内: https://api.vidu.cn/ent/v2\n国际: https://api.vidu.com/ent/v2",
     console: "https://platform.vidu.cn",
     protocol: ["native"],
-    models: ["viduq1","vidu2.0","vidu1.5"],
-    notes: [{text:"清华系视频模型，参考生视频（多主体一致）见长",type:"dim"}]
+    models: [
+      "viduq3-pro",
+      "viduq3-turbo",
+      "viduq3-pro-fast",
+      "viduq2-pro",
+      "viduq2-turbo",
+      "viduq2-pro-fast",
+      "viduq2",
+      "viduq1",
+      "viduq1-classic",
+      "vidu2.0"
+    ],
+    notes: [{text:"鉴权头为 Authorization: Token <key>，不是 Bearer",type:"danger"}]
   },
   {
     name: "字节即梦 (Jimeng)",
@@ -2187,12 +2905,21 @@ const platforms = [
     icon: "💭",
     iconBg: "linear-gradient(135deg,#1e40af,#60a5fa)",
     keyPrefix: "无（火山 AK/SK 签名）",
-    keyFormat: "火山引擎 AccessKey + SecretKey，HMAC-SHA256 请求签名",
+    keyFormat: "火山引擎 AccessKey + SecretKey，HMAC-SHA256 V4 请求签名（Authorization / X-Date / X-Content-Sha256 头，Region=cn-north-1，Service=cv）",
     auth: "Volc SigV4 签名（SDK 自动处理）",
-    baseUrl: "https://visual.volcengineapi.com（Action=CVSync2AsyncSubmitTask）",
+    baseUrl: "https://visual.volcengineapi.com（Action=CVSync2AsyncSubmitTask 提交 / CVSync2AsyncGetResult 查询，Version=2022-08-31）",
     console: "https://console.volcengine.com/iam/keymanage",
     protocol: ["native"],
-    models: ["jimeng_t2i_v31","jimeng_t2v_v30","jimeng_i2v_v30"],
+    models: [
+      "jimeng_seedream46_cvtob",
+      "jimeng_t2i_v40",
+      "jimeng_t2i_v31",
+      "jimeng_ti2v_v30_pro",
+      "jimeng_t2v_v30",
+      "jimeng_t2v_v30_1080p",
+      "jimeng_i2v_first_v30",
+      "jimeng_i2v_first_tail_v30_1080p"
+    ],
     notes: [{text:"req_key 以控制台「视觉智能」列表为准；也可走火山方舟 doubao-seedream 用 API Key",type:"dim"}]
   },
   {
@@ -2202,12 +2929,21 @@ const platforms = [
     icon: "🎬",
     iconBg: "linear-gradient(135deg,#0f766e,#5eead4)",
     keyPrefix: "无固定前缀",
-    keyFormat: "字母数字串（无前缀）",
-    auth: "API-KEY: <key> + Ai-trace-id: <uuid>",
+    keyFormat: "字母数字串（无前缀，创建后仅显示一次）",
+    auth: "API-KEY: <key> + Ai-trace-id: <uuid>（每次请求换新 UUID，重复会返回上次结果）",
     baseUrl: "https://app-api.pixverse.ai/openapi/v2",
     console: "https://platform.pixverse.ai",
     protocol: ["native"],
-    models: ["v4.5","v4","v3.5"],
+    models: [
+      "v6",
+      "v5.6",
+      "v5.5",
+      "v5",
+      "v4.5",
+      "v4",
+      "v3.5",
+      "c1"
+    ],
     notes: [{text:"每次请求需带唯一 Ai-trace-id",type:"dim"}]
   },
 
@@ -2221,15 +2957,27 @@ const platforms = [
     icon: "🦙",
     iconBg: "linear-gradient(135deg,#ff9d00,#ff6d00)",
     keyPrefix: "无",
-    keyFormat: "无需 Key（可用任意占位如 ollama）",
-    auth: "无（可选反代加 Bearer）",
-    baseUrl: "OpenAI兼容: http://localhost:11434/v1\n原生: http://localhost:11434/api",
-    console: "https://ollama.com/download",
-    protocol: ["openai", "native"],
+    keyFormat: "本地无需 Key（OpenAI SDK 的 api_key 必填但被忽略，填任意占位如 ollama）；ollama.com 云端 Key 在 Settings → Keys 创建，环境变量 OLLAMA_API_KEY（格式未公开）",
+    auth: "本地无；云端 Authorization: Bearer $OLLAMA_API_KEY",
+    baseUrl: "OpenAI兼容: http://localhost:11434/v1\n原生: http://localhost:11434/api\n云端原生: https://ollama.com/api",
+    console: "https://ollama.com/settings/keys",
+    protocol: ["openai","native"],
     models: [
-      "llama3.3:70b","llama3.1:8b","llama4:scout",
-      "qwen3:32b","qwen2.5:7b","deepseek-r1:14b",
-      "glm-4:9b","mistral:7b","phi4:14b","gpt-oss:20b"
+      "gpt-oss:20b",
+      "gpt-oss:120b",
+      "qwen3:8b",
+      "qwen3:32b",
+      "qwen3.5:27b",
+      "qwen3-coder:30b",
+      "qwen3-vl:8b",
+      "gemma4:26b",
+      "llama3.3:70b",
+      "llama3.1:8b",
+      "llama4:scout",
+      "deepseek-r1:14b",
+      "phi4:14b",
+      "glm4:9b",
+      "nomic-embed-text"
     ],
     notes: [{text:"本地运行，完全免费，支持 100+ 开源模型",type:"green"}]
   },
@@ -2240,12 +2988,14 @@ const platforms = [
     icon: "⚙️",
     iconBg: "linear-gradient(135deg,#7c3aed,#a78bfa)",
     keyPrefix: "自定义",
-    keyFormat: "可自定义（--api-key 参数）或无需 Key",
+    keyFormat: "可自定义（启动参数 --api-key <key>，或环境变量 VLLM_API_KEY），默认无需 Key；注意只保护 /v1、/v2、/inference 前缀的端点",
     auth: "Authorization: Bearer <自定义 key>",
     baseUrl: "http://localhost:8000/v1",
-    console: "https://docs.vllm.ai",
+    console: "https://docs.vllm.ai/en/latest/serving/online_serving/",
     protocol: ["openai"],
-    models: ["任意 HuggingFace 模型（vllm serve <model> 启动）"],
+    models: [
+      "任意 HuggingFace 模型（vllm serve <model> 启动，model 字段填启动时的模型名）"
+    ],
     notes: [{text:"高性能推理引擎，适合自部署生产环境",type:"dim"}]
   },
   {
@@ -2255,12 +3005,14 @@ const platforms = [
     icon: "🔥",
     iconBg: "linear-gradient(135deg,#dc2626,#f97316)",
     keyPrefix: "自定义",
-    keyFormat: "可自定义（--api-key 参数）或无需 Key",
+    keyFormat: "可自定义（启动参数 --api-key <key>）或无需 Key（客户端填 EMPTY 占位）",
     auth: "Authorization: Bearer <自定义 key>",
-    baseUrl: "http://localhost:30000/v1",
-    console: "https://docs.sglang.ai",
-    protocol: ["openai"],
-    models: ["任意 HuggingFace 模型（python -m sglang.launch_server 启动）"],
+    baseUrl: "OpenAI兼容: http://localhost:30000/v1\n原生: http://localhost:30000/generate",
+    console: "https://docs.sglang.io",
+    protocol: ["openai","native"],
+    models: [
+      "任意 HuggingFace 模型（python -m sglang.launch_server --model-path <model> 启动）"
+    ],
     notes: [{text:"RadixAttention 前缀缓存，DeepSeek 官方推荐推理框架",type:"dim"}]
   },
   {
@@ -2270,13 +3022,17 @@ const platforms = [
     icon: "💻",
     iconBg: "linear-gradient(135deg,#10b981,#34d399)",
     keyPrefix: "无",
-    keyFormat: "无需 Key（可用 lm-studio 占位）",
-    auth: "无",
-    baseUrl: "OpenAI兼容: http://localhost:1234/v1\n原生: http://localhost:1234/api/v0",
-    console: "https://lmstudio.ai",
-    protocol: ["openai"],
-    models: ["任意 GGUF / MLX 模型（通过 UI 加载）"],
-    notes: [{text:"图形界面管理本地模型，新手友好",type:"green"}]
+    keyFormat: "默认不鉴权（api_key 任意占位）；Developer → Server Settings 打开 Require Authentication 后，在 Manage Tokens → Create Token 生成 API Token（仅显示一次，格式未公开）",
+    auth: "Authorization: Bearer <token>（也接受 x-api-key: <token>；未开启鉴权时可省略）",
+    baseUrl: "OpenAI兼容: http://localhost:1234/v1\nAnthropic兼容: http://localhost:1234（/v1/messages）\n原生: http://localhost:1234/api/v1（0.4.0+ 正式版；旧版 /api/v0 仍保留）",
+    console: "https://lmstudio.ai/docs/developer/core/authentication",
+    protocol: ["openai","anthropic","native"],
+    models: [
+      "openai/gpt-oss-20b",
+      "ibm/granite-4-micro",
+      "任意 GGUF / MLX 模型（{发布者}/{模型名} 形式，通过 UI 下载加载）"
+    ],
+    notes: [{text:"图形界面管理本地模型，新手友好；0.4 起原生 API 为 /api/v1，并支持 Anthropic 兼容 /v1/messages",type:"green"}]
   },
   {
     name: "llama.cpp Server",
@@ -2285,12 +3041,14 @@ const platforms = [
     icon: "🧩",
     iconBg: "linear-gradient(135deg,#64748b,#94a3b8)",
     keyPrefix: "无",
-    keyFormat: "无需 Key（--api-key 可选）",
+    keyFormat: "无需 Key（可选 --api-key <key>，多个用逗号分隔；或 --api-key-file、环境变量 LLAMA_API_KEY）",
     auth: "Authorization: Bearer <自定义 key>（可选）",
-    baseUrl: "http://localhost:8080/v1",
-    console: "https://github.com/ggml-org/llama.cpp",
-    protocol: ["openai"],
-    models: ["任意 GGUF 模型（llama-server -m model.gguf 启动）"],
+    baseUrl: "OpenAI兼容: http://localhost:8080/v1\nAnthropic兼容: http://localhost:8080（/v1/messages）\n原生: http://localhost:8080/completion",
+    console: "https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md",
+    protocol: ["openai","anthropic","native"],
+    models: [
+      "任意 GGUF 模型（llama-server -m model.gguf 启动）"
+    ],
     notes: [{text:"纯 C/C++ 推理，无 GPU 也能跑，Ollama / LM Studio 的底层引擎",type:"dim"}]
   },
   {
@@ -2300,12 +3058,15 @@ const platforms = [
     icon: "🏠",
     iconBg: "linear-gradient(135deg,#0891b2,#22d3ee)",
     keyPrefix: "自定义",
-    keyFormat: "可自定义（API_KEY 环境变量）或无需 Key",
+    keyFormat: "可自定义（环境变量 LOCALAI_API_KEY 或 API_KEY，或启动参数 --api-keys，可多个）或无需 Key；简单 Key 模式为全管理员权限，另有 --auth-enabled 用户体系",
     auth: "Authorization: Bearer <自定义 key>",
-    baseUrl: "http://localhost:8080/v1",
-    console: "https://localai.io",
-    protocol: ["openai"],
-    models: ["LLM / 图像 / 语音 / Embedding 全套本地替代"],
+    baseUrl: "OpenAI兼容: http://localhost:8080/v1\nAnthropic兼容: http://localhost:8080（/v1/messages，3.10+）",
+    console: "https://localai.io/docs/reference/cli-reference/",
+    protocol: ["openai","anthropic"],
+    models: [
+      "qwen3-4b",
+      "LLM / 图像 / 语音 / Embedding 全套本地替代（model 字段填已安装的 gallery 模型名）"
+    ],
     notes: [{text:"OpenAI 全功能本地替代（含 TTS / 图像生成）",type:"dim"}]
   },
   {
@@ -2315,13 +3076,18 @@ const platforms = [
     icon: "🧮",
     iconBg: "linear-gradient(135deg,#7e22ce,#d8b4fe)",
     keyPrefix: "自定义",
-    keyFormat: "可自定义（--auth-config）或无需 Key",
-    auth: "Authorization: Bearer <自定义 key>",
-    baseUrl: "http://localhost:9997/v1",
-    console: "https://inference.readthedocs.io",
-    protocol: ["openai"],
-    models: ["LLM / Embedding / Rerank / 多模态（xinference launch）"],
-    notes: [{text:"国内团队开源，Dify / RAGFlow 常用后端",type:"dim"}]
+    keyFormat: "v3.0+ 默认启用数据库鉴权（XINFERENCE_AUTH_ADVANCED=0 可关闭）：首次启动 POST /v1/admin/setup 创建管理员，再 POST /v1/admin/keys 创建 API Key（格式未公开）；旧版 --auth-config JSON 方式已移除；关闭鉴权时 api_key 任意占位",
+    auth: "Authorization: Bearer <api key>（CLI 用 --api-key）",
+    baseUrl: "OpenAI兼容: http://localhost:9997/v1\nAnthropic兼容: http://localhost:9997/anthropic",
+    console: "https://inference.readthedocs.io/en/latest/user_guide/auth_system.html",
+    protocol: ["openai","anthropic"],
+    models: [
+      "qwen2.5-instruct",
+      "bge-small-en-v1.5",
+      "whisper-large-v3",
+      "LLM / Embedding / Rerank / 多模态（xinference launch 启动，model 字段填内置模型名）"
+    ],
+    notes: [{text:"v3.0 起默认开启数据库鉴权，Key 通过 /v1/admin/keys 创建；Dify / RAGFlow 常用后端",type:"dim"}]
   },
   {
     name: "Open WebUI",
@@ -2330,12 +3096,14 @@ const platforms = [
     icon: "🖥️",
     iconBg: "linear-gradient(135deg,#0f172a,#475569)",
     keyPrefix: "sk-",
-    keyFormat: "sk-xxxxxxxx（设置 → 账号 → API Key 生成）",
-    auth: "Authorization: Bearer <key>",
-    baseUrl: "http://localhost:3000/api（注意是 /api 不是 /v1）",
+    keyFormat: "sk- + 32 位小写十六进制，共 35 字符（管理员先在 Admin Settings 开启 API Keys，再到 Settings → Account → Secrets 生成）；也接受登录 JWT",
+    auth: "Authorization: Bearer <key>（反代占用该头时可用 x-api-key，头名由 CUSTOM_API_KEY_HEADER 配置）",
+    baseUrl: "OpenAI兼容: http://localhost:3000/api（/api/chat/completions、/api/models；注意是 /api 不是 /v1，/api/v1/chat/completions 亦可）\nAnthropic兼容: http://localhost:3000/api/v1（/messages）\nOllama透传: http://localhost:3000/ollama/api",
     console: "http://localhost:3000/settings/account",
-    protocol: ["openai"],
-    models: ["透传已接入的 Ollama / OpenAI 兼容后端"],
+    protocol: ["openai","anthropic"],
+    models: [
+      "透传已接入的 Ollama / OpenAI 兼容后端（GET /api/models 查看）"
+    ],
     notes: [{text:"聊天前端兼做 API 网关，路径为 /api/chat/completions",type:"danger"}]
   },
   {
@@ -2345,12 +3113,14 @@ const platforms = [
     icon: "👋",
     iconBg: "linear-gradient(135deg,#1e293b,#64748b)",
     keyPrefix: "自定义",
-    keyFormat: "可自定义或无需 Key",
+    keyFormat: "可自定义（Settings → Local API Server 中填任意字符串作为 API Key）或留空无需 Key；无默认 Key",
     auth: "Authorization: Bearer <自定义 key>",
     baseUrl: "http://localhost:1337/v1",
-    console: "https://jan.ai",
+    console: "https://www.jan.ai/docs/desktop/api-server",
     protocol: ["openai"],
-    models: ["任意 GGUF 模型（Jan Hub 下载）"],
+    models: [
+      "任意 GGUF 模型（Jan Hub 下载，model 字段填模型 ID）"
+    ],
     notes: [{text:"开源 ChatGPT 桌面替代，内置本地 API Server",type:"dim"}]
   },
   {
@@ -2360,12 +3130,14 @@ const platforms = [
     icon: "📟",
     iconBg: "linear-gradient(135deg,#374151,#9ca3af)",
     keyPrefix: "自定义",
-    keyFormat: "可自定义（--api-key）或无需 Key",
+    keyFormat: "可自定义（--api-key <key>；模型加载等管理操作另有 --admin-key）或无需 Key",
     auth: "Authorization: Bearer <自定义 key>",
-    baseUrl: "http://localhost:5000/v1",
-    console: "https://github.com/oobabooga/text-generation-webui",
-    protocol: ["openai"],
-    models: ["GGUF / GPTQ / EXL2 / Transformers 多后端"],
+    baseUrl: "OpenAI兼容: http://localhost:5000/v1\nAnthropic兼容: http://localhost:5000（/v1/messages）",
+    console: "https://github.com/oobabooga/text-generation-webui/wiki/12-%E2%80%90-OpenAI-API",
+    protocol: ["openai","anthropic"],
+    models: [
+      "GGUF / GPTQ / EXL2 / Transformers 多后端（需 --api 启动，Web UI 端口 7860，API 端口 5000 可用 --api-port 改）"
+    ],
     notes: [{text:"启动加 --api 参数开启 OpenAI 兼容接口",type:"dim"}]
   },
   {
@@ -2375,12 +3147,14 @@ const platforms = [
     icon: "🎲",
     iconBg: "linear-gradient(135deg,#b45309,#fbbf24)",
     keyPrefix: "无",
-    keyFormat: "无需 Key（--password 可选）",
+    keyFormat: "无需 Key（--password <key> 可选，设置后所有生成端点需带 Key）",
     auth: "Authorization: Bearer <password>（可选）",
-    baseUrl: "http://localhost:5001/v1",
-    console: "https://github.com/LostRuins/koboldcpp",
-    protocol: ["openai"],
-    models: ["任意 GGUF 模型（单文件 exe 启动）"],
+    baseUrl: "OpenAI兼容: http://localhost:5001/v1\n原生: http://localhost:5001/api（/api/v1/generate、/api/extra/*）",
+    console: "https://github.com/LostRuins/koboldcpp/wiki",
+    protocol: ["openai","native"],
+    models: [
+      "任意 GGUF 模型（单文件 exe 启动）"
+    ],
     notes: [{text:"单文件免安装，角色扮演社区常用",type:"dim"}]
   },
   {
@@ -2390,12 +3164,16 @@ const platforms = [
     icon: "🍎",
     iconBg: "linear-gradient(135deg,#1f2937,#6b7280)",
     keyPrefix: "无",
-    keyFormat: "无需 Key",
+    keyFormat: "无需 Key（mlx_lm.server 无鉴权参数，官方称仅基本安全检查、不建议生产使用）",
     auth: "无",
     baseUrl: "http://localhost:8080/v1",
-    console: "https://github.com/ml-explore/mlx-lm",
+    console: "https://github.com/ml-explore/mlx-lm/blob/main/mlx_lm/SERVER.md",
     protocol: ["openai"],
-    models: ["mlx-community/* 模型（mlx_lm.server --model 启动）"],
+    models: [
+      "mlx-community/Llama-3.2-3B-Instruct-4bit",
+      "mlx-community/Mistral-7B-Instruct-v0.3-4bit",
+      "mlx-community/* 模型（mlx_lm.server --model 启动，请求 model 字段可填本地路径或 HF repo id）"
+    ],
     notes: [{text:"Mac M 系列芯片原生加速",type:"dim"}]
   }
 ];
