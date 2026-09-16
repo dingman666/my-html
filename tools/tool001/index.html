@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>文本处理工具 · 合并去重 / 分割 / 清洗 / 随机密码 / 谷歌邮箱</title>
+<title>文本处理工具 · 合并去重 / 分割 / 清洗 / 随机密码 / 谷歌邮箱 / 2FA</title>
 <style>
   :root{
     --bg:#f5f5f7;--bg-grad-1:#f5f5f7;--bg-grad-2:#ebebef;
@@ -247,6 +247,43 @@
   .toggle-sm .sw::after{width:16px;height:16px}
   .toggle-sm input:checked + .sw::after{transform:translateX(12px)}
 
+  /* ===== 2FA 验证码 ===== */
+  .tf-heroWrap{display:flex;gap:26px;align-items:center;flex-wrap:wrap}
+  .tf-ringBox{position:relative;width:128px;height:128px;flex:none}
+  .tf-ringSvg{width:128px;height:128px;transform:rotate(-90deg)}
+  .tf-ringSvg .track{fill:none;stroke:var(--chip);stroke-width:9}
+  .tf-ringSvg .prog{fill:none;stroke:var(--accent);stroke-width:9;stroke-linecap:round;stroke-dasharray:339.292;stroke-dashoffset:0;transition:stroke-dashoffset .25s linear,stroke .3s}
+  .tf-ringText{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .tf-heroMain{flex:1;min-width:260px}
+  .tf-heroLabel{font-size:15px;display:flex;align-items:center;flex-wrap:wrap;gap:4px}
+  .tf-heroLabel b{font-weight:600}
+  .tf-heroCode{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:clamp(40px,7vw,64px);font-weight:700;letter-spacing:.08em;line-height:1.15;margin:6px 0 4px;cursor:pointer;color:var(--accent);user-select:all;transition:color .3s}
+  .tf-heroCode.expiring{color:var(--red)}
+  .tf-heroSub{display:flex;gap:22px;font-size:13px;color:var(--text-2);font-variant-numeric:tabular-nums}
+  .tf-heroSub b{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-weight:600;color:var(--text)}
+  .tf-uri{margin-top:10px;font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:var(--text-3)}
+  .tf-rows{display:flex;flex-direction:column;gap:6px;max-height:640px;overflow:auto;overscroll-behavior:contain}
+  .tf-row{display:grid;grid-template-columns:44px minmax(140px,1.4fr) minmax(120px,1fr) 118px 92px 110px auto;align-items:center;gap:10px;background:var(--chip);border-radius:var(--radius-sm);padding:8px 10px 8px 12px;font-size:13px;cursor:pointer;border:1px solid transparent;transition:.15s}
+  .tf-row:hover{background:var(--line)}
+  .tf-row.sel{border-color:var(--accent);background:var(--accent-soft)}
+  .tf-row.bad{grid-template-columns:44px minmax(140px,1.4fr) minmax(120px,1fr) 1fr;cursor:default;background:rgba(255,59,48,.07)}
+  .tf-row .ix{color:var(--text-3);font-variant-numeric:tabular-nums;text-align:right}
+  .tf-row .lab{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tf-row .lab .badge{font-size:10px;padding:1px 6px}
+  .tf-row .key{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+  .tf-row .code{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:19px;font-weight:700;letter-spacing:.06em;color:var(--accent);white-space:nowrap}
+  .tf-row .left{display:flex;align-items:center;gap:8px;font-variant-numeric:tabular-nums;color:var(--text-2);font-size:12px}
+  .tf-row .left .bar{flex:1;height:5px;border-radius:999px;background:var(--line);overflow:hidden;display:block}
+  .tf-row .left .bar b{display:block;height:100%;background:var(--green);border-radius:999px;transition:width .25s linear}
+  .tf-row .left em{font-style:normal;width:28px;text-align:right}
+  .tf-row .nxt{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:var(--text-3);white-space:nowrap}
+  .tf-row .err{color:var(--red);font-size:12px}
+  .tf-vault{display:flex;flex-direction:column;gap:6px;max-height:360px;overflow:auto}
+  .tf-vrow{display:grid;grid-template-columns:minmax(140px,1.4fr) minmax(120px,1fr) auto auto;align-items:center;gap:10px;background:var(--chip);border-radius:var(--radius-sm);padding:8px 10px 8px 14px;font-size:13px}
+  .tf-vrow .lab{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tf-vrow .key{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;color:var(--text-3);font-size:12px}
+  @media(max-width:760px){ .tf-row{grid-template-columns:34px 1fr 100px auto;grid-auto-rows:auto} .tf-row .key,.tf-row .nxt{display:none} .tf-row .left{grid-column:2/4} }
+
   /* ===== 左侧边栏导航 ===== */
   :root{--side:rgba(255,255,255,.58)}
   @media (prefers-color-scheme:dark){ :root{--side:rgba(28,28,30,.72)} }
@@ -297,6 +334,7 @@
       <div class="side-group">账号工具</div>
       <button class="maintab" data-page="pw" data-sub="随机字符 / 密码短语 / PIN / 模板组合，加密级随机源" style="--ic:#ff375f"><span class="ic">🔐</span>随机密码</button>
       <button class="maintab" data-page="gm" data-sub="把账号信息整理成表格，一键粘进 Excel / WPS" style="--ic:#ffb340"><span class="ic">📬</span>谷歌邮箱专用</button>
+      <button class="maintab" data-page="tf" data-sub="粘贴密钥即出验证码，批量、倒计时、纯本地" style="--ic:#32ade6"><span class="ic">🛡️</span>2FA 验证码</button>
     </nav>
     <div class="side-foot">界面仅预览前 5000 行<br>大文件请开「写入文件夹」</div>
   </aside>
@@ -948,6 +986,77 @@
         <div class="pane-head"><span class="desc">⚠️ 异常行（没有识别到邮箱，或含未识别字段）<span class="cnt" id="gm-c-bad">0</span></span><div class="tools"><button class="btn btn-ghost btn-sm" id="gm-copyBad">复制</button><button class="btn btn-primary btn-sm" id="gm-dlBad">下载</button></div></div>
         <textarea id="gm-ta-bad" readonly spellcheck="false" style="min-height:160px"></textarea>
       </div>
+    </div>
+  </section>
+
+  <!-- ================= 2FA 验证码 ================= -->
+  <section class="page" id="page-tf">
+    <div class="card">
+      <h2>① 粘贴密钥 <span class="badge on">纯本地计算 · 不联网 · 不保存</span></h2>
+      <textarea id="tf-input" class="paste" spellcheck="false" autocomplete="off" placeholder="支持任意混合，每行一个：&#10;vtrz osbd gvir mwxp&#10;JBSWY3DPEHPK3PXP&#10;mokrigen@gmail.com	Mameen@432	qewasyuh@gmail.com	vtrz osbd gvir mwxp	84216386	…（整行账号信息也行，会自动找到密钥）&#10;工作邮箱: JBSW Y3DP EHPK 3PXP&#10;otpauth://totp/Google:me@gmail.com?secret=JBSWY3DPEHPK3PXP&amp;issuer=Google"></textarea>
+      <div class="hint" id="tf-inputHint">尚未输入</div>
+      <div class="toggles" style="margin-top:12px">
+        <label class="toggle"><input type="checkbox" id="tf-showKey"><span class="sw"></span>显示完整密钥</label>
+        <button class="btn btn-ghost btn-sm" id="tf-clear" type="button">清空输入</button>
+      </div>
+    </div>
+
+    <div class="card" id="tf-hero" style="display:none">
+      <div class="tf-heroWrap">
+        <div class="tf-ringBox">
+          <svg viewBox="0 0 120 120" class="tf-ringSvg"><circle cx="60" cy="60" r="54" class="track"/><circle cx="60" cy="60" r="54" class="prog" id="tf-ring"/></svg>
+          <div class="tf-ringText" id="tf-ringText">30</div>
+        </div>
+        <div class="tf-heroMain">
+          <div class="tf-heroLabel"><b id="tf-heroLabel">—</b><span class="hint" style="margin:0 0 0 10px" id="tf-heroMeta"></span></div>
+          <div class="tf-heroCode" id="tf-heroCode" title="点击复制">------</div>
+          <div class="tf-heroSub"><span>下一个 <b id="tf-heroNext">—</b></span><span>上一个 <b id="tf-heroPrev">—</b></span></div>
+          <div class="pw-hero-tools" style="margin-top:12px">
+            <button class="btn btn-primary" id="tf-heroCopy" type="button">复制验证码</button>
+            <button class="btn btn-ghost" id="tf-hotpNext" type="button" style="display:none">计数器 +1</button>
+            <button class="btn btn-ghost btn-sm" id="tf-copyUri" type="button">复制 otpauth 链接</button>
+            <span class="spacer"></span><span class="hint" style="margin:0">快捷键 <b>C</b> 复制当前验证码</span>
+          </div>
+          <input type="text" id="tf-uri" readonly class="tf-uri" spellcheck="false" title="可粘贴到支持导入链接的验证器 App">
+        </div>
+      </div>
+    </div>
+
+    <div class="result" id="tf-result" style="display:none">
+      <div class="stats" id="tf-stats"></div>
+      <div class="card">
+        <div class="pane-head"><span class="desc">全部验证码 · 点击行切换上方大号显示，点验证码即复制</span>
+          <div class="tools"><select id="tf-copyFmt" style="width:auto"><option value="code">仅验证码</option><option value="label" selected>标识 + 验证码</option><option value="secret">密钥 + 验证码</option><option value="raw">原行 + 验证码</option></select><button class="btn btn-primary btn-sm" id="tf-copyAll" type="button">复制全部验证码</button></div>
+        </div>
+        <div class="tf-rows" id="tf-rows"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>② 参数（一般不用改）</h2>
+      <div class="grid">
+        <div class="field"><label>验证码位数</label><select id="tf-digits"><option value="6" selected>6 位（绝大多数）</option><option value="7">7 位</option><option value="8">8 位</option></select></div>
+        <div class="field"><label>刷新周期（秒）</label><input type="number" id="tf-period" value="30" min="5" max="600"><div class="hint">几乎都是 30；个别为 60</div></div>
+        <div class="field"><label>哈希算法</label><select id="tf-algo"><option value="SHA1" selected>SHA-1（标准）</option><option value="SHA256">SHA-256</option><option value="SHA512">SHA-512</option></select></div>
+        <div class="field"><label>密钥格式</label><select id="tf-fmt"><option value="auto" selected>自动识别</option><option value="base32">Base32</option><option value="hex">十六进制</option></select></div>
+        <div class="field"><label>时间偏移（秒）</label><div class="pw-inline"><input type="number" id="tf-offset" value="0" step="1" style="flex:1"><button class="btn btn-ghost btn-sm" id="tf-offsetReset" type="button">归零</button></div><div class="hint">验证码总是不对时，多半是电脑时间不准：先校准系统时间；临时可在这里加减几秒。当前 <b id="tf-localTime">—</b></div></div>
+      </div>
+      <div class="hint" style="margin-top:12px;line-height:1.7">otpauth 链接里自带的位数 / 周期 / 算法会优先于这里的设置。验证码由 RFC 6238 / 4226 标准算法在本机算出，与 Google Authenticator、Authy、微软验证器结果一致。</div>
+    </div>
+
+    <div class="card">
+      <h2>③ 本地保管库 <span class="badge" id="tf-vaultBadge">已存 <b id="tf-vaultN">0</b> 个</span><span class="badge" style="background:var(--orange);color:#fff">可选 · 明文存在本浏览器</span></h2>
+      <div class="pw-inline" style="margin-bottom:12px">
+        <input type="text" id="tf-vaultSearch" placeholder="搜索标识或密钥…" style="flex:1;min-width:200px">
+        <button class="btn btn-primary btn-sm" id="tf-saveAll" type="button">保存上方识别出的密钥</button>
+        <button class="btn btn-ghost btn-sm" id="tf-loadAllVault" type="button">全部载入显示</button>
+        <button class="btn btn-ghost btn-sm" id="tf-exportVault" type="button">导出备份</button>
+        <button class="btn btn-ghost btn-sm" id="tf-importVault" type="button">导入备份</button>
+        <button class="btn btn-ghost btn-sm" id="tf-clearVault" type="button">清空</button>
+        <input type="file" id="tf-importFile" accept=".json,application/json" style="display:none">
+      </div>
+      <div class="tf-vault" id="tf-vaultList"></div>
+      <div class="hint" style="margin-top:12px;line-height:1.7">保管库只存在这台电脑的这个浏览器里（localStorage），不会上传；但它是明文，凡能打开此浏览器的人都能看到。共用电脑请不要保存，用完点「清空」。</div>
     </div>
   </section>
 
@@ -2005,6 +2114,167 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
   $("#gm-dlBad").onclick=()=>{ if(!bad.length){toast("没有异常行");return;} download(new Blob([bad.join("\n")+"\n"],{type:"text/plain;charset=utf-8"}),"异常行.txt"); };
   window.__gmTest={parseLine,table,toDelimited,toHTML,toXLSX,setRows:r=>{rows=r;},cfg};
   updateRun();
+})();
+
+/* ===================== 模块九：2FA 验证码（TOTP / HOTP，纯本地计算） ===================== */
+(function(){
+  /* ---- 纯 JS 哈希：SHA-1 / SHA-256 / SHA-512，供 HMAC 使用（不依赖 crypto.subtle，file:// 下也稳定） ---- */
+  function sha1(msg){ const ml=msg.length, w=new Uint32Array(80); let h0=0x67452301,h1=0xEFCDAB89,h2=0x98BADCFE,h3=0x10325476,h4=0xC3D2E1F0;
+    const total=((ml+9+63)>>6)<<6, buf=new Uint8Array(total); buf.set(msg); buf[ml]=0x80; const bits=ml*8; buf[total-4]=(bits>>>24)&255; buf[total-3]=(bits>>>16)&255; buf[total-2]=(bits>>>8)&255; buf[total-1]=bits&255;
+    for(let off=0;off<total;off+=64){ for(let i=0;i<16;i++)w[i]=(buf[off+i*4]<<24)|(buf[off+i*4+1]<<16)|(buf[off+i*4+2]<<8)|buf[off+i*4+3]; for(let i=16;i<80;i++){const x=w[i-3]^w[i-8]^w[i-14]^w[i-16]; w[i]=(x<<1)|(x>>>31);}
+      let a=h0,b=h1,c=h2,d=h3,e=h4; for(let i=0;i<80;i++){ let f,k; if(i<20){f=(b&c)|(~b&d);k=0x5A827999;} else if(i<40){f=b^c^d;k=0x6ED9EBA1;} else if(i<60){f=(b&c)|(b&d)|(c&d);k=0x8F1BBCDC;} else {f=b^c^d;k=0xCA62C1D6;} const t=(((a<<5)|(a>>>27))+f+e+k+w[i])|0; e=d; d=c; c=(b<<30)|(b>>>2); b=a; a=t; }
+      h0=(h0+a)|0;h1=(h1+b)|0;h2=(h2+c)|0;h3=(h3+d)|0;h4=(h4+e)|0; }
+    const out=new Uint8Array(20); [h0,h1,h2,h3,h4].forEach((h,i)=>{out[i*4]=(h>>>24)&255;out[i*4+1]=(h>>>16)&255;out[i*4+2]=(h>>>8)&255;out[i*4+3]=h&255;}); return out; }
+  const K256=new Uint32Array([0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2]);
+  function sha256(msg){ const ml=msg.length, w=new Uint32Array(64); const H=new Uint32Array([0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19]);
+    const total=((ml+9+63)>>6)<<6, buf=new Uint8Array(total); buf.set(msg); buf[ml]=0x80; const bits=ml*8; buf[total-4]=(bits>>>24)&255; buf[total-3]=(bits>>>16)&255; buf[total-2]=(bits>>>8)&255; buf[total-1]=bits&255;
+    const rotr=(x,n)=>(x>>>n)|(x<<(32-n));
+    for(let off=0;off<total;off+=64){ for(let i=0;i<16;i++)w[i]=(buf[off+i*4]<<24)|(buf[off+i*4+1]<<16)|(buf[off+i*4+2]<<8)|buf[off+i*4+3]; for(let i=16;i<64;i++){ const s0=rotr(w[i-15],7)^rotr(w[i-15],18)^(w[i-15]>>>3), s1=rotr(w[i-2],17)^rotr(w[i-2],19)^(w[i-2]>>>10); w[i]=(w[i-16]+s0+w[i-7]+s1)|0; }
+      let a=H[0],b=H[1],c=H[2],d=H[3],e=H[4],f=H[5],g=H[6],h=H[7];
+      for(let i=0;i<64;i++){ const S1=rotr(e,6)^rotr(e,11)^rotr(e,25), ch=(e&f)^(~e&g), t1=(h+S1+ch+K256[i]+w[i])|0, S0=rotr(a,2)^rotr(a,13)^rotr(a,22), maj=(a&b)^(a&c)^(b&c), t2=(S0+maj)|0; h=g;g=f;f=e;e=(d+t1)|0;d=c;c=b;b=a;a=(t1+t2)|0; }
+      H[0]=(H[0]+a)|0;H[1]=(H[1]+b)|0;H[2]=(H[2]+c)|0;H[3]=(H[3]+d)|0;H[4]=(H[4]+e)|0;H[5]=(H[5]+f)|0;H[6]=(H[6]+g)|0;H[7]=(H[7]+h)|0; }
+    const out=new Uint8Array(32); for(let i=0;i<8;i++){out[i*4]=(H[i]>>>24)&255;out[i*4+1]=(H[i]>>>16)&255;out[i*4+2]=(H[i]>>>8)&255;out[i*4+3]=H[i]&255;} return out; }
+  const K512=["428a2f98d728ae22","7137449123ef65cd","b5c0fbcfec4d3b2f","e9b5dba58189dbbc","3956c25bf348b538","59f111f1b605d019","923f82a4af194f9b","ab1c5ed5da6d8118","d807aa98a3030242","12835b0145706fbe","243185be4ee4b28c","550c7dc3d5ffb4e2","72be5d74f27b896f","80deb1fe3b1696b1","9bdc06a725c71235","c19bf174cf692694","e49b69c19ef14ad2","efbe4786384f25e3","0fc19dc68b8cd5b5","240ca1cc77ac9c65","2de92c6f592b0275","4a7484aa6ea6e483","5cb0a9dcbd41fbd4","76f988da831153b5","983e5152ee66dfab","a831c66d2db43210","b00327c898fb213f","bf597fc7beef0ee4","c6e00bf33da88fc2","d5a79147930aa725","06ca6351e003826f","142929670a0e6e70","27b70a8546d22ffc","2e1b21385c26c926","4d2c6dfc5ac42aed","53380d139d95b3df","650a73548baf63de","766a0abb3c77b2a8","81c2c92e47edaee6","92722c851482353b","a2bfe8a14cf10364","a81a664bbc423001","c24b8b70d0f89791","c76c51a30654be30","d192e819d6ef5218","d69906245565a910","f40e35855771202a","106aa07032bbd1b8","19a4c116b8d2d0c8","1e376c085141ab53","2748774cdf8eeb99","34b0bcb5e19b48a8","391c0cb3c5c95a63","4ed8aa4ae3418acb","5b9cca4f7763e373","682e6ff3d6b2b8a3","748f82ee5defb2fc","78a5636f43172f60","84c87814a1f0ab72","8cc702081a6439ec","90befffa23631e28","a4506cebde82bde9","bef9a3f7b2c67915","c67178f2e372532b","ca273eceea26619c","d186b8c721c0c207","eada7dd6cde0eb1e","f57d4f7fee6ed178","06f067aa72176fba","0a637dc5a2c898a6","113f9804bef90dae","1b710b35131c471b","28db77f523047d84","32caab7b40c72493","3c9ebe0a15c9bebc","431d67c49c100d4c","4cc5d4becb3e42b6","597f299cfc657e2a","5fcb6fab3ad6faec","6c44198c4a475817"].map(h=>BigInt("0x"+h));
+  const M64=(1n<<64n)-1n;
+  function sha512(msg){ const ml=msg.length; const total=((ml+17+127)>>7)<<7, buf=new Uint8Array(total); buf.set(msg); buf[ml]=0x80; let bits=BigInt(ml)*8n; for(let i=0;i<16;i++){ buf[total-1-i]=Number(bits&255n); bits>>=8n; }
+    const H=["6a09e667f3bcc908","bb67ae8584caa73b","3c6ef372fe94f82b","a54ff53a5f1d36f1","510e527fade682d1","9b05688c2b3e6c1f","1f83d9abfb41bd6b","5be0cd19137e2179"].map(h=>BigInt("0x"+h));
+    const rotr=(x,n)=>((x>>n)|(x<<(64n-n)))&M64; const w=new Array(80);
+    for(let off=0;off<total;off+=128){ for(let i=0;i<16;i++){ let v=0n; for(let k=0;k<8;k++)v=(v<<8n)|BigInt(buf[off+i*8+k]); w[i]=v; } for(let i=16;i<80;i++){ const s0=rotr(w[i-15],1n)^rotr(w[i-15],8n)^(w[i-15]>>7n), s1=rotr(w[i-2],19n)^rotr(w[i-2],61n)^(w[i-2]>>6n); w[i]=(w[i-16]+s0+w[i-7]+s1)&M64; }
+      let [a,b,c,d,e,f,g,h]=H;
+      for(let i=0;i<80;i++){ const S1=rotr(e,14n)^rotr(e,18n)^rotr(e,41n), ch=(e&f)^((~e)&M64&g), t1=(h+S1+ch+K512[i]+w[i])&M64, S0=rotr(a,28n)^rotr(a,34n)^rotr(a,39n), maj=(a&b)^(a&c)^(b&c), t2=(S0+maj)&M64; h=g;g=f;f=e;e=(d+t1)&M64;d=c;c=b;b=a;a=(t1+t2)&M64; }
+      H[0]=(H[0]+a)&M64;H[1]=(H[1]+b)&M64;H[2]=(H[2]+c)&M64;H[3]=(H[3]+d)&M64;H[4]=(H[4]+e)&M64;H[5]=(H[5]+f)&M64;H[6]=(H[6]+g)&M64;H[7]=(H[7]+h)&M64; }
+    const out=new Uint8Array(64); for(let i=0;i<8;i++){ let v=H[i]; for(let k=7;k>=0;k--){ out[i*8+k]=Number(v&255n); v>>=8n; } } return out; }
+  const HASHES={SHA1:{fn:sha1,block:64},SHA256:{fn:sha256,block:64},SHA512:{fn:sha512,block:128}};
+  function hmac(algo,key,msg){ const {fn,block}=HASHES[algo]; if(key.length>block)key=fn(key); const k=new Uint8Array(block); k.set(key); const ipad=new Uint8Array(block+msg.length), opad=new Uint8Array(block+fn(new Uint8Array(0)).length); for(let i=0;i<block;i++){ipad[i]=k[i]^0x36; opad[i]=k[i]^0x5c;} ipad.set(msg,block); const inner=fn(ipad); opad.set(inner,block); return fn(opad); }
+  function hotp(key,counter,digits,algo){ const msg=new Uint8Array(8); let c=BigInt(counter); for(let i=7;i>=0;i--){ msg[i]=Number(c&255n); c>>=8n; } const h=hmac(algo,key,msg); const o=h[h.length-1]&15; const bin=((h[o]&0x7f)<<24)|(h[o+1]<<16)|(h[o+2]<<8)|h[o+3]; return String(bin%Math.pow(10,digits)).padStart(digits,"0"); }
+
+  /* ---- 密钥解析 ---- */
+  const B32="ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  function base32Decode(s){ const clean=s.toUpperCase().replace(/[\s\-_=]/g,""); if(!clean)throw new Error("密钥为空"); const bad=[...clean].find(ch=>B32.indexOf(ch)<0); if(bad!==undefined)throw new Error(`含有 Base32 不允许的字符「${bad}」`+(/[0189]/.test(bad)?"（Base32 没有 0 1 8 9，可能是 O I B 的误读）":"")); const out=[]; let bits=0,val=0; for(const ch of clean){ val=(val<<5)|B32.indexOf(ch); bits+=5; if(bits>=8){ out.push((val>>>(bits-8))&255); bits-=8; } } if(out.length<1)throw new Error("密钥太短"); return new Uint8Array(out); }
+  function hexDecode(s){ const clean=s.replace(/[\s\-]/g,""); if(!/^[0-9a-f]+$/i.test(clean)||clean.length%2)throw new Error("不是合法的十六进制密钥"); const out=new Uint8Array(clean.length/2); for(let i=0;i<out.length;i++)out[i]=parseInt(clean.substr(i*2,2),16); return out; }
+  function decodeSecret(s,fmt){ if(fmt==="hex")return hexDecode(s); if(fmt==="base32")return base32Decode(s); try{ return base32Decode(s); }catch(e){ if(/^[0-9a-f\s\-]+$/i.test(s)&&s.replace(/[\s\-]/g,"").length%2===0&&s.replace(/[\s\-]/g,"").length>=16)return hexDecode(s); throw e; } }
+  const EMAIL=/^[^\s@]+@[^\s@]+\.[^\s@]+$/, TFA_FULL=/^(?:[a-z2-7]{4}[ \-]?){4,32}$/i, TFA_RAW=/^[a-z2-7]{16,128}$/i, TFA_GRP=/^[a-z2-7]{4}$/i, HEXKEY=/^[0-9a-f]{20,128}$/i;
+  function parseOtpauth(u){ const m=u.match(/^otpauth:\/\/(totp|hotp)\/([^?]*)\??(.*)$/i); if(!m)return null; const type=m[1].toLowerCase(); let label=decodeURIComponent(m[2].replace(/\+/g," ")); const q={}; for(const kv of m[3].split("&")){ if(!kv)continue; const i=kv.indexOf("="); const k=decodeURIComponent(i<0?kv:kv.slice(0,i)).toLowerCase(), v=decodeURIComponent(i<0?"":kv.slice(i+1).replace(/\+/g," ")); q[k]=v; }
+    if(q.issuer&&!label.includes(":"))label=q.issuer+": "+label; else label=label.replace(/^([^:]+):/,"$1: ");
+    return { type, label:label.trim(), secret:q.secret||"", digits:q.digits?+q.digits:undefined, period:q.period?+q.period:undefined, algo:q.algorithm?q.algorithm.toUpperCase().replace("-",""):undefined, counter:q.counter?+q.counter:0 }; }
+  function parseLine(raw){
+    const line=raw.replace(/\r$/,"").trim(); if(!line)return null;
+    if(/^otpauth:\/\//i.test(line)){ const o=parseOtpauth(line); return o?{...o,raw:line}:{raw:line,error:"otpauth 链接格式不正确"}; }
+    const tabMode=line.includes("\t"); const toks=tabMode?line.split("\t").map(s=>s.trim()).filter(Boolean):line.split(/\s+/);
+    let secret="", label="", email="", others=[]; const grp=[];
+    const flush=()=>{ if(!grp.length)return; if(grp.length>=4&&!secret)secret=grp.join(""); else others.push(...grp); grp.length=0; };
+    for(const t of toks){
+      if(!tabMode&&TFA_GRP.test(t)&&!/^\d+$/.test(t)){ grp.push(t); continue; } flush();
+      if(EMAIL.test(t)){ if(!email)email=t; else others.push(t); continue; }
+      if(!secret&&(TFA_FULL.test(t)||TFA_RAW.test(t)||HEXKEY.test(t))){ secret=t; continue; }
+      others.push(t);
+    }
+    flush();
+    if(!secret){ // 「标签:密钥」「标签,密钥」写法
+      const m=line.match(/^(.*?)[:,，：]\s*([A-Za-z2-7 \-]{16,})\s*$/); if(m&&TFA_FULL.test(m[2].trim())||m&&TFA_RAW.test(m[2].replace(/[\s\-]/g,""))){ return {raw:line,label:m[1].trim(),secret:m[2].trim(),type:"totp"}; }
+      if(toks.length===1)return {raw:line,label:"",secret:toks[0],type:"totp"}; // 单独一段，交给解码器判断
+      return {raw:line,error:"没有找到 2FA 密钥（需 16 位以上 Base32，如 vtrz osbd gvir mwxp）"};
+    }
+    label=(email||others.find(x=>!/^\d{6,12}$/.test(x)&&!TFA_GRP.test(x))||"").replace(/[:：,，;；]+$/,"");
+    return {raw:line,label,secret,type:"totp"};
+  }
+
+  /* ---- 状态 ---- */
+  const input=$("#tf-input"); let entries=[], selected=0, timer=null, offset=0, showSecret=false;
+  function cfg(){ return { digits:+$("#tf-digits").value, period:Math.max(5,parseInt($("#tf-period").value)||30), algo:$("#tf-algo").value, fmt:$("#tf-fmt").value }; }
+  function buildEntries(text){
+    const c=cfg(); const list=[]; let n=0;
+    for(const raw of text.split(/\n/)){ const p=parseLine(raw); if(!p)continue; n++;
+      const e={ raw:p.raw, label:p.label||"", secretText:p.secret||"", type:p.type||"totp", digits:p.digits||c.digits, period:p.period||c.period, algo:(p.algo&&HASHES[p.algo])?p.algo:c.algo, counter:p.counter||0, error:p.error||null, key:null, lastCounter:-1, code:"", next:"", prev:"" };
+      if(!e.error){ try{ e.key=decodeSecret(e.secretText,c.fmt); e.norm=e.secretText.toUpperCase().replace(/[\s\-=]/g,""); }catch(err){ e.error=err.message; } }
+      list.push(e); }
+    return list;
+  }
+  const nowSec=()=>Date.now()/1000+offset;
+  function compute(e,force){ if(e.error)return; if(e.type==="hotp"){ if(force||!e.code){ e.code=hotp(e.key,e.counter,e.digits,e.algo); e.next=hotp(e.key,e.counter+1,e.digits,e.algo); } return; } const ctr=Math.floor(nowSec()/e.period); if(ctr!==e.lastCounter||force){ e.lastCounter=ctr; e.code=hotp(e.key,ctr,e.digits,e.algo); e.next=hotp(e.key,ctr+1,e.digits,e.algo); e.prev=hotp(e.key,ctr-1,e.digits,e.algo); } }
+  const group=code=>code.length===6?code.slice(0,3)+" "+code.slice(3):code.length===8?code.slice(0,4)+" "+code.slice(4):code;
+  const maskKey=s=>s.length<=8?s:s.slice(0,4)+"…"+s.slice(-4);
+
+  /* ---- 渲染 ---- */
+  function renderAll(){
+    const box=$("#tf-rows"); const okN=entries.filter(e=>!e.error).length, badN=entries.length-okN;
+    $("#tf-stats").innerHTML=`<div class="stat"><div class="n">${entries.length}</div><div class="l">条目</div></div><div class="stat ok"><div class="n">${okN}</div><div class="l">可用密钥</div></div><div class="stat dup"><div class="n">${badN}</div><div class="l">无法识别</div></div><div class="stat"><div class="n" id="tf-clock">—</div><div class="l">本机 UTC 时间</div></div>`;
+    $("#tf-result").style.display=entries.length?"block":"none";
+    if(!entries.length){ box.innerHTML=""; return; }
+    if(selected>=entries.length||entries[selected].error){ selected=Math.max(0,entries.findIndex(e=>!e.error)); }
+    box.innerHTML=entries.map((e,i)=>`<div class="tf-row${i===selected?" sel":""}${e.error?" bad":""}" data-i="${i}">
+      <span class="ix">${i+1}</span>
+      <span class="lab" title="${escHTML(e.raw)}">${escHTML(e.label||"（无标识）")}${e.type==="hotp"?' <span class="badge">HOTP</span>':""}${(e.digits!==6||e.period!==30||e.algo!=="SHA1")&&!e.error?` <span class="badge">${e.digits}位·${e.period}s·${e.algo}</span>`:""}</span>
+      <span class="key" title="${escHTML(e.secretText)}">${escHTML(showSecret?e.secretText:maskKey(e.secretText))}</span>
+      ${e.error?`<span class="err">⚠️ ${escHTML(e.error)}</span>`:`<span class="code" title="点击复制">${group(e.code||"------")}</span><span class="left"><i class="bar"><b></b></i><em>--</em></span><span class="nxt" title="下一个验证码">下个 ${group(e.next||"")}</span><button class="btn btn-ghost btn-sm cp" type="button">复制</button>`}
+    </div>`).join("");
+    tick(true);
+  }
+  function renderHero(){
+    const e=entries[selected]; const hero=$("#tf-hero");
+    if(!e||e.error){ hero.style.display="none"; return; } hero.style.display="block";
+    $("#tf-heroLabel").textContent=e.label||"（无标识）"; $("#tf-heroMeta").textContent=`${e.type==="hotp"?"HOTP · 计数 "+e.counter:"TOTP · 每 "+e.period+" 秒"} · ${e.digits} 位 · ${e.algo}`;
+    $("#tf-heroCode").textContent=group(e.code); $("#tf-heroNext").textContent=group(e.next); $("#tf-heroPrev").textContent=e.type==="hotp"?"—":group(e.prev);
+    $("#tf-hotpNext").style.display=e.type==="hotp"?"inline-flex":"none";
+    $("#tf-uri").value=`otpauth://${e.type}/${encodeURIComponent(e.label||"account")}?secret=${e.norm}&digits=${e.digits}&algorithm=${e.algo}${e.type==="hotp"?"&counter="+e.counter:"&period="+e.period}`;
+  }
+  let lastSec=-1;
+  function tick(force){
+    if(!entries.length)return; const now=nowSec(); const sec=Math.floor(now);
+    let changed=force;
+    entries.forEach(e=>{ if(e.error)return; const before=e.code; compute(e,force); if(e.code!==before)changed=true; });
+    if(changed){ // 有验证码翻转 → 刷新文字
+      $("#tf-rows").querySelectorAll(".tf-row").forEach(row=>{ const e=entries[+row.dataset.i]; if(e.error)return; row.querySelector(".code").textContent=group(e.code); row.querySelector(".nxt").textContent="下个 "+group(e.next); });
+      renderHero();
+    }
+    if(sec!==lastSec||force){ lastSec=sec;
+      $("#tf-rows").querySelectorAll(".tf-row").forEach(row=>{ const e=entries[+row.dataset.i]; if(e.error)return; const left=e.type==="hotp"?e.period:e.period-(now%e.period); const pct=left/e.period*100; const b=row.querySelector(".left b"); b.style.width=pct+"%"; b.style.background=left<=5?"var(--red)":left<=10?"var(--orange)":"var(--green)"; row.querySelector(".left em").textContent=e.type==="hotp"?"∞":Math.ceil(left)+"s"; });
+      const e=entries[selected]; if(e&&!e.error){ const left=e.type==="hotp"?e.period:e.period-(now%e.period); const ring=$("#tf-ring"); const C=2*Math.PI*54; ring.style.strokeDashoffset=String(C*(1-left/e.period)); ring.style.stroke=left<=5?"var(--red)":left<=10?"var(--orange)":"var(--accent)"; $("#tf-ringText").textContent=e.type==="hotp"?"∞":Math.ceil(left); $("#tf-heroCode").classList.toggle("expiring",left<=5&&e.type!=="hotp"); }
+      const clk=$("#tf-clock"); if(clk){ const d=new Date(now*1000); clk.textContent=d.toISOString().slice(11,19); }
+      $("#tf-localTime").textContent=new Date().toLocaleTimeString()+(offset?`（已偏移 ${offset>0?"+":""}${offset}s）`:"");
+    }
+  }
+  function start(){ clearInterval(timer); timer=setInterval(()=>tick(false),250); tick(true); }
+  function rebuild(){ entries=buildEntries(input.value); selected=0; renderAll(); renderHero(); if(entries.length)start(); else clearInterval(timer); $("#tf-inputHint").textContent=entries.length?`已识别 ${entries.length} 条`:"尚未输入"; }
+  let deb=null; input.addEventListener("input",()=>{ clearTimeout(deb); deb=setTimeout(rebuild,200); });
+  ["tf-digits","tf-period","tf-algo","tf-fmt"].forEach(id=>$("#"+id).addEventListener("change",rebuild));
+  $("#tf-offset").addEventListener("input",()=>{ offset=parseInt($("#tf-offset").value)||0; tick(true); });
+  $("#tf-offsetReset").onclick=()=>{ $("#tf-offset").value="0"; offset=0; tick(true); toast("已恢复本机时间"); };
+  $("#tf-clear").onclick=()=>{ input.value=""; rebuild(); toast("已清空（页面不保存任何密钥）"); };
+  $("#tf-showKey").addEventListener("change",()=>{ showSecret=$("#tf-showKey").checked; renderAll(); renderHero(); });
+  async function copy(text,msg){ try{ await navigator.clipboard.writeText(text); toast(msg||"已复制"); return true; }catch{ toast("复制失败"); return false; } }
+  $("#tf-rows").addEventListener("click",e=>{ const row=e.target.closest(".tf-row"); if(!row)return; const i=+row.dataset.i; const en=entries[i];
+    if(e.target.closest(".cp")||e.target.closest(".code")){ if(!en.error)copy(en.code,`已复制 ${en.label||"第 "+(i+1)+" 条"} 的验证码 ${en.code}`); return; }
+    if(e.target.closest(".key")){ copy(en.secretText,"已复制密钥"); return; }
+    if(!en.error){ selected=i; $("#tf-rows").querySelectorAll(".tf-row").forEach(r=>r.classList.toggle("sel",+r.dataset.i===i)); renderHero(); tick(true); } });
+  $("#tf-heroCode").onclick=()=>{ const e=entries[selected]; if(e&&!e.error)copy(e.code,"已复制验证码 "+e.code); };
+  $("#tf-heroCopy").onclick=()=>$("#tf-heroCode").onclick();
+  $("#tf-copyUri").onclick=()=>copy($("#tf-uri").value,"已复制 otpauth 链接，可导入验证器 App");
+  $("#tf-hotpNext").onclick=()=>{ const e=entries[selected]; if(!e||e.type!=="hotp")return; e.counter++; compute(e,true); renderAll(); renderHero(); toast("计数器 +1 → "+e.counter); };
+  $("#tf-copyAll").onclick=()=>{ const ok=entries.filter(e=>!e.error); if(!ok.length){toast("没有可复制的验证码");return;} const f=$("#tf-copyFmt").value; const lines=ok.map((e,i)=>f==="code"?e.code:f==="label"?`${e.label||"第"+(i+1)+"条"}\t${e.code}`:f==="secret"?`${e.secretText}\t${e.code}`:`${e.raw}\t${e.code}`); copy(lines.join("\n"),`已复制 ${ok.length} 个验证码`); };
+  document.addEventListener("keydown",e=>{ if(!$("#page-tf").classList.contains("active"))return; const tag=(e.target.tagName||"").toLowerCase(); if(tag==="input"||tag==="textarea"||tag==="select"||e.ctrlKey||e.metaKey||e.altKey)return; if(e.key==="c"||e.key==="C"){ e.preventDefault(); $("#tf-heroCode").onclick(); } });
+
+  /* ---- 本地保管库（可选，明确告知风险） ---- */
+  const VKEY="tt.2fa.vault";
+  function loadVault(){ try{ const v=JSON.parse(localStorage.getItem(VKEY)||"[]"); return Array.isArray(v)?v:[]; }catch{ return []; } }
+  function saveVault(v){ try{ localStorage.setItem(VKEY,JSON.stringify(v)); return true; }catch{ toast("保存失败：浏览器不允许本地存储"); return false; } }
+  function renderVault(){ const v=loadVault(); const q=$("#tf-vaultSearch").value.trim().toLowerCase(); const box=$("#tf-vaultList"); $("#tf-vaultN").textContent=v.length;
+    const shown=v.map((x,i)=>({...x,i})).filter(x=>!q||(x.label||"").toLowerCase().includes(q)||(x.secret||"").toLowerCase().includes(q));
+    if(!v.length){ box.innerHTML='<div class="hint">还没有保存任何密钥。上方识别出的密钥可用「保存到本浏览器」存起来，下次打开直接显示验证码。</div>'; return; }
+    if(!shown.length){ box.innerHTML='<div class="hint">没有匹配的条目</div>'; return; }
+    box.innerHTML=shown.map(x=>`<div class="tf-vrow" data-i="${x.i}"><span class="lab">${escHTML(x.label||"（无标识）")}</span><span class="key">${escHTML(maskKey((x.secret||"").replace(/\s/g,"")))}</span><button class="btn btn-ghost btn-sm load" type="button">显示验证码</button><button class="btn btn-ghost btn-sm del" type="button">删除</button></div>`).join(""); }
+  $("#tf-vaultSearch").addEventListener("input",renderVault);
+  $("#tf-saveAll").onclick=()=>{ const ok=entries.filter(e=>!e.error); if(!ok.length){toast("没有可保存的密钥");return;} if(!confirm(`把 ${ok.length} 个密钥保存到本浏览器的本地存储？\n\n注意：任何能打开这台电脑此浏览器的人都能看到它们；请只在自己的设备上使用。`))return; const v=loadVault(); let added=0; for(const e of ok){ if(v.some(x=>x.secret.replace(/[\s\-=]/g,"").toUpperCase()===e.norm))continue; v.push({label:e.label,secret:e.secretText,type:e.type,digits:e.digits,period:e.period,algo:e.algo,counter:e.counter,added:Date.now()}); added++; } if(saveVault(v)){ renderVault(); toast(`已保存 ${added} 个（${ok.length-added} 个已存在）`); } };
+  $("#tf-vaultList").addEventListener("click",e=>{ const row=e.target.closest(".tf-vrow"); if(!row)return; const v=loadVault(); const x=v[+row.dataset.i]; if(!x)return;
+    if(e.target.closest(".del")){ if(!confirm(`删除「${x.label||x.secret}」？`))return; v.splice(+row.dataset.i,1); saveVault(v); renderVault(); toast("已删除"); return; }
+    if(e.target.closest(".load")){ const uri=`otpauth://${x.type||"totp"}/${encodeURIComponent(x.label||"account")}?secret=${x.secret.replace(/[\s\-=]/g,"")}&digits=${x.digits||6}&algorithm=${x.algo||"SHA1"}${x.type==="hotp"?"&counter="+(x.counter||0):"&period="+(x.period||30)}`; input.value=(input.value.trim()?input.value.replace(/\s+$/,"")+"\n":"")+uri; rebuild(); selected=entries.length-1; renderAll(); renderHero(); tick(true); $("#tf-hero").scrollIntoView({behavior:"smooth",block:"center"}); } });
+  $("#tf-loadAllVault").onclick=()=>{ const v=loadVault(); if(!v.length){toast("保管库是空的");return;} input.value=v.map(x=>`otpauth://${x.type||"totp"}/${encodeURIComponent(x.label||"account")}?secret=${x.secret.replace(/[\s\-=]/g,"")}&digits=${x.digits||6}&algorithm=${x.algo||"SHA1"}${x.type==="hotp"?"&counter="+(x.counter||0):"&period="+(x.period||30)}`).join("\n"); rebuild(); $("#tf-hero").scrollIntoView({behavior:"smooth",block:"start"}); };
+  $("#tf-exportVault").onclick=()=>{ const v=loadVault(); if(!v.length){toast("保管库是空的");return;} download(new Blob([JSON.stringify({app:"文本处理工具 2FA",version:1,exported:new Date().toISOString(),items:v},null,2)],{type:"application/json"}),"2fa-backup.json"); };
+  $("#tf-importVault").onclick=()=>$("#tf-importFile").click();
+  $("#tf-importFile").addEventListener("change",async e=>{ const f=e.target.files[0]; e.target.value=""; if(!f)return; try{ const j=JSON.parse(await f.text()); const items=Array.isArray(j)?j:(j.items||[]); const v=loadVault(); let n=0; for(const x of items){ if(!x||!x.secret)continue; if(v.some(y=>y.secret.replace(/[\s\-=]/g,"").toUpperCase()===String(x.secret).replace(/[\s\-=]/g,"").toUpperCase()))continue; v.push({label:x.label||"",secret:String(x.secret),type:x.type||"totp",digits:+x.digits||6,period:+x.period||30,algo:x.algo||"SHA1",counter:+x.counter||0,added:Date.now()}); n++; } saveVault(v); renderVault(); toast(`已导入 ${n} 个`); }catch(err){ toast("导入失败：文件不是有效的备份 JSON"); } });
+  $("#tf-clearVault").onclick=()=>{ if(!loadVault().length){toast("保管库已是空的");return;} if(!confirm("清空本浏览器保存的全部 2FA 密钥？此操作不可恢复（建议先导出备份）。"))return; saveVault([]); renderVault(); toast("已清空"); };
+  renderVault();
+  window.__tfTest={sha1,sha256,sha512,hmac,hotp,base32Decode,hexDecode,decodeSecret,parseLine,parseOtpauth,buildEntries,setInput:v=>{input.value=v;},rebuild,getEntries:()=>entries};
 })();
 </script>
 </body>
