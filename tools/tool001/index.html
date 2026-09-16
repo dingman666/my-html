@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>文本处理工具 · 合并去重 / 分割 / 清洗 / 随机密码 / 谷歌邮箱 / 2FA</title>
+<title>文本处理工具 · 合并去重 / 分割 / 清洗 / 随机密码 / 谷歌邮箱 / 微软 / 2FA</title>
 <style>
   :root{
     --bg:#f5f5f7;--bg-grad-1:#f5f5f7;--bg-grad-2:#ebebef;
@@ -244,8 +244,59 @@
   .gm-table tbody tr.selected td{background:var(--accent-soft)}
   .toggle-sm{padding:5px 11px;font-size:13px;gap:7px}
   .toggle-sm .sw{width:32px;height:20px}
+  /* ---- 收件 API（微软页：点表格里的 📩 拉取该账号最新邮件） ---- */
+  .api-bar{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;background:var(--chip);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:8px}
+  .api-bar .field{margin:0;flex:1 1 220px;min-width:0}
+  .api-bar .field.sm{flex:0 1 190px}
+  .api-bar .field.xs{flex:0 1 120px}
+  .api-bar .field label{font-size:12px;margin-bottom:5px;white-space:nowrap}
+  .api-bar select,.api-bar input[type=text]{padding:8px 11px;font-size:13px;border-radius:10px}
+  .api-bar .btn{flex:none;white-space:nowrap}
+  .api-hint{font-size:12px;color:var(--text-3);margin:0 0 12px;line-height:1.7;word-break:break-all}
+  .api-hint.warn{color:var(--orange)}
+  .gm-table th.api,.gm-table td.api{min-width:190px;max-width:300px;font-family:inherit;white-space:normal;text-align:left}
+  .api-btn{border:none;background:var(--accent-soft);color:var(--accent);font-family:inherit;font-size:12px;font-weight:600;padding:5px 10px;border-radius:999px;cursor:pointer;transition:.15s;white-space:nowrap;vertical-align:middle}
+  .api-btn:hover{background:var(--accent);color:#fff}
+  .api-btn:disabled{opacity:.55;cursor:progress}
+  .api-st{display:inline-block;margin-left:7px;font-size:12px;font-weight:600;vertical-align:middle;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .api-st.ok{color:var(--text);cursor:pointer;text-decoration:underline dotted var(--text-3);text-underline-offset:3px}
+  .api-st.ok:hover{color:var(--accent)}
+  .api-st.code{background:var(--green);color:#fff;padding:3px 11px;border-radius:999px;font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:14px;letter-spacing:.1em;cursor:pointer;transition:.15s}
+  .api-st.code:hover{filter:brightness(1.08);transform:translateY(-1px)}
+  .api-st.empty{color:var(--text-3);cursor:pointer}
+  .api-st.err{color:var(--red);cursor:pointer}
+  .api-st.load{color:var(--text-2)}
+  .api-st.load::before{content:"";display:inline-block;width:10px;height:10px;border:2px solid var(--line-strong);border-top-color:var(--accent);border-radius:50%;margin-right:6px;vertical-align:-1px;animation:apispin .8s linear infinite}
+  @keyframes apispin{to{transform:rotate(360deg)}}
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.38);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);z-index:50;display:none;align-items:center;justify-content:center;padding:20px}
+  .modal-bg.show{display:flex;animation:fade .18s ease}
+  .modal{background:var(--card-solid);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-lg);width:min(780px,100%);max-height:min(88vh,920px);display:flex;flex-direction:column;overflow:hidden}
+  .modal-head{display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid var(--line)}
+  .modal-head .t{font-size:15px;font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .modal-head .t small{display:block;font-size:12px;font-weight:500;color:var(--text-3);margin-top:2px}
+  .modal-x{border:none;background:var(--chip);color:var(--text-2);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:15px;line-height:30px;text-align:center;flex:none;font-family:inherit;transition:.15s}
+  .modal-x:hover{background:var(--line);color:var(--text)}
+  .modal-body{padding:16px 20px 20px;overflow:auto;overscroll-behavior:contain}
+  .mail{border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:12px;background:var(--card)}
+  .mail:last-child{margin-bottom:0}
+  .mail .subj{font-size:15px;font-weight:700;margin-bottom:6px;word-break:break-word}
+  .mail .meta{font-size:12px;color:var(--text-2);display:flex;gap:6px 16px;flex-wrap:wrap;margin-bottom:10px}
+  .mail .meta b{color:var(--text-3);font-weight:600;margin-right:4px}
+  .mail .codes{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+  .mail .codes .lb{font-size:12px;color:var(--text-2);font-weight:600}
+  .codechip{border:none;background:var(--green);color:#fff;font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:17px;font-weight:700;letter-spacing:.14em;padding:7px 15px;border-radius:10px;cursor:pointer;transition:.15s}
+  .codechip:hover{filter:brightness(1.08);transform:translateY(-1px)}
+  .codechip.alt{background:var(--chip);color:var(--text);font-size:13px;letter-spacing:.06em;font-weight:600}
+  .mail .body{font-size:13px;line-height:1.7;white-space:pre-wrap;word-break:break-word;background:var(--chip);border-radius:10px;padding:10px 12px;max-height:340px;overflow:auto;font-family:inherit}
+  .mail .links{margin-top:10px;font-size:12px;color:var(--text-2)}
+  .mail .links a{color:var(--accent);word-break:break-all;display:block;margin-top:3px}
+  .mail .mtools{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .mail-empty{text-align:center;color:var(--text-3);padding:36px 10px;font-size:14px}
+  .mail-err{color:var(--red);background:rgba(255,59,48,.08);border-radius:10px;padding:12px 14px;font-size:13px;word-break:break-word;line-height:1.6}
   .toggle-sm .sw::after{width:16px;height:16px}
   .toggle-sm input:checked + .sw::after{transform:translateX(12px)}
+  .tabs-mini{display:inline-flex;padding:3px;margin:0;gap:3px;flex-wrap:nowrap}
+  .tabs-mini .subtab{padding:5px 12px;font-size:12px;min-width:0;flex:none}
 
   /* ===== 2FA 验证码 ===== */
   .tf-heroWrap{display:flex;gap:26px;align-items:center;flex-wrap:wrap}
@@ -341,6 +392,7 @@
       <div class="side-group">账号工具</div>
       <button class="maintab" data-page="pw" data-sub="随机字符 / 密码短语 / PIN / 模板组合，加密级随机源" style="--ic:#ff375f"><span class="ic">🔐</span>随机密码</button>
       <button class="maintab" data-page="gm" data-sub="把账号信息整理成表格，一键粘进 Excel / WPS" style="--ic:#ffb340"><span class="ic">📬</span>谷歌邮箱专用</button>
+      <button class="maintab" data-page="ms" data-sub="微软账号信息整理成表格，支持自定义格式提取；可按行调接口收取最新邮件 / 验证码" style="--ic:#0078d4"><span class="ic">Ⓜ️</span>微软专用</button>
       <button class="maintab" data-page="tf" data-sub="粘贴密钥即出验证码，批量、倒计时、纯本地" style="--ic:#32ade6"><span class="ic">🛡️</span>2FA 验证码</button>
     </nav>
     <div class="side-foot">界面仅预览前 5000 行<br>大文件请开「写入文件夹」</div>
@@ -944,7 +996,7 @@
         <input type="file" id="gm-file" accept=".txt,.csv,.tsv,text/plain" multiple>
         <div class="icon">📬</div>
         <div class="big">点击选择 或 拖拽 TXT</div>
-        <div class="sub">每行一个账号：邮箱 ⇥ 密码 ⇥ 辅助邮箱 ⇥ 2FA 密钥 ⇥ 备份代码…（Tab 或空格分隔，顺序可乱、字段可缺）</div>
+        <div class="sub">每行一个账号：邮箱 ⇥ 密码 ⇥ 辅助邮箱 ⇥ 2FA 密钥 ⇥ 备份代码…（智能识别时 Tab 或空格分隔、顺序可乱；自定义模式按模板拆）</div>
       </div>
       <div class="files" id="gm-list"></div>
       <div class="or-divider"><span>或 直接粘贴内容</span></div>
@@ -953,21 +1005,49 @@
     </div>
 
     <div class="card">
-      <h2>② 表格选项</h2>
-      <div class="grid">
-        <div class="field"><label>备份代码排列</label>
-          <select id="gm-codeMode"><option value="lines" selected>同一单元格内换行（如截图）</option><option value="space">同一单元格内用空格隔开</option><option value="comma">同一单元格内用逗号隔开</option><option value="cols">每个代码单独一列</option></select>
+      <h2>② 提取方式</h2>
+      <div class="tabs" id="gm-modeTabs">
+        <button class="subtab" data-m="split">按分隔符拆分</button>
+        <button class="subtab" data-m="smart">智能识别</button>
+        <button class="subtab" data-m="custom">自定义格式提取</button>
+      </div>
+      <div class="pane" id="gm-pane-split">
+        <div class="pw-sub" style="margin-top:0">每行按什么拆开</div>
+        <div class="chips" id="gm-splitChips" style="margin-top:0">
+          <button type="button" class="chip on" data-sep="ws">空格（任意个空格 / Tab）</button><button type="button" class="chip" data-sep="[Tab]">仅 Tab</button><button type="button" class="chip" data-sep="----">四连字符 ----</button><button type="button" class="chip" data-sep=":">冒号 :</button><button type="button" class="chip" data-sep="|">竖线 |</button><button type="button" class="chip" data-sep=",">逗号 ,</button><button type="button" class="chip" data-sep=";">分号 ;</button><button type="button" class="chip" data-sep="-">连字符 -</button><button type="button" class="chip" data-sep="_">下划线 _</button><button type="button" class="chip" data-sep="__custom__">自定义…</button>
         </div>
-        <div class="field"><label>2FA 密钥</label>
-          <select id="gm-tfaMode"><option value="keep" selected>保持原样（vtrz osbd gvir mwxp）</option><option value="strip">去掉空格（vtrzosbdgvirmwxp）</option><option value="upper">去空格并大写（VTRZOSBDGVIRMWXP）</option></select>
+        <div class="grid" style="margin-top:14px">
+          <div class="field" id="gm-splitCustomWrap" style="display:none"><label>自定义分隔符</label><input type="text" id="gm-splitCustom" placeholder="例如 :: 或 [Tab]" spellcheck="false"><div class="hint">Tab 写 [Tab]，空格写 [空格]</div></div>
+          <div class="field"><label>列名（可选，用空格分开，按顺序对应）</label><input type="text" id="gm-splitNames" placeholder="例如 邮箱 密码 辅助邮箱 2FA 备份代码" spellcheck="false"><div class="hint">不填则自动叫 列1、列2…；填了的列名可在「③ 重新组合」的模板里用 {列名} 引用</div></div>
         </div>
+        <div class="hint" style="margin-top:12px;line-height:1.7">最简单直接：不需要邮箱、不需要写模板，每行按分隔符切开就是一列一列。列数按最长的一行算，短的行后面留空。拆好后到下方「③ 重新组合」选冒号等符号即可重新拼成 <b>1:11:111:1111:111</b> 这样的一行。</div>
+      </div>
+      <div class="pane" id="gm-pane-smart">
+        <div class="grid">
+          <div class="field"><label>备份代码排列</label>
+            <select id="gm-codeMode"><option value="lines" selected>同一单元格内换行（如截图）</option><option value="space">同一单元格内用空格隔开</option><option value="comma">同一单元格内用逗号隔开</option><option value="cols">每个代码单独一列</option></select>
+          </div>
+          <div class="field"><label>2FA 密钥</label>
+            <select id="gm-tfaMode"><option value="keep" selected>保持原样（vtrz osbd gvir mwxp）</option><option value="strip">去掉空格（vtrzosbdgvirmwxp）</option><option value="upper">去空格并大写（VTRZOSBDGVIRMWXP）</option></select>
+          </div>
+        </div>
+        <div class="hint" style="margin-top:12px;line-height:1.7">识别规则：邮箱按 @ 判断（第 1 个是主邮箱、第 2 个是辅助邮箱）；6–12 位纯数字视为备份代码；4 组 4 位字母数字视为 2FA 密钥；紧跟主邮箱后的那段视为密码。识别不了的内容会放进「未识别」列并计入异常，不会丢。</div>
+      </div>
+      <div class="pane" id="gm-pane-custom">
+        <div class="field"><label>行格式模板（字段名 + 分隔符，照着你的数据顺序写）</label><input type="text" id="gm-tpl" spellcheck="false"><div class="hint" id="gm-tplHint"></div></div>
+        <div class="pw-sub">常用模板（点击套用）</div>
+        <div class="chips" id="gm-tplChips" style="margin-top:0"><button class="chip" data-tpl="Email[Tab]Password[Tab]辅助邮箱[Tab]2FA[Tab]备份代码*">Tab：邮箱 密码 辅助邮箱 2FA 备份代码*</button><button class="chip" data-tpl="Email----Password----辅助邮箱----2FA">----：邮箱 密码 辅助邮箱 2FA</button><button class="chip" data-tpl="Email:Password">邮箱:密码</button><button class="chip" data-tpl="Email|Password|辅助邮箱">邮箱|密码|辅助邮箱</button><button class="chip" data-tpl="Email,Password,备注*">邮箱,密码,备注*</button></div>
+        <div class="hint" style="margin-top:12px;line-height:1.7">写法：字段名之间用你数据里实际的分隔符隔开，如 <b>----</b>、<b>:</b>、<b>|</b>、<b>,</b>；Tab 写成 <b>[Tab]</b>，空格写成 <b>[空格]</b>。各段分隔符不同时用花括号写法：<b>{Email}:{Password}|{Token}</b>。最后一个字段名加 <b>*</b> 表示"把剩下的所有段都归它"（如备份代码不定个数），会在单元格内换行排列。多出来的段进「未识别」列，缺的段留空。</div>
+      </div>
+      <div class="pw-sub">输出列（点击关闭 / 开启）</div>
+      <div class="chips" id="gm-cols" style="margin-top:0"></div>
+      <div class="grid" style="margin-top:14px">
         <div class="field"><label>序号起始</label><input type="number" id="gm-start" value="1" min="0"><div class="hint">接着上一批填表时可从上次的下一号开始</div></div>
       </div>
       <div class="toggles">
         <label class="toggle"><input type="checkbox" id="gm-lower" checked><span class="sw"></span>邮箱转小写</label>
-        <label class="toggle"><input type="checkbox" id="gm-dedup"><span class="sw"></span>按邮箱去重（保留第一条）</label>
+        <label class="toggle"><input type="checkbox" id="gm-dedup"><span class="sw"></span>按第一列（邮箱）去重，保留第一条</label>
       </div>
-      <div class="hint" style="margin-top:12px;line-height:1.7">识别规则：邮箱按 @ 判断（第 1 个是主邮箱、第 2 个是辅助邮箱）；6–12 位纯数字视为备份代码；4 组 4 位字母数字视为 2FA 密钥；紧跟主邮箱后的那段视为密码。识别不了的内容会放进「未识别」列并计入异常，不会丢。</div>
       <div class="actions"><button class="btn btn-primary" id="gm-run" disabled>📋 整理成表格</button><button class="btn btn-ghost" id="gm-clear">清空</button></div>
       <div class="progress" id="gm-progress"><div class="bar"><div class="fill" id="gm-fill"></div></div><div class="ptext" id="gm-text">处理中…</div></div>
     </div>
@@ -977,21 +1057,150 @@
       <div class="card">
         <div class="pane-head"><span class="desc">整理结果 · 预览前 <b id="gm-previewN">0</b> 行 · 已勾选 <b id="gm-selN">0</b> 行</span>
           <div class="tools">
+            <div class="tabs tabs-mini" id="gm-copyMode" title="复制所选 / 复制全部 用哪种格式"><button class="subtab active" data-cm="table" type="button">表格模式</button><button class="subtab" data-cm="text" type="button">文本模式</button></div>
             <label class="toggle toggle-sm" title="复制 / 下载时是否带第一行表头"><input type="checkbox" id="gm-header" checked><span class="sw"></span>带表头</label>
             <button class="btn btn-primary btn-sm" id="gm-copySel">📋 复制所选</button>
             <button class="btn btn-primary btn-sm" id="gm-copyTable">📋 复制全部</button>
-            <button class="btn btn-ghost btn-sm" id="gm-copyTsv">复制纯文本</button>
             <button class="btn btn-ghost btn-sm" id="gm-dlXlsx">下载 Excel</button>
             <button class="btn btn-ghost btn-sm" id="gm-dlCsv">下载 CSV</button>
+            <button class="btn btn-ghost btn-sm" id="gm-dlTxt">下载 TXT</button>
           </div>
         </div>
         <div class="note" id="gm-note"></div>
         <div class="gm-tablewrap"><table class="gm-table" id="gm-table"></table></div>
-        <div class="hint" style="margin-top:10px">勾选左侧方框后「复制所选」只复制勾中的行（序号保持原编号）；「复制全部 / 复制所选」都带格式与单元格内换行，在 Excel / WPS 里 Ctrl+V 即得截图效果；「带表头」控制复制和下载是否包含第一行标题；点任意单元格可单独复制该格。</div>
+        <div class="hint" style="margin-top:10px" id="gm-copyHint"></div>
+      </div>
+      <div class="card">
+        <h2>③ 重新组合成一行文本 <span class="badge">反向操作</span></h2>
+        <div class="pw-sub" style="margin-top:0">字段之间用</div>
+        <div class="chips" id="gm-joinChips" style="margin-top:0">
+          <button type="button" class="chip on" data-sep=":">冒号 :</button><button type="button" class="chip" data-sep="----">四连字符 ----</button><button type="button" class="chip" data-sep="|">竖线 |</button><button type="button" class="chip" data-sep=",">逗号 ,</button><button type="button" class="chip" data-sep=";">分号 ;</button><button type="button" class="chip" data-sep="[Tab]">Tab</button><button type="button" class="chip" data-sep="[空格]">空格</button><button type="button" class="chip" data-sep="-">连字符 -</button><button type="button" class="chip" data-sep="_">下划线 _</button><button type="button" class="chip" data-sep="/">斜杠 /</button><button type="button" class="chip" data-sep="#">井号 #</button><button type="button" class="chip" data-sep="__custom__">自定义…</button>
+        </div>
+        <div class="grid" style="margin-top:14px">
+          <div class="field" id="gm-joinCustomWrap" style="display:none"><label>自定义分隔符</label><input type="text" id="gm-joinCustom" placeholder="例如 :: 或 [Tab]" spellcheck="false"><div class="hint">Tab 写 [Tab]，空格写 [空格]</div></div>
+          <div class="field"><label>或 用模板自由组合（留空则按上面的分隔符顺序拼接）</label><input type="text" id="gm-joinTpl" placeholder="例如 {Email}:{Password}|{辅助邮箱}" spellcheck="false"><div class="hint" id="gm-joinTplHint">可用列名：—</div></div>
+          <div class="field"><label>单元格内多值（如备份代码）之间用</label><input type="text" id="gm-joinInner" value=" " placeholder="默认空格" spellcheck="false"><div class="hint">备份代码在表格里是一格多行，拼成一行时用这个字符连起来</div></div>
+        </div>
+        <div class="toggles">
+          <label class="toggle"><input type="checkbox" id="gm-joinIdx"><span class="sw"></span>包含序号</label>
+          <label class="toggle"><input type="checkbox" id="gm-joinSelOnly"><span class="sw"></span>只组合勾选的行</label>
+          <label class="toggle"><input type="checkbox" id="gm-joinSkipEmpty"><span class="sw"></span>跳过空字段（不保留位置）</label>
+        </div>
+        <div class="pane-head" style="margin-top:14px"><span class="desc">组合结果 <b id="gm-joinCount">0</b> 行 · 只显示前 500 行，复制 / 下载为全部</span><div class="tools"><button class="btn btn-primary btn-sm" id="gm-joinCopy">复制组合结果</button><button class="btn btn-ghost btn-sm" id="gm-joinDl">下载 TXT</button></div></div>
+        <textarea id="gm-joinOut" readonly spellcheck="false" style="min-height:160px"></textarea>
       </div>
       <div class="card" id="gm-badCard" style="display:none">
-        <div class="pane-head"><span class="desc">⚠️ 异常行（没有识别到邮箱，或含未识别字段）<span class="cnt" id="gm-c-bad">0</span></span><div class="tools"><button class="btn btn-ghost btn-sm" id="gm-copyBad">复制</button><button class="btn btn-primary btn-sm" id="gm-dlBad">下载</button></div></div>
+        <div class="pane-head"><span class="desc">⚠️ 异常行（没有识别到第一列，或含未识别字段）<span class="cnt" id="gm-c-bad">0</span></span><div class="tools"><button class="btn btn-ghost btn-sm" id="gm-copyBad">复制</button><button class="btn btn-primary btn-sm" id="gm-dlBad">下载</button></div></div>
         <textarea id="gm-ta-bad" readonly spellcheck="false" style="min-height:160px"></textarea>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 微软专用 ================= -->
+  <section class="page" id="page-ms">
+    <div class="card">
+      <h2>① 导入 / 输入</h2>
+      <div class="drop" id="ms-drop">
+        <input type="file" id="ms-file" accept=".txt,.csv,.tsv,text/plain" multiple>
+        <div class="icon">Ⓜ️</div>
+        <div class="big">点击选择 或 拖拽 TXT</div>
+        <div class="sub">每行一个账号，默认格式：Email----Password----RefreshToken----Client_ID----辅助邮箱----辅助邮箱密码</div>
+      </div>
+      <div class="files" id="ms-list"></div>
+      <div class="or-divider"><span>或 直接粘贴内容</span></div>
+      <textarea id="ms-paste" class="paste" spellcheck="false" placeholder="alice@outlook.com----Pa55word!----M.C5xxxx…（RefreshToken）----9e5f94bc-e8a4-4e73-b8be-63364c29d753----backup@gmail.com----Backup#123"></textarea>
+      <div class="hint" id="ms-pasteHint">尚未输入</div>
+    </div>
+
+    <div class="card">
+      <h2>② 提取方式</h2>
+      <div class="tabs" id="ms-modeTabs">
+        <button class="subtab" data-m="split">按分隔符拆分</button>
+        <button class="subtab" data-m="smart">智能识别</button>
+        <button class="subtab" data-m="custom">自定义格式提取</button>
+      </div>
+      <div class="pane" id="ms-pane-split">
+        <div class="pw-sub" style="margin-top:0">每行按什么拆开</div>
+        <div class="chips" id="ms-splitChips" style="margin-top:0">
+          <button type="button" class="chip on" data-sep="ws">空格（任意个空格 / Tab）</button><button type="button" class="chip" data-sep="[Tab]">仅 Tab</button><button type="button" class="chip" data-sep="----">四连字符 ----</button><button type="button" class="chip" data-sep=":">冒号 :</button><button type="button" class="chip" data-sep="|">竖线 |</button><button type="button" class="chip" data-sep=",">逗号 ,</button><button type="button" class="chip" data-sep=";">分号 ;</button><button type="button" class="chip" data-sep="-">连字符 -</button><button type="button" class="chip" data-sep="_">下划线 _</button><button type="button" class="chip" data-sep="__custom__">自定义…</button>
+        </div>
+        <div class="grid" style="margin-top:14px">
+          <div class="field" id="ms-splitCustomWrap" style="display:none"><label>自定义分隔符</label><input type="text" id="ms-splitCustom" placeholder="例如 :: 或 [Tab]" spellcheck="false"><div class="hint">Tab 写 [Tab]，空格写 [空格]</div></div>
+          <div class="field"><label>列名（可选，用空格分开，按顺序对应）</label><input type="text" id="ms-splitNames" placeholder="例如 邮箱 密码 Token ClientID 辅助邮箱 辅助邮箱密码" spellcheck="false"><div class="hint">不填则自动叫 列1、列2…；填了的列名可在「③ 重新组合」的模板里用 {列名} 引用</div></div>
+        </div>
+        <div class="hint" style="margin-top:12px;line-height:1.7">最简单直接：不需要邮箱、不需要写模板，每行按分隔符切开就是一列一列。列数按最长的一行算，短的行后面留空。拆好后到下方「③ 重新组合」选冒号等符号即可重新拼成 <b>1:11:111:1111:111</b> 这样的一行。</div>
+      </div>
+      <div class="pane" id="ms-pane-smart">
+        
+        <div class="hint" style="margin-top:12px;line-height:1.7">识别规则：按 Tab、---- 或空格分段；第 1 个邮箱是主邮箱、紧跟其后的是密码；形如 xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx 的是 Client_ID；40 位以上的长串是 RefreshToken；第 2 个邮箱是辅助邮箱，其后的一段是辅助邮箱密码。顺序可乱、字段可缺；识别不了的进「未识别」列。</div>
+      </div>
+      <div class="pane" id="ms-pane-custom">
+        <div class="field"><label>行格式模板（字段名 + 分隔符，照着你的数据顺序写）</label><input type="text" id="ms-tpl" spellcheck="false"><div class="hint" id="ms-tplHint"></div></div>
+        <div class="pw-sub">常用模板（点击套用）</div>
+        <div class="chips" id="ms-tplChips" style="margin-top:0"><button class="chip" data-tpl="Email----Password----RefreshToken----Client_ID----辅助邮箱----辅助邮箱密码">默认：6 段 ----</button><button class="chip" data-tpl="Email----Password----RefreshToken----Client_ID">4 段：邮箱 密码 Token ClientID</button><button class="chip" data-tpl="Email:Password">邮箱:密码</button><button class="chip" data-tpl="Email[Tab]Password[Tab]辅助邮箱">Tab：邮箱 密码 辅助邮箱</button><button class="chip" data-tpl="Email|Password|RefreshToken">邮箱|密码|Token</button></div>
+        <div class="hint" style="margin-top:12px;line-height:1.7">写法：字段名之间用你数据里实际的分隔符隔开，如 <b>----</b>、<b>:</b>、<b>|</b>、<b>,</b>；Tab 写成 <b>[Tab]</b>，空格写成 <b>[空格]</b>。各段分隔符不同时用花括号写法：<b>{Email}:{Password}|{Token}</b>。最后一个字段名加 <b>*</b> 表示"把剩下的所有段都归它"（如备份代码不定个数），会在单元格内换行排列。多出来的段进「未识别」列，缺的段留空。</div>
+      </div>
+      <div class="pw-sub">输出列（点击关闭 / 开启）</div>
+      <div class="chips" id="ms-cols" style="margin-top:0"></div>
+      <div class="grid" style="margin-top:14px">
+        <div class="field"><label>序号起始</label><input type="number" id="ms-start" value="1" min="0"><div class="hint">接着上一批填表时可从上次的下一号开始</div></div>
+      </div>
+      <div class="toggles">
+        <label class="toggle"><input type="checkbox" id="ms-lower" checked><span class="sw"></span>邮箱转小写</label>
+        <label class="toggle"><input type="checkbox" id="ms-dedup"><span class="sw"></span>按第一列（邮箱）去重，保留第一条</label>
+      </div>
+      <div class="actions"><button class="btn btn-primary" id="ms-run" disabled>📋 整理成表格</button><button class="btn btn-ghost" id="ms-clear">清空</button></div>
+      <div class="progress" id="ms-progress"><div class="bar"><div class="fill" id="ms-fill"></div></div><div class="ptext" id="ms-text">处理中…</div></div>
+    </div>
+
+    <div class="result" id="ms-result">
+      <div class="stats" id="ms-stats"></div>
+      <div class="card">
+        <div class="pane-head"><span class="desc">整理结果 · 预览前 <b id="ms-previewN">0</b> 行 · 已勾选 <b id="ms-selN">0</b> 行</span>
+          <div class="tools">
+            <div class="tabs tabs-mini" id="ms-copyMode" title="复制所选 / 复制全部 用哪种格式"><button class="subtab active" data-cm="table" type="button">表格模式</button><button class="subtab" data-cm="text" type="button">文本模式</button></div>
+            <label class="toggle toggle-sm" title="复制 / 下载时是否带第一行表头"><input type="checkbox" id="ms-header" checked><span class="sw"></span>带表头</label>
+            <button class="btn btn-primary btn-sm" id="ms-copySel">📋 复制所选</button>
+            <button class="btn btn-primary btn-sm" id="ms-copyTable">📋 复制全部</button>
+            <button class="btn btn-ghost btn-sm" id="ms-dlXlsx">下载 Excel</button>
+            <button class="btn btn-ghost btn-sm" id="ms-dlCsv">下载 CSV</button>
+            <button class="btn btn-ghost btn-sm" id="ms-dlTxt">下载 TXT</button>
+          </div>
+        </div>
+        <div class="api-bar" id="ms-apiBar">
+          <div class="field"><label>📩 收件 API 地址</label><input type="text" id="ms-apiBase" placeholder="例如 https://mail.example.com（留空 = 本页所在站点）" spellcheck="false" autocomplete="off"></div>
+          <div class="field sm"><label>邮箱类型 email_type</label><select id="ms-apiType"><option value="ms_imap">ms_imap · 微软 IMAP</option><option value="ms_graph">ms_graph · Graph OAuth</option><option value="mail_com">mail_com · Mail.com</option><option value="temp_api">temp_api · 临时邮箱</option></select></div>
+          <div class="field xs"><label>取最新几封 limit</label><select id="ms-apiLimit"><option value="1">1 封</option><option value="2">2 封</option><option value="3">3 封</option><option value="4">4 封</option><option value="5">5 封</option></select></div>
+          <div class="field"><label>凭据模板（/api/ 后面那段，可用 {列名}）</label><input type="text" id="ms-apiTpl" placeholder="留空 = 自动：邮箱----密码" spellcheck="false" autocomplete="off"></div>
+          <button class="btn btn-primary btn-sm" id="ms-apiBatch" type="button" title="对左侧勾选的行依次调用接口">📩 收取勾选行</button>
+        </div>
+        <div class="api-hint" id="ms-apiHint"></div>
+        <div class="note" id="ms-note"></div>
+        <div class="gm-tablewrap"><table class="gm-table" id="ms-table"></table></div>
+        <div class="hint" style="margin-top:10px" id="ms-copyHint"></div>
+      </div>
+      <div class="card">
+        <h2>③ 重新组合成一行文本 <span class="badge">反向操作</span></h2>
+        <div class="pw-sub" style="margin-top:0">字段之间用</div>
+        <div class="chips" id="ms-joinChips" style="margin-top:0">
+          <button type="button" class="chip on" data-sep=":">冒号 :</button><button type="button" class="chip" data-sep="----">四连字符 ----</button><button type="button" class="chip" data-sep="|">竖线 |</button><button type="button" class="chip" data-sep=",">逗号 ,</button><button type="button" class="chip" data-sep=";">分号 ;</button><button type="button" class="chip" data-sep="[Tab]">Tab</button><button type="button" class="chip" data-sep="[空格]">空格</button><button type="button" class="chip" data-sep="-">连字符 -</button><button type="button" class="chip" data-sep="_">下划线 _</button><button type="button" class="chip" data-sep="/">斜杠 /</button><button type="button" class="chip" data-sep="#">井号 #</button><button type="button" class="chip" data-sep="__custom__">自定义…</button>
+        </div>
+        <div class="grid" style="margin-top:14px">
+          <div class="field" id="ms-joinCustomWrap" style="display:none"><label>自定义分隔符</label><input type="text" id="ms-joinCustom" placeholder="例如 :: 或 [Tab]" spellcheck="false"><div class="hint">Tab 写 [Tab]，空格写 [空格]</div></div>
+          <div class="field"><label>或 用模板自由组合（留空则按上面的分隔符顺序拼接）</label><input type="text" id="ms-joinTpl" placeholder="例如 {Email}:{Password}|{辅助邮箱}" spellcheck="false"><div class="hint" id="ms-joinTplHint">可用列名：—</div></div>
+          <div class="field"><label>单元格内多值（如备份代码）之间用</label><input type="text" id="ms-joinInner" value=" " placeholder="默认空格" spellcheck="false"><div class="hint">备份代码在表格里是一格多行，拼成一行时用这个字符连起来</div></div>
+        </div>
+        <div class="toggles">
+          <label class="toggle"><input type="checkbox" id="ms-joinIdx"><span class="sw"></span>包含序号</label>
+          <label class="toggle"><input type="checkbox" id="ms-joinSelOnly"><span class="sw"></span>只组合勾选的行</label>
+          <label class="toggle"><input type="checkbox" id="ms-joinSkipEmpty"><span class="sw"></span>跳过空字段（不保留位置）</label>
+        </div>
+        <div class="pane-head" style="margin-top:14px"><span class="desc">组合结果 <b id="ms-joinCount">0</b> 行 · 只显示前 500 行，复制 / 下载为全部</span><div class="tools"><button class="btn btn-primary btn-sm" id="ms-joinCopy">复制组合结果</button><button class="btn btn-ghost btn-sm" id="ms-joinDl">下载 TXT</button></div></div>
+        <textarea id="ms-joinOut" readonly spellcheck="false" style="min-height:160px"></textarea>
+      </div>
+      <div class="card" id="ms-badCard" style="display:none">
+        <div class="pane-head"><span class="desc">⚠️ 异常行（没有识别到第一列，或含未识别字段）<span class="cnt" id="ms-c-bad">0</span></span><div class="tools"><button class="btn btn-ghost btn-sm" id="ms-copyBad">复制</button><button class="btn btn-primary btn-sm" id="ms-dlBad">下载</button></div></div>
+        <textarea id="ms-ta-bad" readonly spellcheck="false" style="min-height:160px"></textarea>
       </div>
     </div>
   </section>
@@ -1079,6 +1288,12 @@
   </main>
 </div>
 
+<div class="modal-bg" id="ms-apiModal" role="dialog" aria-modal="true" aria-labelledby="ms-apiMTitle">
+  <div class="modal">
+    <div class="modal-head"><div class="t" id="ms-apiMTitle">收件结果</div><button class="btn btn-ghost btn-sm" id="ms-apiMRefresh" type="button" title="再调一次接口">↻ 重新收取</button><button class="modal-x" id="ms-apiMClose" type="button" title="关闭 (Esc)">✕</button></div>
+    <div class="modal-body" id="ms-apiMBody"></div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1093,6 +1308,7 @@ function escHTML(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&
 function safeFileName(s){ return String(s).replace(/[\\/:*?"<>|\x00-\x1f]/g,"").replace(/^\.+/,"").trim().slice(0,80); }
 /* 复制文本：优先 Clipboard API，失败则退回 execCommand（老浏览器 / 某些国产浏览器 / 非安全上下文） */
 async function copyTextSafe(text){ try{ if(navigator.clipboard&&navigator.clipboard.writeText){ await navigator.clipboard.writeText(text); return true; } }catch(e){} try{ const ta=document.createElement("textarea"); ta.value=text; ta.setAttribute("readonly",""); ta.style.cssText="position:fixed;top:0;left:0;width:1px;height:1px;opacity:0"; document.body.appendChild(ta); ta.focus(); ta.select(); ta.setSelectionRange(0,text.length); const ok=document.execCommand("copy"); document.body.removeChild(ta); return !!ok; }catch(e){ return false; } }
+const EOL="\r\n"; /* 复制到剪贴板统一用 Windows 换行，避免旧记事本等把多行粘成一行 */
 function download(blob,name){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(()=>URL.revokeObjectURL(a.href),8000); toast("已下载 "+name); }
 
 /* ---- 纯 JS ZIP（store 存储法，无压缩，无外部库） ---- */
@@ -1134,7 +1350,7 @@ async function zipDownload(items,zipName){
 async function copySinkFull(sink){
   if(!sink||!sink.count){ toast("没有内容"); return; }
   const blob=new Blob(await sink.blobParts());
-  if(blob.size>25*1024*1024){ try{await navigator.clipboard.writeText(sink.preview.join("\n"));toast(`内容较大，已复制预览前 ${sink.preview.length.toLocaleString()} 行`);}catch{toast("复制失败，请下载");} return; }
+  if(blob.size>25*1024*1024){ try{await navigator.clipboard.writeText(sink.preview.join(EOL));toast(`内容较大，已复制预览前 ${sink.preview.length.toLocaleString()} 行`);}catch{toast("复制失败，请下载");} return; }
   try{ await navigator.clipboard.writeText(await blob.text()); toast(`已复制 ${sink.count.toLocaleString()} 行`); }catch{toast("复制失败，请下载");}
 }
 function bindDrop(dropEl,inputEl,onFiles){ dropEl.addEventListener("click",e=>{ if(e.target===inputEl)return; inputEl.click(); }); dropEl.addEventListener("dragover",e=>{e.preventDefault();dropEl.classList.add("drag");}); dropEl.addEventListener("dragleave",()=>dropEl.classList.remove("drag")); dropEl.addEventListener("drop",e=>{e.preventDefault();dropEl.classList.remove("drag");onFiles(e.dataTransfer.files);}); inputEl.addEventListener("change",e=>{onFiles(e.target.files);inputEl.value="";}); }
@@ -1292,7 +1508,7 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
   };
   $("#mg-dlFresh").onclick=()=>dlSink(lastRun&&lastRun.fresh,"新增数据.txt");
   $("#mg-skip").onclick=()=>{ $("#mergePanel").style.display="none"; toast("已跳过归档"); };
-  document.querySelectorAll("#page-merge [data-copy]").forEach(b=>b.onclick=async ()=>{ const s=lastRun&&lastRun[b.dataset.copy]; if(!s||!s.count){toast("没有内容");return;} try{await navigator.clipboard.writeText(s.preview.join("\n"));toast(s.count>s.preview.length?`已复制预览前 ${s.preview.length.toLocaleString()} 行`:`已复制 ${s.count.toLocaleString()} 行`);}catch{toast("复制失败，请下载");} });
+  document.querySelectorAll("#page-merge [data-copy]").forEach(b=>b.onclick=async ()=>{ const s=lastRun&&lastRun[b.dataset.copy]; if(!s||!s.count){toast("没有内容");return;} try{await navigator.clipboard.writeText(s.preview.join(EOL));toast(s.count>s.preview.length?`已复制预览前 ${s.preview.length.toLocaleString()} 行`:`已复制 ${s.count.toLocaleString()} 行`);}catch{toast("复制失败，请下载");} });
   const nameMap={fresh:"新增数据.txt",invalid:"格式异常.txt",internal:"本批重复.txt",archive:"存档已有.txt"};
   document.querySelectorAll("#page-merge [data-dl]").forEach(b=>b.onclick=()=>dlSink(lastRun&&lastRun[b.dataset.dl],nameMap[b.dataset.dl]));
   async function dlSink(s,name){ if(!s||!s.count){toast("没有内容");return;} download(new Blob(await s.blobParts(),{type:"text/plain;charset=utf-8"}),name); }
@@ -1439,7 +1655,7 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
     toast(`清洗完成：输出 ${out.count.toLocaleString()} 行，删除 ${removed.toLocaleString()} 行`);
   }
   let lastOut=null;
-  $("#cl-copy").onclick=async ()=>{ if(!lastOut||!lastOut.count){toast("没有内容");return;} try{await navigator.clipboard.writeText(lastOut.preview.join("\n"));toast(lastOut.count>lastOut.preview.length?`已复制预览前 ${lastOut.preview.length.toLocaleString()} 行`:`已复制 ${lastOut.count.toLocaleString()} 行`);}catch{toast("复制失败，请下载");} };
+  $("#cl-copy").onclick=async ()=>{ if(!lastOut||!lastOut.count){toast("没有内容");return;} try{await navigator.clipboard.writeText(lastOut.preview.join(EOL));toast(lastOut.count>lastOut.preview.length?`已复制预览前 ${lastOut.preview.length.toLocaleString()} 行`:`已复制 ${lastOut.count.toLocaleString()} 行`);}catch{toast("复制失败，请下载");} };
   $("#cl-dl").onclick=async ()=>{ if(!lastOut||!lastOut.count){toast("没有内容");return;} download(new Blob(await lastOut.blobParts(),{type:"text/plain;charset=utf-8"}),"清洗结果.txt"); };
 
   updateRun(); updateExample();
@@ -1498,7 +1714,7 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
   function fillPane(key,sink){ const ta=$("#de-ta-"+key),note=$("#de-note-"+key); ta.value=sink.preview.join("\n"); if(sink.count>sink.preview.length){note.style.display="block";note.textContent=`共 ${sink.count.toLocaleString()} 行，仅预览前 ${sink.preview.length.toLocaleString()} 行；完整请下载或到文件夹查看。`;}else note.style.display="none"; }
   function setPane(name){ document.querySelectorAll("#page-dedup .subtab").forEach(t=>t.classList.toggle("active",t.dataset.p===name)); document.querySelectorAll("#page-dedup .pane").forEach(p=>p.classList.toggle("active",p.id==="de-pane-"+name)); }
   document.querySelectorAll("#page-dedup .subtab").forEach(t=>t.addEventListener("click",()=>setPane(t.dataset.p)));
-  document.querySelectorAll("#page-dedup [data-decopy]").forEach(b=>b.onclick=async ()=>{ const s=b.dataset.decopy==="kept"?lastKept:lastDups; if(!s||!s.count){toast("没有内容");return;} try{await navigator.clipboard.writeText(s.preview.join("\n"));toast(s.count>s.preview.length?`已复制预览前 ${s.preview.length.toLocaleString()} 行`:`已复制 ${s.count.toLocaleString()} 行`);}catch{toast("复制失败，请下载");} });
+  document.querySelectorAll("#page-dedup [data-decopy]").forEach(b=>b.onclick=async ()=>{ const s=b.dataset.decopy==="kept"?lastKept:lastDups; if(!s||!s.count){toast("没有内容");return;} try{await navigator.clipboard.writeText(s.preview.join(EOL));toast(s.count>s.preview.length?`已复制预览前 ${s.preview.length.toLocaleString()} 行`:`已复制 ${s.count.toLocaleString()} 行`);}catch{toast("复制失败，请下载");} });
   document.querySelectorAll("#page-dedup [data-dedl]").forEach(b=>b.onclick=async ()=>{ const s=b.dataset.dedl==="kept"?lastKept:lastDups; if(!s||!s.count){toast("没有内容");return;} download(new Blob(await s.blobParts(),{type:"text/plain;charset=utf-8"}), b.dataset.dedl==="kept"?"去重结果.txt":"重复项.txt"); });
   $("#de-zipAll").onclick=async ()=>{ if(!lastKept){toast("请先去重");return;} await zipDownload([{name:"去重结果.txt",sink:lastKept},{name:"重复项.txt",sink:lastDups}],"去重结果.zip"); };
   updateRun();
@@ -1576,7 +1792,7 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
     $("#cv-result").style.display="block"; $("#cv-result").scrollIntoView({behavior:"smooth",block:"start"});
     toast(`合并完成：输出 ${out.count.toLocaleString()} 行`);
   }
-  $("#cv-copy").onclick=async ()=>{ if(!lastOut||!lastOut.count){toast("没有内容");return;} try{await navigator.clipboard.writeText(lastOut.preview.join("\n"));toast(lastOut.count>lastOut.preview.length?`已复制预览前 ${lastOut.preview.length.toLocaleString()} 行`:`已复制 ${lastOut.count.toLocaleString()} 行`);}catch{toast("复制失败，请下载");} };
+  $("#cv-copy").onclick=async ()=>{ if(!lastOut||!lastOut.count){toast("没有内容");return;} try{await navigator.clipboard.writeText(lastOut.preview.join(EOL));toast(lastOut.count>lastOut.preview.length?`已复制预览前 ${lastOut.preview.length.toLocaleString()} 行`:`已复制 ${lastOut.count.toLocaleString()} 行`);}catch{toast("复制失败，请下载");} };
   $("#cv-dl").onclick=async ()=>{ if(!lastOut||!lastOut.count){toast("没有内容");return;} download(new Blob(await lastOut.blobParts(),{type:"text/plain;charset=utf-8"}),"合并结果.txt"); };
   updateRun(); updateExample();
 })();
@@ -1667,7 +1883,7 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
   function fillPane(key,sink){ const ta=$("#ex-ta-"+key),note=$("#ex-note-"+key); ta.value=sink.preview.join("\n"); if(sink.count>sink.preview.length){note.style.display="block";note.textContent=`共 ${sink.count.toLocaleString()} 行，仅预览前 ${sink.preview.length.toLocaleString()} 行；完整请下载或到文件夹查看。`;}else note.style.display="none"; }
   function setPane(name){ document.querySelectorAll("#page-extract .subtab").forEach(t=>t.classList.toggle("active",t.dataset.p===name)); document.querySelectorAll("#page-extract .pane").forEach(p=>p.classList.toggle("active",p.id==="ex-pane-"+name)); }
   document.querySelectorAll("#page-extract .subtab").forEach(t=>t.addEventListener("click",()=>setPane(t.dataset.p)));
-  document.querySelectorAll("#page-extract [data-excopy]").forEach(b=>b.onclick=async ()=>{ const s=b.dataset.excopy==="hit"?lastHit:lastMiss; if(!s||!s.count){toast("没有内容");return;} try{await navigator.clipboard.writeText(s.preview.join("\n"));toast(s.count>s.preview.length?`已复制预览前 ${s.preview.length.toLocaleString()} 行`:`已复制 ${s.count.toLocaleString()} 行`);}catch{toast("复制失败，请下载");} });
+  document.querySelectorAll("#page-extract [data-excopy]").forEach(b=>b.onclick=async ()=>{ const s=b.dataset.excopy==="hit"?lastHit:lastMiss; if(!s||!s.count){toast("没有内容");return;} try{await navigator.clipboard.writeText(s.preview.join(EOL));toast(s.count>s.preview.length?`已复制预览前 ${s.preview.length.toLocaleString()} 行`:`已复制 ${s.count.toLocaleString()} 行`);}catch{toast("复制失败，请下载");} });
   document.querySelectorAll("#page-extract [data-exdl]").forEach(b=>b.onclick=async ()=>{ const s=b.dataset.exdl==="hit"?lastHit:lastMiss; if(!s||!s.count){toast("没有内容");return;} download(new Blob(await s.blobParts(),{type:"text/plain;charset=utf-8"}),b.dataset.exdl==="hit"?"匹配结果.txt":"未找到.txt"); });
   $("#ex-zipAll").onclick=async ()=>{ if(!lastHit){toast("请先提取");return;} await zipDownload([{name:"匹配结果.txt",sink:lastHit},{name:"未找到.txt",sink:lastMiss}],"提取匹配结果.zip"); };
   updateRun();
@@ -1934,7 +2150,7 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
   }
   /* 序号：显示、批量复制、下载共用一套格式 */
   function numTag(n){ if(!$("#pw-numOn").checked)return ""; const fmt=$("#pw-numFmt").value, w=String(batch.length).length; return fmt==="paren"?n+") ":fmt==="bracket"?"["+n+"] ":fmt==="pad"?String(n).padStart(w,"0")+" ":fmt==="tab"?n+"\t":fmt==="colon"?n+":":n+". "; }
-  function numbered(list){ return list.map(x=>numTag(x.i+1)+x.pw).join("\n"); }
+  function numbered(list){ return list.map(x=>numTag(x.i+1)+x.pw).join(EOL); }
   const withIndex=arr=>arr.map((b,i)=>({pw:b.pw,i}));
   let copied=new Set();
   function markCopied(i){ copied.add(i); const el=$("#pw-batch").children[i]; if(el)el.classList.add("copied"); $("#pw-copiedCount").textContent=copied.size.toLocaleString(); }
@@ -1966,7 +2182,7 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
   $("#pw-regen").onclick=generate; $("#pw-gen").onclick=generate;
   $("#pw-copyAll").onclick=async ()=>{ if(!batch.length){toast("没有内容");return;} if(await copyText(numbered(withIndex(batch)),`已复制全部 ${batch.length} 条`+($("#pw-numOn").checked?"（带序号）":""))) batch.forEach((_,i)=>markCopied(i)); };
   $("#pw-copyRest").onclick=async ()=>{ const rest=withIndex(batch).filter(x=>!copied.has(x.i)); if(!rest.length){toast("没有未复制的条目");return;} if(await copyText(numbered(rest),`已复制剩余 ${rest.length} 条`)) rest.forEach(x=>markCopied(x.i)); };
-  $("#pw-dlAll").onclick=()=>{ if(!batch.length){toast("没有内容");return;} download(new Blob([numbered(withIndex(batch))+"\n"],{type:"text/plain;charset=utf-8"}),"随机密码.txt"); };
+  $("#pw-dlAll").onclick=()=>{ if(!batch.length){toast("没有内容");return;} download(new Blob([numbered(withIndex(batch))+EOL],{type:"text/plain;charset=utf-8"}),"随机密码.txt"); };
   $("#pw-reset").onclick=()=>{
     const set=(id,v)=>{ const el=$("#"+id); if(el.type==="checkbox")el.checked=v; else el.value=v; };
     set("pw-len",16);set("pw-lenNum",16);set("pw-upper",true);set("pw-lower",true);set("pw-digit",true);set("pw-symbol",true);set("pw-customOn",false);set("pw-symbols",DEFAULT_SYMBOLS);set("pw-custom","");set("pw-exclude","");
@@ -1991,29 +2207,22 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
   generate();
 })();
 
-/* ===================== 模块八：谷歌邮箱专用（账号信息整理成表） ===================== */
+/* ===================== 模块八：账号信息整理成表（谷歌邮箱专用 / 微软专用共用一套引擎） ===================== */
 (function(){
-  const files=[]; let running=false, rows=[], bad=[], lastCfg=null, stats={inN:0,dupN:0};
-  const paste=$("#gm-paste");
-  const prog=progressCtl($("#gm-progress"),$("#gm-fill"),$("#gm-text"));
-  bindDrop($("#gm-drop"),$("#gm-file"),list=>{ const a=[...list].filter(f=>/\.(txt|csv|tsv)$/i.test(f.name)||f.type==="text/plain"); if(!a.length){toast("请选择 .txt / .csv / .tsv");return;} files.push(...a); render(); });
-  function render(){ renderFileList($("#gm-list"),files,render); updateRun(); }
-  function updateRun(){ $("#gm-run").disabled=!(files.length||paste.value.trim()); const n=countPasteLines(paste.value); $("#gm-pasteHint").textContent=n?`已输入约 ${n.toLocaleString()} 行`:"尚未输入"; }
-  paste.addEventListener("input",updateRun);
-  $("#gm-clear").onclick=()=>{ files.length=0; render(); paste.value=""; updateRun(); $("#gm-result").style.display="none"; rows=[]; bad=[]; toast("已清空"); };
-
-  /* ---- 识别一行 ---- */
   const EMAIL=/^[^\s@]+@[^\s@]+\.[^\s@]+$/, CODE=/^\d{6,12}$/, TFA_FULL=/^(?:[a-z2-7]{4}[ \-]?){4,16}$/i, TFA_RAW=/^[a-z2-7]{16,64}$/i, TFA_GRP=/^[a-z2-7]{4}$/i;
-  function parseLine(raw){
+  const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, LONGTOKEN=/^[A-Za-z0-9._\-+/=!*~$]{40,}$/;
+
+  /* ---------- 谷歌：智能识别 ---------- */
+  function gmParse(raw){
     const line=raw.replace(/\r$/,""); if(!line.trim())return null;
     const tabMode=line.includes("\t");
     const toks=tabMode?line.split("\t").map(s=>s.trim()).filter(s=>s!==""):line.trim().split(/\s+/);
     const r={email:"",pw:"",rec:"",tfa:"",codes:[],extra:[],raw:line};
     let rest=toks;
-    if(toks.length&&EMAIL.test(toks[0])){ r.email=toks[0]; r.pw=toks.length>1?toks[1]:""; rest=toks.slice(2); } // 位置优先：第 1 段邮箱、第 2 段密码
+    if(toks.length&&EMAIL.test(toks[0])){ r.email=toks[0]; r.pw=toks.length>1?toks[1]:""; rest=toks.slice(2); }
     const grp=[]; const flush=()=>{ if(!grp.length)return; if(grp.length>=4)r.tfa=r.tfa?r.tfa+" "+grp.join(" "):grp.join(" "); else r.extra.push(...grp); grp.length=0; };
     for(const t of rest){
-      if(!tabMode&&TFA_GRP.test(t)&&!/^\d+$/.test(t)){ grp.push(t); continue; } // 空格分隔时 2FA 是 4 个一组的小段
+      if(!tabMode&&TFA_GRP.test(t)&&!/^\d+$/.test(t)){ grp.push(t); continue; }
       flush();
       if(EMAIL.test(t)){ if(!r.email)r.email=t; else if(!r.rec)r.rec=t; else r.extra.push(t); }
       else if(CODE.test(t))r.codes.push(t);
@@ -2022,113 +2231,320 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
     }
     flush();
     if(r.email&&!r.pw&&r.extra.length)r.pw=r.extra.shift();
-    r.ok=!!r.email;
-    return r;
+    r.ok=!!r.email; return r;
+  }
+  /* ---------- 微软：智能识别 ---------- */
+  function msParse(raw){
+    const line=raw.replace(/\r$/,""); if(!line.trim())return null;
+    const toks=line.includes("\t")?line.split("\t"):line.includes("----")?line.split("----"):line.trim().split(/\s+/);
+    const parts=toks.map(s=>s.trim()).filter(s=>s!=="");
+    const r={email:"",pw:"",token:"",cid:"",rec:"",recPw:"",extra:[],raw:line};
+    let rest=parts;
+    if(parts.length&&EMAIL.test(parts[0])){ r.email=parts[0]; r.pw=parts.length>1?parts[1]:""; rest=parts.slice(2); }
+    let afterRec=false;
+    for(const t of rest){
+      if(EMAIL.test(t)){ if(!r.email)r.email=t; else if(!r.rec){ r.rec=t; afterRec=true; } else r.extra.push(t); continue; }
+      if(UUID.test(t)){ if(!r.cid)r.cid=t; else r.extra.push(t); continue; }
+      if(LONGTOKEN.test(t)&&!r.token){ r.token=t; continue; }
+      if(afterRec&&!r.recPw){ r.recPw=t; continue; }
+      if(!r.pw&&r.email){ r.pw=t; continue; }
+      r.extra.push(t);
+    }
+    r.ok=!!r.email; return r;
   }
 
-  /* ---- 生成表格数据 ---- */
-  function cfg(){ return { codeMode:$("#gm-codeMode").value, tfaMode:$("#gm-tfaMode").value, start:parseInt($("#gm-start").value)||0, header:$("#gm-header").checked, lower:$("#gm-lower").checked, dedup:$("#gm-dedup").checked }; }
-  function tfaOf(r,c){ if(c.tfaMode==="strip")return r.tfa.replace(/[\s-]+/g,""); if(c.tfaMode==="upper")return r.tfa.replace(/[\s-]+/g,"").toUpperCase(); return r.tfa; }
-  function table(c,idx){ // idx：只输出这些行（保持原序号）
-    const list=idx?idx.map(i=>rows[i]):rows;
-    const maxCodes=rows.reduce((a,r)=>Math.max(a,r.codes.length),0), hasExtra=rows.some(r=>r.extra.length);
-    const head=["序号","邮箱","密码","辅助邮箱","2FA"];
-    if(c.codeMode==="cols"){ for(let i=1;i<=maxCodes;i++)head.push("备份代码"+i); } else head.push("备份代码");
-    if(hasExtra)head.push("未识别");
-    const body=list.map((r,k)=>{ const i=idx?idx[k]:k; const cells=[String(c.start+i),r.email,r.pw,r.rec,tfaOf(r,c)];
-      if(c.codeMode==="cols"){ for(let k=0;k<maxCodes;k++)cells.push(r.codes[k]||""); } else cells.push(r.codes.join(c.codeMode==="space"?" ":c.codeMode==="comma"?",":"\n"));
-      if(hasExtra)cells.push(r.extra.join(" ")); return cells; });
-    return { head, body, hasExtra, maxCodes };
+  /* ---------- 自定义格式模板 ---------- */
+  const unescapeDelim=d=>d.replace(/\[Tab\]|\\t/gi,"\t").replace(/\[空格\]/g," ");
+  function parseTemplate(tpl){
+    tpl=tpl.replace(/\r?\n/g,"").trim(); if(!tpl) throw new Error("模板为空");
+    let names=[],delims=[];
+    if(/\{[^}]+\}/.test(tpl)){ const re=/\{([^}]+)\}/g; let last=0,m,first=true; while((m=re.exec(tpl))){ if(!first)delims.push(unescapeDelim(tpl.slice(last,m.index))); first=false; names.push(m[1].trim()); last=m.index+m[0].length; } if(delims.some(d=>d===""))throw new Error("两个字段之间必须有分隔符"); }
+    else { const t=unescapeDelim(tpl); const m=t.match(/[^\p{L}\p{N}_*· ]+/u); if(!m) throw new Error("模板里没有分隔符（如 ----、:、|、[Tab]）"); const d=m[0]; names=t.split(d).map(s=>s.trim()); delims=names.slice(1).map(()=>d); }
+    if(names.length<2) throw new Error("至少需要两个字段");
+    if(names.some(n=>!n)) throw new Error("字段名不能为空");
+    const fields=names.map(n=>({name:n.replace(/\*$/,"").trim()||"字段",rest:/\*$/.test(n)}));
+    if(fields.slice(0,-1).some(f=>f.rest)) throw new Error("带 * 的「吸收剩余」字段只能放在最后");
+    return { fields, delims, uniform:delims.every(d=>d===delims[0]) };
   }
-  const kinds=t=>t.head.map((h,i)=>i===0?"ix":h==="邮箱"||h==="辅助邮箱"?"email":h.startsWith("备份代码")?"codes":h==="未识别"?"extra":"");
+  function splitByTemplate(line,t){
+    const n=t.fields.length; let values=[],extra=[]; const last=t.fields[n-1];
+    if(t.uniform){ const parts=line.split(t.delims[0]).map(s=>s.trim()); if(parts.length<2)return {values:[line.trim()].concat(new Array(n-1).fill("")),extra:[],hit:false};
+      if(last.rest){ values=parts.slice(0,n-1); values.push(parts.slice(n-1).filter(Boolean).join("\n")); } else { values=parts.slice(0,n); extra=parts.slice(n).filter(Boolean); } }
+    else { let rest=line,hit=false; for(let i=0;i<n-1;i++){ const d=t.delims[i]; const idx=rest.indexOf(d); if(idx<0){ values.push(rest.trim()); rest=""; for(let k=i+1;k<n;k++)values.push(""); return {values,extra,hit:i>0}; } hit=true; values.push(rest.slice(0,idx).trim()); rest=rest.slice(idx+d.length); } values.push(rest.trim()); return {values,extra,hit}; }
+    while(values.length<n)values.push("");
+    return {values,extra,hit:true};
+  }
 
-  /* ---- 输出：TSV / CSV / HTML / XLSX ---- */
+  /* ---------- 输出：TSV / CSV / HTML / XLSX ---------- */
   const q=(s,sep)=>(s.includes('"')||s.includes("\n")||s.includes(sep))?'"'+s.replace(/"/g,'""')+'"':s;
   function toDelimited(t,c,sep){ const lines=[]; if(c.header)lines.push(t.head.map(h=>q(h,sep)).join(sep)); for(const row of t.body)lines.push(row.map(s=>q(s,sep)).join(sep)); return lines.join("\r\n"); }
   function toHTML(t,c){
-    const k=kinds(t); const td=(s,i)=>{ const num=k[i]==="ix"; const style=`border:1px solid #bfbfbf;padding:4px 8px;text-align:center;vertical-align:middle;white-space:normal;${num?"":"mso-number-format:'\\@';"}`; return `<td style="${style}">${escHTML(s).replace(/\n/g,"<br>")}</td>`; };
-    let h=`<table border="1" cellspacing="0" cellpadding="4" style="border-collapse:collapse;font-family:Consolas,'Microsoft YaHei',monospace;font-size:11pt">`;
+    const td=(s,i)=>{ const num=t.kinds[i]==="ix"; const style=`border:1px solid #bfbfbf;padding:4px 8px;text-align:center;vertical-align:middle;white-space:normal;${num?"":"mso-number-format:'\\@';"}`; return `<td style="${style}">${escHTML(s).replace(/\n/g,"<br>")}</td>`; };
+    let h=`<html><head><meta charset="utf-8"></head><body><table border="1" cellspacing="0" cellpadding="4" style="border-collapse:collapse;font-family:Consolas,'Microsoft YaHei',monospace;font-size:11pt">`;
     if(c.header)h+="<thead><tr>"+t.head.map(x=>`<th style="background:#ffc000;color:#000;font-weight:700;text-align:center;border:1px solid #bfbfbf;padding:4px 10px">${escHTML(x)}</th>`).join("")+"</tr></thead>";
-    h+="<tbody>"+t.body.map(row=>"<tr>"+row.map(td).join("")+"</tr>").join("")+"</tbody></table>";
-    return h;
+    return h+"<tbody>"+t.body.map(row=>"<tr>"+row.map(td).join("")+"</tr>").join("")+"</tbody></table></body></html>";
   }
   const xml=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g,"");
   function colName(n){ let s=""; n++; while(n>0){ const m=(n-1)%26; s=String.fromCharCode(65+m)+s; n=(n-m-1)/26; } return s; }
-  function toXLSX(t,c){
-    const enc=new TextEncoder(); const k=kinds(t);
+  function toXLSX(t,c,sheetName){
+    const enc=new TextEncoder();
     const widths=t.head.map((h,i)=>{ let w=Math.max(h.length*2.2,6); for(const row of t.body){ for(const part of row[i].split("\n"))w=Math.max(w,part.length*1.15+2); } return Math.min(60,Math.ceil(w)); });
     let sheet=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0">${c.header?'<pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/>':""}</sheetView></sheetViews><sheetFormatPr defaultRowHeight="18"/><cols>${widths.map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join("")}</cols><sheetData>`;
     let rn=1;
     if(c.header){ sheet+=`<row r="1" ht="22" customHeight="1">`+t.head.map((h,i)=>`<c r="${colName(i)}1" s="1" t="inlineStr"><is><t>${xml(h)}</t></is></c>`).join("")+"</row>"; rn=2; }
     for(const row of t.body){ const lines=row.reduce((a,s)=>Math.max(a,s.split("\n").length),1); sheet+=`<row r="${rn}" ht="${Math.min(409,lines*18+4)}" customHeight="1">`;
-      row.forEach((s,i)=>{ const ref=colName(i)+rn; if(k[i]==="ix"&&/^\d+$/.test(s))sheet+=`<c r="${ref}" s="2"><v>${s}</v></c>`; else if(s!=="")sheet+=`<c r="${ref}" s="2" t="inlineStr"><is><t xml:space="preserve">${xml(s)}</t></is></c>`; });
+      row.forEach((s,i)=>{ const ref=colName(i)+rn; if(t.kinds[i]==="ix"&&/^\d+$/.test(s))sheet+=`<c r="${ref}" s="2"><v>${s}</v></c>`; else if(s!=="")sheet+=`<c r="${ref}" s="2" t="inlineStr"><is><t xml:space="preserve">${xml(s)}</t></is></c>`; });
       sheet+="</row>"; rn++; }
     sheet+="</sheetData></worksheet>";
     const styles=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Microsoft YaHei"/></font><font><b/><sz val="12"/><name val="Microsoft YaHei"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFC000"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="FFBFBFBF"/></left><right style="thin"><color rgb="FFBFBFBF"/></right><top style="thin"><color rgb="FFBFBFBF"/></top><bottom style="thin"><color rgb="FFBFBFBF"/></bottom><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="3"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="49" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
     const ct=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`;
     const rels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`;
-    const wb=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="谷歌邮箱" sheetId="1" r:id="rId1"/></sheets></workbook>`;
+    const wb=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="${xml(sheetName)}" sheetId="1" r:id="rId1"/></sheets></workbook>`;
     const wbrels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`;
     const entries=[["[Content_Types].xml",ct],["_rels/.rels",rels],["xl/workbook.xml",wb],["xl/_rels/workbook.xml.rels",wbrels],["xl/styles.xml",styles],["xl/worksheets/sheet1.xml",sheet]].map(([name,body])=>({name,bytes:enc.encode(body)}));
-    const blob=buildZip(entries); return new Blob([blob],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+    return new Blob([buildZip(entries)],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
   }
-
-  /* ---- 复制：带格式 + 纯文本 ---- */
   async function copyRich(html,text){
     try{ if(navigator.clipboard&&window.ClipboardItem){ await navigator.clipboard.write([new ClipboardItem({"text/html":new Blob([html],{type:"text/html"}),"text/plain":new Blob([text],{type:"text/plain"})})]); return true; } }catch(e){}
     try{ const div=document.createElement("div"); div.style.cssText="position:fixed;left:-9999px;top:0;opacity:0"; div.innerHTML=html; document.body.appendChild(div); const range=document.createRange(); range.selectNodeContents(div); const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range); const ok=document.execCommand("copy"); sel.removeAllRanges(); document.body.removeChild(div); if(ok)return true; }catch(e){}
-    try{ await navigator.clipboard.writeText(text); return true; }catch(e){ return false; }
+    return copyTextSafe(text);
   }
 
-  /* ---- 处理 ---- */
-  function sources(){ const s=files.map(f=>({file:f})); if(paste.value.trim())s.push({text:paste.value}); return s; }
-  $("#gm-run").onclick=()=>{ if(running)return; run().catch(e=>{ running=false; $("#gm-run").disabled=false; prog.hide(); console.error(e); toast("处理失败："+(e&&e.message||e)); }); };
-  async function run(){
-    const srcs=sources(); if(!srcs.length){toast("请先导入或粘贴");return;}
-    running=true; $("#gm-run").disabled=true; $("#gm-result").style.display="none";
-    prog.show("整理中…"); await tick();
-    const c=cfg(); rows=[]; bad=[]; let inN=0, dupN=0; const seen=c.dedup?new Set():null;
-    let procBytes=0; const tot=srcs.reduce((a,s)=>a+(s.file?s.file.size:new Blob([s.text]).size),0)||1;
-    function onLine(raw){ const r=parseLine(raw); if(!r)return null; inN++;
-      if(r.ok&&c.lower){ r.email=r.email.toLowerCase(); r.rec=r.rec.toLowerCase(); }
-      if(!r.ok){ bad.push(r.raw); return null; }
-      if(seen){ if(seen.has(r.email)){dupN++;return null;} seen.add(r.email); }
-      rows.push(r); if(r.extra.length)bad.push(r.raw+"　　← 未识别："+r.extra.join(" "));
-      return null; }
-    for(const s of srcs){ await streamSource(s,onLine,n=>{procBytes+=n;prog.set(procBytes/tot*100,`整理中…　${fmtSize(procBytes)} / ${fmtSize(tot)}`);}); }
-    lastCfg=c; stats={inN,dupN}; renderResult();
-    prog.hide(); running=false; $("#gm-run").disabled=false; $("#gm-result").scrollIntoView({behavior:"smooth",block:"start"});
-    toast(`整理完成：${rows.length.toLocaleString()} 个账号${bad.length?`，异常 ${bad.length}`:""}`);
+  /* ---------- 通用页面工厂 ---------- */
+  /* ---------- 收件 API：点表格里的 📩 用「邮箱----密码」调接口，拉取该账号最新邮件并提取验证码 ---------- */
+  function mailApi(P,ctx){
+    const $$=id=>$("#"+P+"-"+id); const KEY="tt."+P+".api";
+    const res=new Map(); let batchRun=false, batchStop=false, openI=-1;
+    const els={base:$$("apiBase"),type:$$("apiType"),limit:$$("apiLimit"),tpl:$$("apiTpl")};
+    try{ const s=JSON.parse(localStorage.getItem(KEY)||"{}"); if(s.base)els.base.value=s.base; if(s.type)els.type.value=s.type; if(s.limit)els.limit.value=String(s.limit); if(s.tpl)els.tpl.value=s.tpl; }catch(e){}
+    function save(){ try{ localStorage.setItem(KEY,JSON.stringify({base:els.base.value.trim(),type:els.type.value,limit:+els.limit.value,tpl:els.tpl.value.trim()})); }catch(e){} }
+    function baseUrl(){ let b=els.base.value.trim().replace(/\/+$/,""); if(b&&!/^https?:\/\//i.test(b))b=(/^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/i.test(b)?"http://":"https://")+b; return b.replace(/\/api$/i,""); }
+    function hint(){ const h=$$("apiHint"); const b=baseUrl(); let warn="";
+      if(location.protocol==="https:"&&/^http:\/\//i.test(b))warn="⚠️ 本页是 https，浏览器会拦截 http 接口（混合内容），请给接口配 https，或把本页以 http / 本地文件方式打开。";
+      else if(!b&&location.protocol==="file:")warn="⚠️ 地址留空表示「本页所在站点」，但本页是本地文件，请填写完整接口地址。";
+      h.classList.toggle("warn",!!warn);
+      h.textContent=(warn?warn+"　":"")+"请求示例："+b+"/api/邮箱----密码?email_type="+els.type.value+"&limit="+els.limit.value+"　·　点每行的「📩 收件」即调用；找到验证码会自动复制。接口需允许跨域（CORS）；这些设置只保存在本浏览器。"; }
+    ["input","change"].forEach(ev=>Object.values(els).forEach(el=>el.addEventListener(ev,()=>{ save(); hint(); })));
+    hint();
+    /* 凭据：模板优先；否则自动找 邮箱列 + 密码列 */
+    function emailOf(i){ const f=ctx.rowFields(i)||[]; const hit=f.find(x=>EMAIL.test(x.value)); return hit?hit.value:""; }
+    function credsOf(i){ const f=ctx.rowFields(i); if(!f)throw new Error("行不存在"); const tpl=els.tpl.value.trim();
+      if(tpl){ let miss=null; const s=tpl.replace(/\{([^}]+)\}/g,(m,n)=>{ const k=n.trim(); const hit=f.find(x=>x.name===k)||f.find(x=>x.name.toLowerCase()===k.toLowerCase()); if(!hit){miss=k;return m;} return hit.value; }); if(miss)throw new Error("凭据模板里的列「"+miss+"」不存在，可用："+f.map(x=>"{"+x.name+"}").join(" ")); if(!s.trim())throw new Error("凭据模板结果为空"); return s; }
+      const ei=f.findIndex(x=>EMAIL.test(x.value)); if(ei<0)throw new Error("这一行没有识别到邮箱");
+      let pi=f.findIndex((x,k)=>k!==ei&&x.value&&/密码|pass|pwd|^pw$/i.test(x.name)&&!/辅助|备用|恢复|recover|backup|second/i.test(x.name));
+      if(pi<0)pi=f.findIndex((x,k)=>k>ei&&x.value!==""); if(pi<0)throw new Error("这一行没有识别到密码（邮箱后面没有字段）");
+      return f[ei].value+"----"+f[pi].value; }
+    function buildUrl(cred){ const seg=cred.split("----").map(encodeURIComponent).join("----"); return baseUrl()+"/api/"+seg+"?email_type="+encodeURIComponent(els.type.value)+"&limit="+(Math.min(5,Math.max(1,+els.limit.value||1))); }
+    const maskUrl=u=>String(u).replace(/(\/api\/[^?]*?)----[^?]*/,"$1----••••••");
+    /* 验证码提取：先看关键词附近，再退回 6 / 8 / 5 / 4 位纯数字；排除年份 */
+    function extractCodes(subject,body){ const out=[]; const push=c=>{ c=String(c).trim(); if(c&&!/^(19|20)\d{2}$/.test(c)&&!out.includes(c))out.push(c); };
+      const txt=(subject||"")+"\n"+(body||""); let m;
+      const kw=/(?:验证码|校验码|动态码|安全码|确认码|验证代码|安全代码|verification code|security code|confirmation code|access code|login code|one[- ]time (?:code|password|passcode)|passcode|otp|your code|the code|代码|コード|인증번호)[\s\S]{0,40}?(?<![\w-])(?=[A-Za-z0-9-]*\d)([A-Z0-9]{3,4}-[A-Z0-9]{3,4}|[A-Za-z0-9]{4,8})(?![\w-])/gi;
+      while((m=kw.exec(txt)))push(m[1]);
+      for(const r of [/(?<!\d)\d{6}(?!\d)/g,/(?<!\d)\d{8}(?!\d)/g,/(?<!\d)\d{5}(?!\d)/g,/(?<!\d)\d{4}(?!\d)/g,/(?<!\d)\d{7}(?!\d)/g]){ while((m=r.exec(txt)))push(m[0]); if(out.length>=3)break; }
+      return out.slice(0,4); }
+    function toText(b){ if(b==null)return ""; if(typeof b==="object")b=b.text||b.plain||b.content||b.html||JSON.stringify(b); b=String(b);
+      if(!/<\/?[a-z][^>]*>/i.test(b))return b.replace(/\r\n?/g,"\n").replace(/\n{3,}/g,"\n\n").trim();
+      try{ const doc=new DOMParser().parseFromString(b,"text/html"); doc.querySelectorAll("script,style,head,noscript,template").forEach(n=>n.remove()); doc.querySelectorAll("br").forEach(n=>n.replaceWith("\n")); doc.querySelectorAll("p,div,tr,li,h1,h2,h3,h4,h5,h6,td,th,table,blockquote,pre").forEach(n=>n.append("\n"));
+        return (doc.body?doc.body.textContent:"").replace(/[ \t\u00a0]+/g," ").replace(/ *\n */g,"\n").replace(/\n{3,}/g,"\n\n").trim(); }catch(e){ return b; } }
+    const fmtAddr=a=>{ if(!a)return ""; if(typeof a==="string")return a; if(Array.isArray(a))return a.map(fmtAddr).filter(Boolean).join(", "); const n=a.name||a.displayName||"", e=a.address||a.email||a.emailAddress||(a.emailAddress&&a.emailAddress.address)||""; return n&&e?n+" <"+e+">":(n||e||JSON.stringify(a)); };
+    function norm(m){ m=m||{}; const subject=String(m.subject||""), body=toText(m.body); let date=m.date?String(m.date):""; if(!date&&m.timestamp){ const ts=+m.timestamp; if(ts)date=new Date(ts>1e12?ts:ts*1000).toLocaleString(); }
+      return { subject, from:fmtAddr(m.from), date, folder:String(m.folder||m.folder_key||m.folder_type||""), body, links:Array.isArray(m.links)?m.links.map(l=>typeof l==="string"?l:(l&&(l.url||l.href))||"").filter(l=>/^https?:\/\//i.test(l)):[], codes:extractCodes(subject,body), id:String(m.id||m.uid||"") }; }
+    async function fetchOne(i){ const cred=credsOf(i); const url=buildUrl(cred); const ac=new AbortController(); const tm=setTimeout(()=>ac.abort(),45000); let resp,txt,data;
+      try{ resp=await fetch(url,{signal:ac.signal,headers:{Accept:"application/json"},cache:"no-store"}); txt=await resp.text(); }
+      catch(e){ throw new Error(e&&e.name==="AbortError"?"请求超时（45 秒）":"网络请求失败：接口地址不对、服务未开 CORS，或 https 页面调用了 http 接口"); }
+      finally{ clearTimeout(tm); }
+      try{ data=JSON.parse(txt); }catch(e){ throw new Error("HTTP "+resp.status+"，返回的不是 JSON："+txt.slice(0,100)); }
+      if(!data||typeof data!=="object")throw new Error("HTTP "+resp.status+"，返回内容异常");
+      if(data.success===false||data.status==="error"||(!resp.ok&&data.success!==true))throw new Error(String(data.error||data.message||("HTTP "+resp.status))+(data.required_email_type?"（需要 email_type="+data.required_email_type+"）":"")+(data.error_code?" ["+data.error_code+"]":""));
+      const list=Array.isArray(data.emails)&&data.emails.length?data.emails:(data.email?[data.email]:[]);
+      return { status:list.length?"success":"empty", emails:list.map(norm), raw:data, url, at:Date.now() }; }
+    /* 单元格 */
+    function cellHTML(i){ const r=res.get(i); let st="";
+      if(r){ if(r.status==="loading")st='<span class="api-st load">收取中</span>';
+        else if(r.status==="error")st=`<span class="api-st err" data-open="${i}" title="${escHTML(r.error)}（点击看详情）">✕ ${escHTML(r.error)}</span>`;
+        else if(r.status==="empty")st=`<span class="api-st empty" data-open="${i}" title="收件箱没有邮件（点击看详情）">📭 无邮件</span>`;
+        else { const m=r.emails[0]; st=m.codes.length?`<span class="api-st code" data-open="${i}" data-code="${escHTML(m.codes[0])}" title="点击复制并查看 · ${escHTML(m.subject)}">${escHTML(m.codes[0])}</span>`:`<span class="api-st ok" data-open="${i}" title="${escHTML(m.subject)}（点击查看）">✉ ${escHTML(m.subject||"(无主题)")}</span>`; } }
+      return `<td class="api"><button type="button" class="api-btn" data-i="${i}" title="用这一行的邮箱----密码调接口，取最新邮件"${r&&r.status==="loading"?" disabled":""}>📩 收件</button>${st}</td>`; }
+    function paint(i){ const btn=$$("table").querySelector('.api-btn[data-i="'+i+'"]'); const td=btn&&btn.closest("td"); if(td)td.outerHTML=cellHTML(i); if(openI===i&&modal.classList.contains("show"))renderModal(i); }
+    async function fetchRow(i){ if(res.get(i)&&res.get(i).status==="loading")return res.get(i); res.set(i,{status:"loading",at:Date.now()}); paint(i);
+      let r; try{ r=await fetchOne(i); }catch(e){ let url=""; try{ url=buildUrl(credsOf(i)); }catch(_){} r={status:"error",error:(e&&e.message)||String(e),url,at:Date.now()}; }
+      res.set(i,r); paint(i); return r; }
+    /* 弹窗 */
+    const modal=$("#"+P+"-apiModal"), mBody=$("#"+P+"-apiMBody"), mTitle=$("#"+P+"-apiMTitle");
+    function mailHTML(m,k){ return `<div class="mail" data-k="${k}"><div class="subj">${escHTML(m.subject||"(无主题)")}</div><div class="meta">${m.from?`<span><b>发件人</b>${escHTML(m.from)}</span>`:""}${m.date?`<span><b>时间</b>${escHTML(m.date)}</span>`:""}${m.folder?`<span><b>文件夹</b>${escHTML(m.folder)}</span>`:""}</div>${m.codes.length?`<div class="codes"><span class="lb">验证码</span>${m.codes.map((c,j)=>`<button type="button" class="codechip${j?" alt":""}" data-cp="code" data-v="${escHTML(c)}" title="点击复制">${escHTML(c)}</button>`).join("")}</div>`:""}<div class="body">${m.body?escHTML(m.body):'<span style="color:var(--text-3)">（正文为空）</span>'}</div>${m.links.length?`<div class="links"><b>链接 ${m.links.length} 个</b>${m.links.slice(0,30).map(l=>`<a href="${escHTML(l)}" target="_blank" rel="noopener noreferrer">${escHTML(l)}</a>`).join("")}</div>`:""}<div class="mtools"><button type="button" class="btn btn-ghost btn-sm" data-cp="body" data-k="${k}">复制正文</button><button type="button" class="btn btn-ghost btn-sm" data-cp="subject" data-k="${k}">复制主题</button>${m.links.length?`<button type="button" class="btn btn-ghost btn-sm" data-cp="links" data-k="${k}">复制全部链接</button>`:""}</div></div>`; }
+    function renderModal(i){ const r=res.get(i); if(!r)return; const email=emailOf(i);
+      mTitle.innerHTML=`${escHTML(email||"收件结果")}<small>${escHTML(r.status==="loading"?"收取中…":new Date(r.at).toLocaleString()+" · "+els.type.value+" · limit "+els.limit.value+(r.emails?" · 共 "+r.emails.length+" 封":""))}</small>`;
+      if(r.status==="loading")mBody.innerHTML='<div class="mail-empty"><span class="api-st load">收取中…</span></div>';
+      else if(r.status==="error")mBody.innerHTML=`<div class="mail-err">✕ ${escHTML(r.error)}</div>${r.url?`<div class="hint" style="margin-top:10px">请求：${escHTML(maskUrl(r.url))}</div>`:""}`;
+      else if(r.status==="empty")mBody.innerHTML='<div class="mail-empty">📭 收件箱里没有邮件（No emails found）<br><span style="font-size:12px">可以稍等片刻再点「↻ 重新收取」</span></div>';
+      else mBody.innerHTML=r.emails.map(mailHTML).join(""); }
+    function openModal(i){ if(!res.get(i))return; openI=i; renderModal(i); modal.classList.add("show"); $("#"+P+"-apiMClose").focus(); }
+    function closeModal(){ modal.classList.remove("show"); openI=-1; }
+    modal.addEventListener("click",async e=>{ if(e.target===modal){closeModal();return;} const b=e.target.closest("[data-cp]"); if(!b)return; const r=res.get(openI); let v="";
+      if(b.dataset.cp==="code")v=b.dataset.v; else if(r&&r.emails){ const m=r.emails[+b.dataset.k]; if(m)v=b.dataset.cp==="links"?m.links.join(EOL):m[b.dataset.cp]||""; }
+      if(!v){toast("没有内容可复制");return;} toast(await copyTextSafe(v)?(b.dataset.cp==="code"?"已复制验证码 "+v:"已复制"):"复制失败"); });
+    $("#"+P+"-apiMClose").onclick=closeModal;
+    $("#"+P+"-apiMRefresh").onclick=async ()=>{ if(openI<0)return; const i=openI; const r=await fetchRow(i); if(r.status==="success"&&r.emails[0].codes.length){ const c=r.emails[0].codes[0]; toast(await copyTextSafe(c)?"已收到并复制验证码 "+c:"收到验证码 "+c); } };
+    document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&modal.classList.contains("show"))closeModal(); });
+    /* 表格里的按钮 / 状态 */
+    $$("table").addEventListener("click",async e=>{ const btn=e.target.closest(".api-btn"); const st=e.target.closest(".api-st[data-open]");
+      if(btn){ const i=+btn.dataset.i; const r=await fetchRow(i);
+        if(r.status==="error")toast("收件失败："+r.error);
+        else if(r.status==="empty")toast("📭 "+emailOf(i)+" 没有邮件");
+        else if(r.emails[0].codes.length){ const c=r.emails[0].codes[0]; toast(await copyTextSafe(c)?"已收到并复制验证码 "+c:"收到验证码 "+c); }
+        else openModal(i);
+        return; }
+      if(st){ const i=+st.dataset.open; openModal(i); if(st.dataset.code&&await copyTextSafe(st.dataset.code))toast("已复制验证码 "+st.dataset.code); } });
+    /* 批量：对勾选行依次收件（2 路并发，可中途停止） */
+    $$("apiBatch").onclick=async ()=>{ const btn=$$("apiBatch"); if(batchRun){ batchStop=true; btn.textContent="正在停止…"; return; }
+      const idx=ctx.selected(); if(!idx.length){toast("请先在表格左侧勾选要收件的行");return;}
+      batchRun=true; batchStop=false; let done=0,okN=0,codeN=0; const q=idx.slice(); btn.textContent=`⏹ 停止 (0/${idx.length})`;
+      const worker=async()=>{ while(q.length&&!batchStop){ const i=q.shift(); const r=await fetchRow(i); done++; if(r.status==="success"){okN++; if(r.emails[0].codes.length)codeN++;} btn.textContent=`⏹ 停止 (${done}/${idx.length})`; } };
+      await Promise.all([worker(),worker()]);
+      batchRun=false; btn.textContent="📩 收取勾选行"; toast((batchStop?`已停止：完成 ${done}/${idx.length}`:`批量收件完成 ${idx.length} 行`)+`，有邮件 ${okN} 行，含验证码 ${codeN} 行`); };
+    return { cellHTML, reset:()=>{ res.clear(); closeModal(); }, fetchRow, credsOf, buildUrl, extractCodes, toText, norm, results:res };
   }
-  const PREVIEW=500;
-  function renderResult(){
-    const c=lastCfg, t=table(c), k=kinds(t), {inN,dupN}=stats;
-    const codesTotal=rows.reduce((a,r)=>a+r.codes.length,0), noRec=rows.filter(r=>!r.rec).length, noTfa=rows.filter(r=>!r.tfa).length;
-    $("#gm-stats").innerHTML=`<div class="stat"><div class="n">${inN.toLocaleString()}</div><div class="l">输入行数</div></div><div class="stat ok"><div class="n">${rows.length.toLocaleString()}</div><div class="l">账号</div></div><div class="stat arc"><div class="n">${codesTotal.toLocaleString()}</div><div class="l">备份代码</div></div><div class="stat warn"><div class="n">${(noRec+noTfa).toLocaleString()}</div><div class="l">缺辅助邮箱/2FA</div></div><div class="stat dup"><div class="n">${bad.length.toLocaleString()}</div><div class="l">异常</div></div>`+(c.dedup?`<div class="stat dup"><div class="n">${dupN.toLocaleString()}</div><div class="l">去重</div></div>`:"");
-    const tb=$("#gm-table"); const n=Math.min(PREVIEW,t.body.length); $("#gm-previewN").textContent=n.toLocaleString();
-    let h='<thead><tr><th class="sel"><input type="checkbox" id="gm-selall" title="全选 / 取消全选"></th>'+t.head.map(x=>`<th>${escHTML(x)}</th>`).join("")+"</tr></thead><tbody>";
-    for(let i=0;i<n;i++){ h+=`<tr><td class="sel"><input type="checkbox" class="gm-cb" data-i="${i}"></td>`+t.body[i].map((s,j)=>`<td class="${k[j]} ${s?"":"empty"} ${j?"cell-click":""}" ${j?'title="点击复制该格"':""}>${s?escHTML(s):"—"}</td>`).join("")+"</tr>"; }
-    tb.innerHTML=h+"</tbody>"; updateSel();
-    $("#gm-selall").addEventListener("change",e=>{ tb.querySelectorAll(".gm-cb").forEach(cb=>cb.checked=e.target.checked); updateSel(); });
-    const note=$("#gm-note"); if(t.body.length>PREVIEW){ note.style.display="block"; note.textContent=`共 ${t.body.length.toLocaleString()} 行，仅预览前 ${PREVIEW} 行；复制 / 下载包含全部。`; } else note.style.display="none";
-    $("#gm-badCard").style.display=bad.length?"block":"none"; $("#gm-c-bad").textContent=bad.length.toLocaleString(); $("#gm-ta-bad").value=bad.slice(0,PREVIEW).join("\n");
-    $("#gm-result").style.display="block";
+
+  function accountTab(P,opts){
+    const $$=id=>$("#"+P+"-"+id);
+    const files=[]; let running=false, rows=[], bad=[], lastCfg=null, stats={inN:0,dupN:0}, mode=opts.defaultMode, tplParsed=null, colOff=new Set(), copied=null, api=null;
+    const paste=$$("paste"); const prog=progressCtl($$("progress"),$$("fill"),$$("text"));
+    bindDrop($$("drop"),$$("file"),list=>{ const a=[...list].filter(f=>/\.(txt|csv|tsv)$/i.test(f.name)||f.type==="text/plain"); if(!a.length){toast("请选择 .txt / .csv / .tsv");return;} files.push(...a); render(); });
+    function render(){ renderFileList($$("list"),files,render); updateRun(); }
+    function updateRun(){ $$("run").disabled=!(files.length||paste.value.trim()); const n=countPasteLines(paste.value); $$("pasteHint").textContent=n?`已输入约 ${n.toLocaleString()} 行`:"尚未输入"; }
+    paste.addEventListener("input",updateRun);
+    $$("clear").onclick=()=>{ files.length=0; render(); paste.value=""; updateRun(); $$("result").style.display="none"; rows=[]; bad=[]; if(api)api.reset(); toast("已清空"); };
+
+    /* 模式切换 */
+    function setMode(m){ mode=m; document.querySelectorAll("#"+P+"-modeTabs .subtab").forEach(t=>t.classList.toggle("active",t.dataset.m===m)); ["split","smart","custom"].forEach(x=>$$("pane-"+x).classList.toggle("active",m===x)); renderCols(); if(rows.length)toast("模式已切换，请重新点「整理成表格」"); }
+    /* 按分隔符拆分 */
+    let splitSep="ws";
+    document.querySelectorAll("#"+P+"-splitChips .chip").forEach(ch=>ch.addEventListener("click",()=>{ splitSep=ch.dataset.sep; document.querySelectorAll("#"+P+"-splitChips .chip").forEach(x=>x.classList.toggle("on",x===ch)); $$("splitCustomWrap").style.display=splitSep==="__custom__"?"block":"none"; if(splitSep==="__custom__")$$("splitCustom").focus(); }));
+    function splitLine(line){ const s=splitSep==="__custom__"?unesc($$("splitCustom").value):splitSep; if(splitSep==="ws"||s==="")return line.trim().split(/\s+/); return line.split(s).map(x=>x.trim()); }
+    function splitNames(n){ const given=$$("splitNames").value.trim()?$$("splitNames").value.trim().split(/\s+/):[]; const names=[]; for(let i=0;i<n;i++)names.push(given[i]||("列"+(i+1))); return names; }
+    document.querySelectorAll("#"+P+"-modeTabs .subtab").forEach(t=>t.addEventListener("click",()=>setMode(t.dataset.m)));
+    /* 模板 */
+    function refreshTpl(){ const hint=$$("tplHint"); try{ tplParsed=parseTemplate($$("tpl").value); const d=tplParsed.delims.map(x=>x==="\t"?"[Tab]":x===" "?"[空格]":x); hint.classList.remove("pw-err"); hint.textContent=`分隔符「${tplParsed.uniform?d[0]:d.join("」「")}」 · ${tplParsed.fields.length} 列：${tplParsed.fields.map(f=>f.name+(f.rest?"（吸收剩余）":"")).join(" / ")}`; }catch(e){ tplParsed=null; hint.classList.add("pw-err"); hint.textContent="⚠️ "+e.message; } renderCols(); }
+    $$("tpl").addEventListener("input",refreshTpl);
+    document.querySelectorAll("#"+P+"-tplChips .chip").forEach(c=>c.addEventListener("click",()=>{ $$("tpl").value=c.dataset.tpl; refreshTpl(); if(mode!=="custom")setMode("custom"); }));
+    /* 输出列开关 */
+    function allColumns(){ if(mode==="custom")return tplParsed?tplParsed.fields.map(f=>f.name):[]; if(mode==="split")return rows.tpl&&rows.mode==="split"?rows.tpl.fields.map(f=>f.name):[]; return opts.smartColumns.map(c=>c.label); }
+    function renderCols(){ const box=$$("cols"); const names=allColumns(); box.innerHTML=names.map(n=>`<button type="button" class="chip${colOff.has(n)?"":" on"}" data-col="${escHTML(n)}">${escHTML(n)}</button>`).join("")||`<span class="hint" style="margin:0">${mode==="split"?"（整理后按实际列数显示）":"（模板无效）"}</span>`; box.querySelectorAll(".chip").forEach(ch=>ch.onclick=()=>{ const n=ch.dataset.col; if(colOff.has(n))colOff.delete(n); else { if(names.filter(x=>!colOff.has(x)).length<=1){toast("至少保留一列");return;} colOff.add(n); } renderCols(); if(rows.length){ lastCfg=cfg(); renderResult(); } }); }
+
+    function cfg(){ return Object.assign({ mode, start:parseInt($$("start").value)||0, header:$$("header").checked, lower:$$("lower").checked, dedup:$$("dedup").checked }, opts.extraCfg?opts.extraCfg():{}); }
+    const isEmailCol=label=>/邮箱|e-?mail/i.test(label)&&!/密码|pass|pwd|pw/i.test(label); // “辅助邮箱密码”不是邮箱列
+    function table(c,idx){
+      const list=idx?idx.map(i=>rows[i]):rows; const hasExtra=rows.some(r=>r.extra.length);
+      let cols=[];
+      if(c.mode!=="smart"){ const t=rows.tpl; cols=t.fields.map((f,i)=>({label:f.name,kind:isEmailCol(f.name)?"email":f.rest?"codes":"",get:r=>r.values[i]||""})).filter(col=>!colOff.has(col.label)); }
+      else { const maxCodes=rows.reduce((a,r)=>Math.max(a,(r.codes||[]).length),0);
+        for(const col of opts.smartColumns){ if(colOff.has(col.label))continue;
+          if(col.kind==="codes"){ if(c.codeMode==="cols"){ for(let k=0;k<maxCodes;k++)cols.push({label:col.label+(k+1),kind:"codes",get:r=>(r[col.key]||[])[k]||""}); } else cols.push({label:col.label,kind:"codes",get:r=>(r[col.key]||[]).join(c.codeMode==="space"?" ":c.codeMode==="comma"?",":"\n")}); }
+          else cols.push({label:col.label,kind:col.kind||"",get:col.get?r=>col.get(r,c):r=>r[col.key]||""}); } }
+      const head=["序号",...cols.map(x=>x.label)]; const kinds=["ix",...cols.map(x=>x.kind)]; if(hasExtra){head.push("未识别");kinds.push("extra");}
+      const body=list.map((r,k)=>{ const i=idx?idx[k]:k; const cells=[String(c.start+i),...cols.map(col=>col.get(r))]; if(hasExtra)cells.push(r.extra.join(" ")); return cells; });
+      return { head, body, kinds };
+    }
+
+    function sources(){ const s=files.map(f=>({file:f})); if(paste.value.trim())s.push({text:paste.value}); return s; }
+    $$("run").onclick=()=>{ if(running)return; run().catch(e=>{ running=false; $$("run").disabled=false; prog.hide(); console.error(e); toast("处理失败："+(e&&e.message||e)); }); };
+    async function run(){
+      const srcs=sources(); if(!srcs.length){toast("请先导入或粘贴");return;}
+      if(mode==="custom"&&!tplParsed){ toast("自定义模板无效，请先修正"); return; }
+      if(mode==="split"&&splitSep==="__custom__"&&!unesc($$("splitCustom").value)){ toast("请填写自定义分隔符"); return; }
+      running=true; $$("run").disabled=true; $$("result").style.display="none";
+      prog.show("整理中…"); await tick();
+      const c=cfg(); rows=[]; bad=[]; if(api)api.reset(); rows.tpl=tplParsed; rows.mode=c.mode; let inN=0,dupN=0,maxCols=0; const seen=c.dedup?new Set():null;
+      let procBytes=0; const tot=srcs.reduce((a,s)=>a+(s.file?s.file.size:new Blob([s.text]).size),0)||1;
+      function onLine(raw){
+        let r;
+        if(c.mode==="split"){ const line=raw.replace(/\r$/,""); if(!line.trim())return null; inN++; const parts=splitLine(line); maxCols=Math.max(maxCols,parts.length); r={ok:parts.length>0&&parts[0]!=="",raw:line,values:parts,extra:[]}; if(c.lower)r.values=r.values.map(v=>EMAIL.test(v)?v.toLowerCase():v); }
+        else if(c.mode==="custom"){ const line=raw.replace(/\r$/,""); if(!line.trim())return null; inN++; const sp=splitByTemplate(line,tplParsed); r={ok:sp.hit&&!!sp.values[0],raw:line,values:sp.values,extra:sp.extra}; if(c.lower)r.values=r.values.map((v,i)=>(isEmailCol(tplParsed.fields[i].name)||EMAIL.test(v))?v.toLowerCase():v); }
+        else { r=opts.smartParse(raw); if(!r)return null; inN++; if(r.ok&&c.lower){ for(const k of opts.emailKeys||[])if(r[k])r[k]=r[k].toLowerCase(); } }
+        if(!r.ok){ bad.push(r.raw); return null; }
+        const key=c.mode==="custom"?r.values[0]:r[(opts.emailKeys||["email"])[0]];
+        if(seen){ if(seen.has(key)){dupN++;return null;} seen.add(key); }
+        rows.push(r); if(r.extra.length)bad.push(r.raw+"　　← 未识别："+r.extra.join(" "));
+        return null; }
+      for(const s of srcs){ await streamSource(s,onLine,n=>{procBytes+=n;prog.set(procBytes/tot*100,`整理中…　${fmtSize(procBytes)} / ${fmtSize(tot)}`);}); }
+      if(c.mode==="split"){ const names=splitNames(maxCols); rows.tpl={fields:names.map(n=>({name:n,rest:false})),delims:[],uniform:true}; for(const r of rows)while(r.values.length<maxCols)r.values.push(""); renderCols(); }
+      lastCfg=c; stats={inN,dupN}; renderResult();
+      prog.hide(); running=false; $$("run").disabled=false; $$("result").scrollIntoView({behavior:"smooth",block:"start"});
+      toast(`整理完成：${rows.length.toLocaleString()} 个账号${bad.length?`，异常 ${bad.length}`:""}`);
+    }
+    const PREVIEW=500;
+    function renderResult(){
+      const c=lastCfg, t=table(c), {inN,dupN}=stats;
+      $$("stats").innerHTML=`<div class="stat"><div class="n">${inN.toLocaleString()}</div><div class="l">输入行数</div></div><div class="stat ok"><div class="n">${rows.length.toLocaleString()}</div><div class="l">账号</div></div><div class="stat arc"><div class="n">${(t.head.length-1).toLocaleString()}</div><div class="l">输出列</div></div><div class="stat dup"><div class="n">${bad.length.toLocaleString()}</div><div class="l">异常</div></div>`+(c.dedup?`<div class="stat dup"><div class="n">${dupN.toLocaleString()}</div><div class="l">去重</div></div>`:"")+(opts.statsExtra?opts.statsExtra(rows):"");
+      const tb=$$("table"); const n=Math.min(PREVIEW,t.body.length); $$("previewN").textContent=n.toLocaleString();
+      let h='<thead><tr><th class="sel"><input type="checkbox" class="selall" title="全选 / 取消全选"></th>'+t.head.map(x=>`<th>${escHTML(x)}</th>`).join("")+(api?'<th class="api">📩 收件</th>':"")+"</tr></thead><tbody>";
+      for(let i=0;i<n;i++){ h+=`<tr><td class="sel"><input type="checkbox" class="gm-cb" data-i="${i}"></td>`+t.body[i].map((s,j)=>{ const k=t.kinds[j]==="email"||(t.kinds[j]===""&&EMAIL.test(s))?"email":t.kinds[j]; return `<td class="${k} ${s?"":"empty"} ${j?"cell-click":""}" ${j?'title="点击复制该格"':""}>${s?escHTML(s):"—"}</td>`; }).join("")+(api?api.cellHTML(i):"")+"</tr>"; }
+      tb.innerHTML=h+"</tbody>"; updateSel();
+      tb.querySelector(".selall").addEventListener("change",e=>{ tb.querySelectorAll(".gm-cb").forEach(cb=>cb.checked=e.target.checked); updateSel(); if($$("joinSelOnly").checked)renderJoin(); });
+      const note=$$("note"); if(t.body.length>PREVIEW){ note.style.display="block"; note.textContent=`共 ${t.body.length.toLocaleString()} 行，仅预览前 ${PREVIEW} 行；复制 / 下载包含全部。`; } else note.style.display="none";
+      $$("badCard").style.display=bad.length?"block":"none"; $$("c-bad").textContent=bad.length.toLocaleString(); $$("ta-bad").value=bad.slice(0,PREVIEW).join("\n");
+      $$("result").style.display="block"; renderJoin();
+    }
+    /* ---- 反向操作：按分隔符 / 模板重新组合成一行 ---- */
+    let joinSep=":";
+    const unesc=s=>s.replace(/\[Tab\]|\\t/gi,"\t").replace(/\[空格\]/g," ");
+    function joinLines(t,idx){
+      const tpl=$$("joinTpl").value.trim(), inner=unesc($$("joinInner").value||" "), withIdx=$$("joinIdx").checked, skipEmpty=$$("joinSkipEmpty").checked;
+      const sep=joinSep==="__custom__"?unesc($$("joinCustom").value):unesc(joinSep);
+      const useTpl=/\{[^}]+\}/.test(tpl); const nameIdx={}; t.head.forEach((h,i)=>{ nameIdx[h]=i; nameIdx[h.toLowerCase()]=i; });
+      const rowsOut=[]; const src=idx?idx.map(i=>t.body[i]):t.body;
+      for(const cells of src){ const v=cells.map(s=>s.replace(/\n/g,inner));
+        if(useTpl){ rowsOut.push(tpl.replace(/\{([^}]+)\}/g,(m,n)=>{ const k=n.trim(); const i=nameIdx[k]!==undefined?nameIdx[k]:nameIdx[k.toLowerCase()]; return i===undefined?m:v[i]; })); }
+        else { let list=withIdx?v:v.slice(1); if(skipEmpty)list=list.filter(x=>x!==""); rowsOut.push(list.join(sep)); } }
+      return rowsOut;
+    }
+    function joinHeader(t){ const tpl=$$("joinTpl").value.trim(); if(/\{[^}]+\}/.test(tpl))return tpl.replace(/\{([^}]+)\}/g,(m,n)=>n.trim()); const sep=joinSep==="__custom__"?unesc($$("joinCustom").value):unesc(joinSep); return ($$("joinIdx").checked?t.head:t.head.slice(1)).join(sep); }
+    function textLines(t,idx,c){ const lines=joinLines(t,idx); if(c.header)lines.unshift(joinHeader(t)); return lines.join(EOL); }
+    let copyMode="table";
+    function copyHint(){ $$("copyHint").innerHTML=copyMode==="table"
+      ?"当前 <b>表格模式</b>：复制的是带格式的表格（含单元格内换行），在 Excel / WPS 里点一个单元格后 Ctrl+V 即得整表；粘到记事本等纯文本处会得到 Tab 分隔的多行文本。勾选左侧方框后「复制所选」只复制勾中的行（序号保持原编号）；「带表头」控制是否包含第一行标题；点任意单元格可单独复制该格。"
+      :"当前 <b>文本模式</b>：每个账号一行，字段用下方「③ 重新组合」里选择的分隔符或模板拼接，适合粘到 TXT、聊天窗口、其它工具。勾选左侧方框后「复制所选」只复制勾中的行；「带表头」开启时第一行是列名；点任意单元格可单独复制该格。"; }
+    document.querySelectorAll("#"+P+"-copyMode .subtab").forEach(b=>b.addEventListener("click",()=>{ copyMode=b.dataset.cm; document.querySelectorAll("#"+P+"-copyMode .subtab").forEach(x=>x.classList.toggle("active",x===b)); copyHint(); toast(copyMode==="table"?"表格模式：粘贴进 Excel / WPS 会直接成表":"文本模式：每行一条，分隔符在下方「重新组合」里选"); }));
+    copyHint();
+    function renderJoin(){ if(!rows.length){ $$("joinOut").value=""; $$("joinCount").textContent="0"; return; } const t=table(lastCfg||cfg()); $$("joinTplHint").textContent="可用列名："+t.head.map(h=>"{"+h+"}").join(" "); const idx=$$("joinSelOnly").checked?selected():null; if(idx&&!idx.length){ $$("joinOut").value="（没有勾选任何行）"; $$("joinCount").textContent="0"; return; } const lines=joinLines(t,idx); $$("joinCount").textContent=lines.length.toLocaleString(); $$("joinOut").value=lines.slice(0,500).join("\n"); }
+    document.querySelectorAll("#"+P+"-joinChips .chip").forEach(ch=>ch.addEventListener("click",()=>{ joinSep=ch.dataset.sep; document.querySelectorAll("#"+P+"-joinChips .chip").forEach(x=>x.classList.toggle("on",x===ch)); $$("joinCustomWrap").style.display=joinSep==="__custom__"?"block":"none"; if(joinSep==="__custom__")$$("joinCustom").focus(); renderJoin(); }));
+    ["joinCustom","joinTpl","joinInner"].forEach(id=>$$(id).addEventListener("input",renderJoin)); ["joinIdx","joinSelOnly","joinSkipEmpty"].forEach(id=>$$(id).addEventListener("change",renderJoin));
+    $$("joinCopy").onclick=async ()=>{ if(!rows.length){toast("请先整理");return;} const t=table(lastCfg||cfg()); const idx=$$("joinSelOnly").checked?selected():null; if(idx&&!idx.length){toast("没有勾选任何行");return;} const lines=joinLines(t,idx); if(await copyTextSafe(lines.join(EOL)))toast(`已复制 ${lines.length.toLocaleString()} 行组合结果`); else toast("复制失败"); };
+    $$("joinDl").onclick=()=>{ if(!rows.length){toast("请先整理");return;} const t=table(lastCfg||cfg()); const idx=$$("joinSelOnly").checked?selected():null; if(idx&&!idx.length){toast("没有勾选任何行");return;} const lines=joinLines(t,idx); download(new Blob([lines.join(EOL)+EOL],{type:"text/plain;charset=utf-8"}),opts.file+"-组合.txt"); };
+    const selected=()=>[...$$("table").querySelectorAll(".gm-cb:checked")].map(cb=>+cb.dataset.i);
+    function updateSel(){ const tb=$$("table"); const cbs=[...tb.querySelectorAll(".gm-cb")]; let n=0; cbs.forEach(cb=>{ cb.closest("tr").classList.toggle("selected",cb.checked); if(cb.checked)n++; }); $$("selN").textContent=n.toLocaleString(); const all=tb.querySelector(".selall"); if(all){ all.checked=n>0&&n===cbs.length; all.indeterminate=n>0&&n<cbs.length; } }
+    $$("table").addEventListener("change",e=>{ if(e.target.classList.contains("gm-cb")){ updateSel(); if($$("joinSelOnly").checked)renderJoin(); } });
+    $$("table").addEventListener("click",async e=>{ const td=e.target.closest("td.cell-click"); if(!td)return; const txt=td.classList.contains("empty")?"":td.textContent; if(!txt){toast("该格为空");return;} if(await copyTextSafe(txt))toast("已复制："+(txt.length>30?txt.slice(0,30)+"…":txt).replace(/\n/g," ")); else toast("复制失败"); });
+    (opts.rerenderIds||[]).concat(["start"]).forEach(id=>$$(id).addEventListener("change",()=>{ if(rows.length){ lastCfg=cfg(); renderResult(); } }));
+    const need=()=>{ if(!rows.length){toast("请先整理");return false;} lastCfg=cfg(); return true; };
+    async function doCopy(idx){ const t=idx?table(lastCfg,idx):table(lastCfg); const n=idx?idx.length:t.body.length; const what=idx?"所选":"全部";
+      if(copyMode==="table"){ const ok=await copyRich(toHTML(t,lastCfg),toDelimited(t,lastCfg,"\t")); toast(ok?`已复制${what} ${n.toLocaleString()} 行【表格模式】${lastCfg.header?"，带表头":""}，去 Excel / WPS 里 Ctrl+V`:"复制失败，请改用下载"); }
+      else { const text=textLines(idx?table(lastCfg,idx):t,null,lastCfg); const ok=await copyTextSafe(text); toast(ok?`已复制${what} ${n.toLocaleString()} 行【文本模式】${lastCfg.header?"，第一行为列名":""}`:"复制失败，请改用下载"); } }
+    $$("copySel").onclick=async ()=>{ if(!need())return; const idx=selected(); if(!idx.length){toast("请先在表格左侧勾选要复制的行");return;} await doCopy(idx); };
+    $$("copyTable").onclick=async ()=>{ if(!need())return; await doCopy(null); };
+    $$("dlTxt").onclick=()=>{ if(!need())return; const t=table(lastCfg); download(new Blob([textLines(t,null,lastCfg)+EOL],{type:"text/plain;charset=utf-8"}),opts.file+".txt"); };
+    $$("dlXlsx").onclick=()=>{ if(!need())return; download(toXLSX(table(lastCfg),lastCfg,opts.sheet),opts.file+".xlsx"); };
+    $$("dlCsv").onclick=()=>{ if(!need())return; download(new Blob(["\uFEFF"+toDelimited(table(lastCfg),lastCfg,",")],{type:"text/csv;charset=utf-8"}),opts.file+".csv"); };
+    $$("copyBad").onclick=async ()=>{ if(!bad.length){toast("没有异常行");return;} if(await copyTextSafe(bad.join(EOL)))toast(`已复制 ${bad.length} 行`); else toast("复制失败"); };
+    $$("dlBad").onclick=()=>{ if(!bad.length){toast("没有异常行");return;} download(new Blob([bad.join("\n")+"\n"],{type:"text/plain;charset=utf-8"}),"异常行.txt"); };
+    /* 某一行的全部字段（忽略输出列开关），供收件 API 找邮箱 / 密码 */
+    function rowFields(i){ const r=rows[i]; if(!r)return null; const out=[]; if(r.values){ const names=rows.tpl?rows.tpl.fields.map(f=>f.name):[]; r.values.forEach((v,k)=>out.push({name:names[k]||("列"+(k+1)),value:v||""})); } else { for(const col of opts.smartColumns){ const v=r[col.key]; out.push({name:col.label,value:Array.isArray(v)?v.join(" "):(v||"")}); } } return out; }
+    if(opts.api)api=mailApi(P,{rowFields,selected});
+    $$("tpl").value=opts.defaultTemplate; refreshTpl(); setMode(opts.defaultMode); updateRun();
+    return { api, rowFields, parseLine:opts.smartParse, table, toDelimited, toHTML, toXLSX:(t,c)=>toXLSX(t,c,opts.sheet), setRows:r=>{rows=r;}, cfg, setMode, getRows:()=>rows, run, joinLines, textLines, setJoinSep:s=>{joinSep=s;}, setCopyMode:m=>{copyMode=m;}, setSplitSep:s=>{splitSep=s;} };
   }
-  const selected=()=>[...$("#gm-table").querySelectorAll(".gm-cb:checked")].map(cb=>+cb.dataset.i);
-  function updateSel(){ const cbs=[...$("#gm-table").querySelectorAll(".gm-cb")]; let n=0; cbs.forEach(cb=>{ cb.closest("tr").classList.toggle("selected",cb.checked); if(cb.checked)n++; }); $("#gm-selN").textContent=n.toLocaleString(); const all=$("#gm-selall"); if(all){ all.checked=n>0&&n===cbs.length; all.indeterminate=n>0&&n<cbs.length; } }
-  $("#gm-table").addEventListener("change",e=>{ if(e.target.classList.contains("gm-cb"))updateSel(); });
-  $("#gm-copySel").onclick=async ()=>{ if(!need())return; const idx=selected(); if(!idx.length){toast("请先在表格左侧勾选要复制的行");return;} const t=table(lastCfg,idx); const ok=await copyRich(toHTML(t,lastCfg),toDelimited(t,lastCfg,"\t")); toast(ok?`已复制所选 ${idx.length} 行${lastCfg.header?"（带表头）":""}`:"复制失败，请改用下载"); };
-  $("#gm-table").addEventListener("click",async e=>{ const td=e.target.closest("td.cell-click"); if(!td)return; const txt=td.classList.contains("empty")?"":td.textContent; if(!txt){toast("该格为空");return;} try{ await navigator.clipboard.writeText(txt); toast("已复制："+(txt.length>30?txt.slice(0,30)+"…":txt).replace(/\n/g," ")); }catch{ toast("复制失败"); } });
-  ["gm-codeMode","gm-tfaMode","gm-start"].forEach(id=>$("#"+id).addEventListener("change",()=>{ if(rows.length){ lastCfg=cfg(); renderResult(); } }));
-  const need=()=>{ if(!rows.length){toast("请先整理");return false;} lastCfg=cfg(); return true; };
-  $("#gm-copyTable").onclick=async ()=>{ if(!need())return; const t=table(lastCfg); const ok=await copyRich(toHTML(t,lastCfg),toDelimited(t,lastCfg,"\t")); toast(ok?`已复制全部 ${t.body.length.toLocaleString()} 行${lastCfg.header?"（带表头）":""}，去 Excel / WPS 里粘贴`:"复制失败，请改用下载"); };
-  $("#gm-copyTsv").onclick=async ()=>{ if(!need())return; const t=table(lastCfg); try{ await navigator.clipboard.writeText(toDelimited(t,lastCfg,"\t")); toast(`已复制 ${t.body.length.toLocaleString()} 行纯文本（Tab 分隔）`); }catch{ toast("复制失败，请改用下载"); } };
-  $("#gm-dlXlsx").onclick=()=>{ if(!need())return; download(toXLSX(table(lastCfg),lastCfg),"谷歌邮箱.xlsx"); };
-  $("#gm-dlCsv").onclick=()=>{ if(!need())return; download(new Blob(["﻿"+toDelimited(table(lastCfg),lastCfg,",")],{type:"text/csv;charset=utf-8"}),"谷歌邮箱.csv"); };
-  $("#gm-copyBad").onclick=async ()=>{ if(!bad.length){toast("没有异常行");return;} try{ await navigator.clipboard.writeText(bad.join("\n")); toast(`已复制 ${bad.length} 行`); }catch{ toast("复制失败"); } };
-  $("#gm-dlBad").onclick=()=>{ if(!bad.length){toast("没有异常行");return;} download(new Blob([bad.join("\n")+"\n"],{type:"text/plain;charset=utf-8"}),"异常行.txt"); };
-  window.__gmTest={parseLine,table,toDelimited,toHTML,toXLSX,setRows:r=>{rows=r;},cfg};
-  updateRun();
+
+  const tfaOf=(r,c)=>c.tfaMode==="strip"?r.tfa.replace(/[\s-]+/g,""):c.tfaMode==="upper"?r.tfa.replace(/[\s-]+/g,"").toUpperCase():r.tfa;
+  window.__gmTest=accountTab("gm",{ sheet:"谷歌邮箱", file:"谷歌邮箱", defaultMode:"split", smartParse:gmParse, emailKeys:["email","rec"],
+    smartColumns:[{key:"email",label:"邮箱",kind:"email"},{key:"pw",label:"密码"},{key:"rec",label:"辅助邮箱",kind:"email"},{key:"tfa",label:"2FA",get:tfaOf},{key:"codes",label:"备份代码",kind:"codes"}],
+    extraCfg:()=>({codeMode:$("#gm-codeMode").value,tfaMode:$("#gm-tfaMode").value}), rerenderIds:["codeMode","tfaMode"],
+    statsExtra:rows=>`<div class="stat warn"><div class="n">${rows.filter(r=>r.values?false:(!r.rec||!r.tfa)).length.toLocaleString()}</div><div class="l">缺辅助邮箱/2FA</div></div>`,
+    defaultTemplate:"Email[Tab]Password[Tab]辅助邮箱[Tab]2FA[Tab]备份代码*" });
+  window.__msTest=accountTab("ms",{ sheet:"微软邮箱", file:"微软邮箱", defaultMode:"split", api:true, smartParse:msParse, emailKeys:["email","rec"],
+    smartColumns:[{key:"email",label:"邮箱",kind:"email"},{key:"pw",label:"密码"},{key:"token",label:"RefreshToken"},{key:"cid",label:"Client_ID"},{key:"rec",label:"辅助邮箱",kind:"email"},{key:"recPw",label:"辅助邮箱密码"}],
+    defaultTemplate:"Email----Password----RefreshToken----Client_ID----辅助邮箱----辅助邮箱密码" });
+  window.__acctTest={parseTemplate,splitByTemplate,msParse,gmParse};
 })();
 
 /* ===================== 共享：二维码生成（QR Code，字节模式，纠错 M，版本 1–40，无外部库） ===================== */
@@ -2336,7 +2752,7 @@ const makeQR=(function(){
   $("#tf-copyUri").onclick=()=>copy($("#tf-uri").value,"已复制 otpauth 链接（仅供验证器 App 导入，浏览器打不开是正常的）");
   $("#tf-uri").addEventListener("click",()=>{ $("#tf-uri").select(); });
   $("#tf-hotpNext").onclick=()=>{ const e=entries[selected]; if(!e||e.type!=="hotp")return; e.counter++; compute(e,true); renderAll(); renderHero(); toast("计数器 +1 → "+e.counter); };
-  $("#tf-copyAll").onclick=()=>{ const ok=entries.filter(e=>!e.error); if(!ok.length){toast("没有可复制的验证码");return;} const f=$("#tf-copyFmt").value; const lines=ok.map((e,i)=>f==="code"?e.code:f==="label"?`${e.label||"第"+(i+1)+"条"}\t${e.code}`:f==="secret"?`${e.secretText}\t${e.code}`:`${e.raw}\t${e.code}`); copy(lines.join("\n"),`已复制 ${ok.length} 个验证码`); };
+  $("#tf-copyAll").onclick=()=>{ const ok=entries.filter(e=>!e.error); if(!ok.length){toast("没有可复制的验证码");return;} const f=$("#tf-copyFmt").value; const lines=ok.map((e,i)=>f==="code"?e.code:f==="label"?`${e.label||"第"+(i+1)+"条"}\t${e.code}`:f==="secret"?`${e.secretText}\t${e.code}`:`${e.raw}\t${e.code}`); copy(lines.join(EOL),`已复制 ${ok.length} 个验证码`); };
   document.addEventListener("keydown",e=>{ if(!$("#page-tf").classList.contains("active"))return; const tag=(e.target.tagName||"").toLowerCase(); if(tag==="input"||tag==="textarea"||tag==="select"||e.ctrlKey||e.metaKey||e.altKey)return; if(e.key==="c"||e.key==="C"){ e.preventDefault(); $("#tf-heroCode").onclick(); } });
 
   /* ---- 本地保管库（可选，明确告知风险） ---- */
