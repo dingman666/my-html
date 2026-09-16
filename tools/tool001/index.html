@@ -1168,7 +1168,7 @@
           </div>
         </div>
         <div class="api-bar" id="ms-apiBar">
-          <div class="field"><label>📩 收件 API 地址</label><input type="text" id="ms-apiBase" placeholder="例如 https://mail.example.com（留空 = 本页所在站点）" spellcheck="false" autocomplete="off"></div>
+          <div class="field"><label>📩 收件 API 地址</label><input type="text" id="ms-apiBase" value="https://ms.lqqq.cc" placeholder="例如 https://ms.lqqq.cc（不带 /web 或 /api）" spellcheck="false" autocomplete="off"></div>
           <div class="field sm"><label>邮箱类型 email_type</label><select id="ms-apiType"><option value="ms_imap">ms_imap · 微软 IMAP</option><option value="ms_graph">ms_graph · Graph OAuth</option><option value="mail_com">mail_com · Mail.com</option><option value="temp_api">temp_api · 临时邮箱</option></select></div>
           <div class="field xs"><label>取最新几封 limit</label><select id="ms-apiLimit"><option value="1">1 封</option><option value="2">2 封</option><option value="3">3 封</option><option value="4">4 封</option><option value="5">5 封</option></select></div>
           <div class="field"><label>凭据模板（/api/ 后面那段，可用 {列名}）</label><input type="text" id="ms-apiTpl" placeholder="留空 = 自动：邮箱----密码" spellcheck="false" autocomplete="off"></div>
@@ -2321,7 +2321,7 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
     function baseUrl(){ let b=els.base.value.trim().replace(/\/+$/,""); if(b&&!/^https?:\/\//i.test(b))b=(/^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/i.test(b)?"http://":"https://")+b; return b.replace(/\/api$/i,""); }
     function hint(){ const h=$$("apiHint"); const b=baseUrl(); let warn="";
       if(location.protocol==="https:"&&/^http:\/\//i.test(b))warn="⚠️ 本页是 https，浏览器会拦截 http 接口（混合内容），请给接口配 https，或把本页以 http / 本地文件方式打开。";
-      else if(!b&&location.protocol==="file:")warn="⚠️ 地址留空表示「本页所在站点」，但本页是本地文件，请填写完整接口地址。";
+      else if(!b)warn=location.protocol==="file:"?"⚠️ 地址留空表示「本页所在站点」，但本页是本地文件，请填写完整接口地址。":"⚠️ 还没填接口地址：留空表示接口和本页在同一站点（"+location.host+"），如果接口在别处请填完整地址，如 https://接口域名。";
       h.classList.toggle("warn",!!warn);
       h.textContent=(warn?warn+"　":"")+"请求示例："+b+"/api/邮箱----密码?email_type="+els.type.value+"&limit="+els.limit.value+"　·　点每行的「📩 收件」即调用；找到验证码会自动复制。接口需允许跨域（CORS）；这些设置只保存在本浏览器。"; }
     ["input","change"].forEach(ev=>Object.values(els).forEach(el=>el.addEventListener(ev,()=>{ save(); hint(); })));
@@ -2354,7 +2354,7 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
       try{ resp=await fetch(url,{signal:ac.signal,headers:{Accept:"application/json"},cache:"no-store"}); txt=await resp.text(); }
       catch(e){ throw new Error(e&&e.name==="AbortError"?"请求超时（45 秒）":"网络请求失败：接口地址不对、服务未开 CORS，或 https 页面调用了 http 接口"); }
       finally{ clearTimeout(tm); }
-      try{ data=JSON.parse(txt); }catch(e){ throw new Error("HTTP "+resp.status+"，返回的不是 JSON："+txt.slice(0,100)); }
+      try{ data=JSON.parse(txt); }catch(e){ if(/^\s*<(!doctype|html)/i.test(txt))throw new Error("HTTP "+resp.status+"，"+(baseUrl()?"这个地址返回的是网页而不是接口 JSON，请检查「收件 API 地址」是否填对（不用带 /api）":"还没填「收件 API 地址」，请求发到了本页所在站点；请在表格上方填写接口所在站点，如 https://接口域名")); throw new Error("HTTP "+resp.status+"，返回的不是 JSON："+txt.slice(0,100)); }
       if(!data||typeof data!=="object")throw new Error("HTTP "+resp.status+"，返回内容异常");
       if(data.success===false||data.status==="error"||(!resp.ok&&data.success!==true))throw new Error(String(data.error||data.message||("HTTP "+resp.status))+(data.required_email_type?"（需要 email_type="+data.required_email_type+"）":"")+(data.error_code?" ["+data.error_code+"]":""));
       const list=Array.isArray(data.emails)&&data.emails.length?data.emails:(data.email?[data.email]:[]);
