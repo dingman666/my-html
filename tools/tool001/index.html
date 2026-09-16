@@ -283,6 +283,13 @@
   .tf-vrow .lab{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .tf-vrow .key{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;color:var(--text-3);font-size:12px}
   @media(max-width:760px){ .tf-row{grid-template-columns:34px 1fr 100px auto;grid-auto-rows:auto} .tf-row .key,.tf-row .nxt{display:none} .tf-row .left{grid-column:2/4} }
+  .tf-qrBox{flex:none;display:flex;flex-direction:column;align-items:center;gap:8px}
+  .tf-qr{width:176px;height:176px;background:#fff;border-radius:14px;padding:8px;box-shadow:0 1px 3px rgba(0,0,0,.12),0 0 0 1px var(--line);display:flex;align-items:center;justify-content:center}
+  .tf-qr svg{width:100%;height:100%;display:block}
+  .tf-qr .qrerr{font-size:12px;color:var(--red);text-align:center;padding:10px}
+  .tf-qrCap{font-size:12px;color:var(--text-2)}
+  .tf-qrBox.off .tf-qr,.tf-qrBox.off .tf-qrCap{display:none}
+  @media(max-width:760px){ .tf-qrBox{width:100%} }
 
   /* ===== 左侧边栏导航 ===== */
   :root{--side:rgba(255,255,255,.58)}
@@ -1017,9 +1024,15 @@
             <button class="btn btn-ghost btn-sm" id="tf-copyUri" type="button">复制 otpauth 链接</button>
             <span class="spacer"></span><span class="hint" style="margin:0">快捷键 <b>C</b> 复制当前验证码</span>
           </div>
-          <input type="text" id="tf-uri" readonly class="tf-uri" spellcheck="false" title="可粘贴到支持导入链接的验证器 App">
+          <input type="text" id="tf-uri" readonly class="tf-uri" spellcheck="false" title="otpauth 链接：浏览器打不开它是正常的，它只供验证器 App 导入；扫右侧二维码最方便">
+        </div>
+        <div class="tf-qrBox" id="tf-qrBox">
+          <div class="tf-qr" id="tf-qr" title="用 Google Authenticator / Authy / 微软验证器扫码添加"></div>
+          <div class="tf-qrCap">用验证器 App 扫码添加</div>
+          <div class="pw-inline" style="gap:6px;justify-content:center"><button class="btn btn-ghost btn-sm" id="tf-qrDl" type="button">下载二维码</button><button class="btn btn-ghost btn-sm" id="tf-qrHide" type="button">隐藏</button></div>
         </div>
       </div>
+      <div class="hint" style="margin-top:12px">otpauth 链接在电脑浏览器里点开不会有反应，这是正常的：它不是网页地址，而是给验证器 App 用的导入格式。手机上用验证器 App 扫上方二维码，或把链接粘贴到支持"通过链接添加"的验证器里即可。</div>
     </div>
 
     <div class="result" id="tf-result" style="display:none">
@@ -1078,6 +1091,8 @@ function fmtSize(b){ if(b<1024)return b.toFixed(0)+" B"; if(b<1048576)return (b/
 let toTimer; function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toTimer); toTimer=setTimeout(()=>t.classList.remove("show"),3000); }
 function escHTML(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 function safeFileName(s){ return String(s).replace(/[\\/:*?"<>|\x00-\x1f]/g,"").replace(/^\.+/,"").trim().slice(0,80); }
+/* 复制文本：优先 Clipboard API，失败则退回 execCommand（老浏览器 / 某些国产浏览器 / 非安全上下文） */
+async function copyTextSafe(text){ try{ if(navigator.clipboard&&navigator.clipboard.writeText){ await navigator.clipboard.writeText(text); return true; } }catch(e){} try{ const ta=document.createElement("textarea"); ta.value=text; ta.setAttribute("readonly",""); ta.style.cssText="position:fixed;top:0;left:0;width:1px;height:1px;opacity:0"; document.body.appendChild(ta); ta.focus(); ta.select(); ta.setSelectionRange(0,text.length); const ok=document.execCommand("copy"); document.body.removeChild(ta); return !!ok; }catch(e){ return false; } }
 function download(blob,name){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(()=>URL.revokeObjectURL(a.href),8000); toast("已下载 "+name); }
 
 /* ---- 纯 JS ZIP（store 存储法，无压缩，无外部库） ---- */
@@ -2116,6 +2131,70 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
   updateRun();
 })();
 
+/* ===================== 共享：二维码生成（QR Code，字节模式，纠错 M，版本 1–40，无外部库） ===================== */
+const makeQR=(function(){
+  const TOTAL=[26,44,70,100,134,172,196,242,292,346,404,466,532,581,655,733,815,901,991,1085,1156,1258,1364,1474,1588,1706,1828,1921,2051,2185,2323,2465,2611,2761,2876,3034,3196,3362,3532,3706];
+  const ECM=[[1,10],[1,16],[1,26],[2,36],[2,48],[4,64],[4,72],[4,88],[5,110],[5,130],[5,150],[8,176],[9,198],[9,216],[10,240],[10,280],[11,308],[13,338],[14,364],[16,416],[17,442],[17,476],[18,504],[20,560],[21,588],[23,644],[25,700],[26,728],[28,784],[29,812],[31,868],[33,924],[35,980],[37,1036],[38,1064],[40,1120],[43,1204],[45,1260],[47,1316],[49,1372]];
+  const ALIGN=[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,86,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]];
+  // GF(256)
+  const EXP=new Uint8Array(512),LOG=new Uint8Array(256); { let x=1; for(let i=0;i<255;i++){ EXP[i]=x; LOG[x]=i; x<<=1; if(x&0x100)x^=0x11d; } for(let i=255;i<512;i++)EXP[i]=EXP[i-255]; }
+  const gmul=(a,b)=>(a&&b)?EXP[LOG[a]+LOG[b]]:0;
+  const GENS={}; function generator(n){ if(GENS[n])return GENS[n]; let g=[1]; for(let i=0;i<n;i++){ const ng=new Array(g.length+1).fill(0); for(let j=0;j<g.length;j++){ ng[j]^=g[j]; ng[j+1]^=gmul(g[j],EXP[i]); } g=ng; } return GENS[n]=g; }
+  function rsEncode(data,n){ const g=generator(n); const res=new Uint8Array(data.length+n); res.set(data); for(let i=0;i<data.length;i++){ const c=res[i]; if(c){ for(let j=1;j<g.length;j++)res[i+j]^=gmul(g[j],c); } } return res.slice(data.length); }
+  function bch(data,poly,bits){ let v=data<<(bits-1-Math.floor(Math.log2(poly))+0); /* shift by degree */ return v; }
+  function formatBits(mask){ // 纠错 M = 00
+    const data=(0<<3)|mask; let v=data<<10; for(let i=14;i>=10;i--){ if(v&(1<<i))v^=0x537<<(i-10); } return ((data<<10)|v)^0x5412; }
+  function versionBits(ver){ let v=ver<<12; for(let i=17;i>=12;i--){ if(v&(1<<i))v^=0x1f25<<(i-12); } return (ver<<12)|v; }
+  function encode(text){
+    const bytes=new TextEncoder().encode(text);
+    let ver=-1; for(let v=1;v<=40;v++){ const dataCw=TOTAL[v-1]-ECM[v-1][1]; const need=4+(v<10?8:16)+bytes.length*8; if(need<=dataCw*8){ver=v;break;} }
+    if(ver<0)throw new Error("内容太长，无法生成二维码");
+    const [blocks,ecTotal]=ECM[ver-1], total=TOTAL[ver-1], dataCw=total-ecTotal, ecPer=ecTotal/blocks;
+    // 比特流
+    const bits=[]; const push=(val,n)=>{ for(let i=n-1;i>=0;i--)bits.push((val>>i)&1); };
+    push(4,4); push(bytes.length,ver<10?8:16); for(const b of bytes)push(b,8);
+    const cap=dataCw*8; for(let i=0;i<4&&bits.length<cap;i++)bits.push(0); while(bits.length%8)bits.push(0);
+    const data=new Uint8Array(dataCw); for(let i=0;i<bits.length/8;i++){ let b=0; for(let k=0;k<8;k++)b=(b<<1)|bits[i*8+k]; data[i]=b; }
+    for(let i=bits.length/8,alt=0;i<dataCw;i++,alt^=1)data[i]=alt?0x11:0xec;
+    // 分块 + RS
+    const short=Math.floor(dataCw/blocks), longN=dataCw%blocks; const dBlocks=[],eBlocks=[]; let pos=0;
+    for(let b=0;b<blocks;b++){ const len=short+(b>=blocks-longN?1:0); const d=data.slice(pos,pos+len); pos+=len; dBlocks.push(d); eBlocks.push(rsEncode(d,ecPer)); }
+    const out=[]; const maxD=short+(longN?1:0); for(let i=0;i<maxD;i++)for(const d of dBlocks)if(i<d.length)out.push(d[i]); for(let i=0;i<ecPer;i++)for(const e of eBlocks)out.push(e[i]);
+    // 矩阵
+    const N=ver*4+17; const m=new Uint8Array(N*N), fixed=new Uint8Array(N*N); const set=(x,y,v)=>{ m[y*N+x]=v; fixed[y*N+x]=1; };
+    const finder=(cx,cy)=>{ for(let dy=-1;dy<=7;dy++)for(let dx=-1;dx<=7;dx++){ const x=cx+dx,y=cy+dy; if(x<0||y<0||x>=N||y>=N)continue; const on=(dx>=0&&dx<=6&&dy>=0&&dy<=6)&&((dx===0||dx===6||dy===0||dy===6)||(dx>=2&&dx<=4&&dy>=2&&dy<=4)); set(x,y,on?1:0); } };
+    finder(0,0); finder(N-7,0); finder(0,N-7);
+    for(let i=8;i<N-8;i++){ set(i,6,i%2===0?1:0); set(6,i,i%2===0?1:0); }
+    const ap=ALIGN[ver-1]; for(const cy of ap)for(const cx of ap){ if((cx<9&&cy<9)||(cx<9&&cy>N-9)||(cx>N-9&&cy<9))continue; /* 与定位图案重叠的三个不画；与时序线重叠的照画 */ for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++){ const on=Math.max(Math.abs(dx),Math.abs(dy))!==1; set(cx+dx,cy+dy,on?1:0); } }
+    for(let i=0;i<9;i++){ if(i!==6){ set(8,i,0); set(i,8,0); } } for(let i=0;i<8;i++){ set(N-1-i,8,0); set(8,N-1-i,0); }
+    set(8,N-8,1); // 固定暗模块（必须在预留格式区之后）
+    if(ver>=7){ for(let i=0;i<18;i++){ set(Math.floor(i/3),N-11+(i%3),0); set(N-11+(i%3),Math.floor(i/3),0); } }
+    // 放置数据
+    let bi=0; const totalBits=out.length*8; let up=true;
+    for(let col=N-1;col>0;col-=2){ if(col===6)col--; for(let k=0;k<N;k++){ const y=up?N-1-k:k; for(let c=0;c<2;c++){ const x=col-c; if(fixed[y*N+x])continue; let bit=0; if(bi<totalBits){ bit=(out[bi>>3]>>(7-(bi&7)))&1; } bi++; m[y*N+x]=bit; } } up=!up; }
+    // 掩码选择
+    const MASK=[(x,y)=>(x+y)%2===0,(x,y)=>y%2===0,(x,y)=>x%3===0,(x,y)=>(x+y)%3===0,(x,y)=>(Math.floor(y/2)+Math.floor(x/3))%2===0,(x,y)=>(x*y)%2+(x*y)%3===0,(x,y)=>((x*y)%2+(x*y)%3)%2===0,(x,y)=>((x+y)%2+(x*y)%3)%2===0];
+    function applyFormat(mat,mask){ const f=formatBits(mask); const b=i=>(f>>i)&1;
+      for(let i=0;i<6;i++)mat[i*N+8]=b(i); mat[7*N+8]=b(6); mat[8*N+8]=b(7); mat[8*N+7]=b(8); for(let i=9;i<15;i++)mat[8*N+(14-i)]=b(i);
+      for(let i=0;i<8;i++)mat[8*N+(N-1-i)]=b(i); for(let i=8;i<15;i++)mat[(N-15+i)*N+8]=b(i); }
+    function penalty(mat){ let p=0;
+      for(let y=0;y<N;y++){ let run=1; for(let x=1;x<N;x++){ if(mat[y*N+x]===mat[y*N+x-1]){ run++; if(run===5)p+=3; else if(run>5)p++; } else run=1; } }
+      for(let x=0;x<N;x++){ let run=1; for(let y=1;y<N;y++){ if(mat[y*N+x]===mat[(y-1)*N+x]){ run++; if(run===5)p+=3; else if(run>5)p++; } else run=1; } }
+      for(let y=0;y<N-1;y++)for(let x=0;x<N-1;x++){ const v=mat[y*N+x]; if(v===mat[y*N+x+1]&&v===mat[(y+1)*N+x]&&v===mat[(y+1)*N+x+1])p+=3; }
+      const P1=[1,0,1,1,1,0,1,0,0,0,0],P2=[0,0,0,0,1,0,1,1,1,0,1];
+      for(let y=0;y<N;y++)for(let x=0;x<=N-11;x++){ let a=true,b=true; for(let k=0;k<11;k++){ const v=mat[y*N+x+k]; if(v!==P1[k])a=false; if(v!==P2[k])b=false; } if(a)p+=40; if(b)p+=40; }
+      for(let x=0;x<N;x++)for(let y=0;y<=N-11;y++){ let a=true,b=true; for(let k=0;k<11;k++){ const v=mat[(y+k)*N+x]; if(v!==P1[k])a=false; if(v!==P2[k])b=false; } if(a)p+=40; if(b)p+=40; }
+      let dark=0; for(let i=0;i<N*N;i++)dark+=mat[i]; const pct=dark*100/(N*N); p+=Math.floor(Math.abs(pct-50)/5)*10; return p; }
+    let best=null,bestP=Infinity,bestMask=0;
+    for(let mk=0;mk<8;mk++){ const mat=new Uint8Array(m); for(let y=0;y<N;y++)for(let x=0;x<N;x++){ if(!fixed[y*N+x]&&MASK[mk](x,y))mat[y*N+x]^=1; } applyFormat(mat,mk); const p=penalty(mat); if(p<bestP){bestP=p;best=mat;bestMask=mk;} }
+    if(ver>=7){ const vb=versionBits(ver); for(let i=0;i<18;i++){ const bit=(vb>>i)&1; best[(N-11+(i%3))*N+Math.floor(i/3)]=bit; best[Math.floor(i/3)*N+(N-11+(i%3))]=bit; } }
+    return { size:N, version:ver, mask:bestMask, get:(x,y)=>best[y*N+x]===1, modules:best };
+  }
+  function toSVG(text,px,opt){ const q=encode(text); const quiet=(opt&&opt.quiet!==undefined)?opt.quiet:4; const S=q.size+quiet*2; let d=""; for(let y=0;y<q.size;y++){ let x=0; while(x<q.size){ if(!q.get(x,y)){x++;continue;} let w=1; while(x+w<q.size&&q.get(x+w,y))w++; d+=`M${x+quiet} ${y+quiet}h${w}v1h-${w}z`; x+=w; } }
+    return { svg:`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${S} ${S}" width="${px}" height="${px}" shape-rendering="crispEdges"><rect width="${S}" height="${S}" fill="#fff"/><path d="${d}" fill="#000"/></svg>`, qr:q }; }
+  encode.toSVG=toSVG; return encode;
+})();
+
 /* ===================== 模块九：2FA 验证码（TOTP / HOTP，纯本地计算） ===================== */
 (function(){
   /* ---- 纯 JS 哈希：SHA-1 / SHA-256 / SHA-512，供 HMAC 使用（不依赖 crypto.subtle，file:// 下也稳定） ---- */
@@ -2217,7 +2296,12 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
     $("#tf-heroCode").textContent=group(e.code); $("#tf-heroNext").textContent=group(e.next); $("#tf-heroPrev").textContent=e.type==="hotp"?"—":group(e.prev);
     $("#tf-hotpNext").style.display=e.type==="hotp"?"inline-flex":"none";
     $("#tf-uri").value=`otpauth://${e.type}/${encodeURIComponent(e.label||"account")}?secret=${e.norm}&digits=${e.digits}&algorithm=${e.algo}${e.type==="hotp"?"&counter="+e.counter:"&period="+e.period}`;
+    renderQR();
   }
+  let qrHidden=false;
+  function renderQR(){ const box=$("#tf-qr"); if(qrHidden)return; const uri=$("#tf-uri").value; if(!uri){ box.innerHTML=""; return; } try{ box.innerHTML=makeQR.toSVG(uri,160).svg; }catch(err){ box.innerHTML=`<div class="qrerr">${escHTML(err.message)}</div>`; } }
+  $("#tf-qrHide").onclick=()=>{ qrHidden=!qrHidden; $("#tf-qrBox").classList.toggle("off",qrHidden); $("#tf-qrHide").textContent=qrHidden?"显示二维码":"隐藏"; if(!qrHidden)renderQR(); };
+  $("#tf-qrDl").onclick=()=>{ const uri=$("#tf-uri").value; if(!uri){toast("没有可生成的内容");return;} try{ const q=makeQR(uri); const scale=8,quiet=4,S=(q.size+quiet*2)*scale; const cv=document.createElement("canvas"); cv.width=S; cv.height=S; const ctx=cv.getContext("2d"); ctx.fillStyle="#fff"; ctx.fillRect(0,0,S,S); ctx.fillStyle="#000"; for(let y=0;y<q.size;y++)for(let x=0;x<q.size;x++)if(q.get(x,y))ctx.fillRect((x+quiet)*scale,(y+quiet)*scale,scale,scale); const e=entries[selected]; cv.toBlob(b=>download(b,`2FA-${safeFileName(e&&e.label||"account")||"account"}.png`),"image/png"); }catch(err){ toast("生成失败："+err.message); } };
   let lastSec=-1;
   function tick(force){
     if(!entries.length)return; const now=nowSec(); const sec=Math.floor(now);
@@ -2242,14 +2326,15 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
   $("#tf-offsetReset").onclick=()=>{ $("#tf-offset").value="0"; offset=0; tick(true); toast("已恢复本机时间"); };
   $("#tf-clear").onclick=()=>{ input.value=""; rebuild(); toast("已清空（页面不保存任何密钥）"); };
   $("#tf-showKey").addEventListener("change",()=>{ showSecret=$("#tf-showKey").checked; renderAll(); renderHero(); });
-  async function copy(text,msg){ try{ await navigator.clipboard.writeText(text); toast(msg||"已复制"); return true; }catch{ toast("复制失败"); return false; } }
+  async function copy(text,msg){ if(await copyTextSafe(text)){ toast(msg||"已复制"); return true; } toast("复制失败：浏览器不允许写入剪贴板，请手动选中复制"); return false; }
   $("#tf-rows").addEventListener("click",e=>{ const row=e.target.closest(".tf-row"); if(!row)return; const i=+row.dataset.i; const en=entries[i];
     if(e.target.closest(".cp")||e.target.closest(".code")){ if(!en.error)copy(en.code,`已复制 ${en.label||"第 "+(i+1)+" 条"} 的验证码 ${en.code}`); return; }
     if(e.target.closest(".key")){ copy(en.secretText,"已复制密钥"); return; }
     if(!en.error){ selected=i; $("#tf-rows").querySelectorAll(".tf-row").forEach(r=>r.classList.toggle("sel",+r.dataset.i===i)); renderHero(); tick(true); } });
   $("#tf-heroCode").onclick=()=>{ const e=entries[selected]; if(e&&!e.error)copy(e.code,"已复制验证码 "+e.code); };
   $("#tf-heroCopy").onclick=()=>$("#tf-heroCode").onclick();
-  $("#tf-copyUri").onclick=()=>copy($("#tf-uri").value,"已复制 otpauth 链接，可导入验证器 App");
+  $("#tf-copyUri").onclick=()=>copy($("#tf-uri").value,"已复制 otpauth 链接（仅供验证器 App 导入，浏览器打不开是正常的）");
+  $("#tf-uri").addEventListener("click",()=>{ $("#tf-uri").select(); });
   $("#tf-hotpNext").onclick=()=>{ const e=entries[selected]; if(!e||e.type!=="hotp")return; e.counter++; compute(e,true); renderAll(); renderHero(); toast("计数器 +1 → "+e.counter); };
   $("#tf-copyAll").onclick=()=>{ const ok=entries.filter(e=>!e.error); if(!ok.length){toast("没有可复制的验证码");return;} const f=$("#tf-copyFmt").value; const lines=ok.map((e,i)=>f==="code"?e.code:f==="label"?`${e.label||"第"+(i+1)+"条"}\t${e.code}`:f==="secret"?`${e.secretText}\t${e.code}`:`${e.raw}\t${e.code}`); copy(lines.join("\n"),`已复制 ${ok.length} 个验证码`); };
   document.addEventListener("keydown",e=>{ if(!$("#page-tf").classList.contains("active"))return; const tag=(e.target.tagName||"").toLowerCase(); if(tag==="input"||tag==="textarea"||tag==="select"||e.ctrlKey||e.metaKey||e.altKey)return; if(e.key==="c"||e.key==="C"){ e.preventDefault(); $("#tf-heroCode").onclick(); } });
