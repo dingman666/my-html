@@ -1204,6 +1204,7 @@
             </div>
           </div>
           <div class="field" id="ms-apiEvenWrap" style="display:none"><label>even_imap 收件 API 地址</label><input type="text" id="ms-apiEvenBase" value="http://15.204.106.173:16347" placeholder="默认 http://15.204.106.173:16347 · 部署 aux_mail_api.py 的地址" spellcheck="false" autocomplete="off"></div>
+          <div class="field" id="ms-apiProxyWrap" style="display:none"><label>HTTPS 代理地址（本页在 https 站点时自动走它）</label><input type="text" id="ms-apiProxy" placeholder="如 https://aux-mail-proxy.你的子域.workers.dev · 留空 = 不用代理" spellcheck="false" autocomplete="off"></div>
           <div class="field" id="ms-apiServerWrap" style="display:none"><label>收件服务器（IMAP）</label><input type="text" id="ms-apiServer" placeholder="默认 mail.evenemail.com · 可填 主机:端口" spellcheck="false" autocomplete="off"></div>
           <div class="field xs"><label>取最新几封 limit</label><select id="ms-apiLimit"><option value="1">1 封</option><option value="2">2 封</option><option value="3">3 封</option><option value="4">4 封</option><option value="5">5 封</option></select></div>
           <div class="field"><label>凭据模板（/api/ 后面那段，可用 {列名}）</label><input type="text" id="ms-apiTpl" placeholder="留空 = 自动：邮箱----密码" spellcheck="false" autocomplete="off"></div>
@@ -2350,7 +2351,7 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
   function mailApi(P,ctx){
     const $$=id=>$("#"+P+"-"+id); const KEY="tt."+P+".api";
     const res=new Map(); let batchRun=false, batchStop=false, openI=-1, openT="";
-    const els={base:$$("apiBase"),limit:$$("apiLimit"),tpl:$$("apiTpl"),server:$$("apiServer"),evenBase:$$("apiEvenBase")};
+    const els={base:$$("apiBase"),limit:$$("apiLimit"),tpl:$$("apiTpl"),server:$$("apiServer"),evenBase:$$("apiEvenBase"),proxy:$$("apiProxy")};
     /* 邮箱类型：多选下拉（可同时勾选多个，收件时按列表顺序依次尝试，先收到邮件的算） */
     const typeBox=$$("apiType"), typeBtn=$$("apiTypeBtn"), typePop=$$("apiTypePop");
     const TYPE_LABEL={ms_imap:"IMAP",ms_graph:"Graph",mail_com:"Mail.com",temp_api:"临时",even_imap:"辅助"}; const tlabel=t=>TYPE_LABEL[t]||t;
@@ -2368,16 +2369,22 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
       if(s.evenBase)els.evenBase.value=s.evenBase; else if(bases.even_imap)els.evenBase.value=bases.even_imap; else els.evenBase.value=DEF_EVEN;
       if(s.mainBase!==undefined)els.base.value=s.mainBase;
       else { const k=Object.keys(bases).find(x=>x!=="even_imap"&&bases[x]); if(k)els.base.value=bases[k]; else if(s.base&&s.type!=="even_imap")els.base.value=s.base; }
-      if(s.limit)els.limit.value=String(s.limit); if(s.tpl)els.tpl.value=s.tpl; if(s.server&&els.server)els.server.value=s.server; }catch(e){}
-    function save(){ try{ localStorage.setItem(KEY,JSON.stringify({mainBase:els.base.value.trim(),evenBase:els.evenBase.value.trim(),types:types(),limit:+els.limit.value,tpl:els.tpl.value.trim(),server:els.server?els.server.value.trim():""})); }catch(e){} }
+      if(s.limit)els.limit.value=String(s.limit); if(s.tpl)els.tpl.value=s.tpl; if(s.server&&els.server)els.server.value=s.server; if(s.proxy&&els.proxy)els.proxy.value=s.proxy; }catch(e){}
+    function save(){ try{ localStorage.setItem(KEY,JSON.stringify({mainBase:els.base.value.trim(),evenBase:els.evenBase.value.trim(),types:types(),limit:+els.limit.value,tpl:els.tpl.value.trim(),server:els.server?els.server.value.trim():"",proxy:els.proxy?els.proxy.value.trim():""})); }catch(e){} }
     function normBase(v){ let b=String(v||"").trim().replace(/\/+$/,""); if(b&&!/^https?:\/\//i.test(b))b=(/^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/i.test(b)?"http://":"https://")+b; return b.replace(/(?:\/(?:web|api|index\.html?))+\/*$/i,""); }
     const DEF_EVEN_BASE="http://15.204.106.173:16347";
-    function baseUrl(type){ return normBase(type==="even_imap"?(els.evenBase.value.trim()||DEF_EVEN_BASE):els.base.value); }
+    const isHttpsPage=()=>location.protocol==="https:";
+    const proxyBase=()=>normBase(els.proxy?els.proxy.value:"");
+    /* 混合内容：本页是 https 而接口是 http 时浏览器必拦；配了 HTTPS 代理就自动改走代理（代理原样转发 /api/... 到 http 接口） */
+    function viaProxy(b,force){ const px=proxyBase(); if(px&&/^http:\/\//i.test(b)&&(force||isHttpsPage()))return px; return b; }
+    function rawBase(type){ return normBase(type==="even_imap"?(els.evenBase.value.trim()||DEF_EVEN_BASE):els.base.value); }
+    function baseUrl(type,force){ return viaProxy(rawBase(type),force); }
     function hint(){ const h=$$("apiHint"); const t=types(); const main=t.filter(x=>x!=="even_imap"); const b=baseUrl(main[0]||"ms_imap"), eb=baseUrl("even_imap"); let warn="";
       const noBase=x=>location.protocol==="file:"?"⚠️ "+x+"地址留空表示「本页所在站点」，但本页是本地文件，请填写完整接口地址。":"⚠️ 还没填"+x+"接口地址：留空表示接口和本页在同一站点（"+location.host+"），如果接口在别处请填完整地址，如 https://接口域名。";
       if(!t.length)warn="⚠️ 还没勾选邮箱类型，请在「邮箱类型」里至少勾选一个。";
       else if(hasEven()&&/ms\.lqqq\.cc/i.test(eb))warn="⚠️ even_imap 是辅助邮箱自建收件（IMAP），「even_imap 收件 API 地址」不能填 ms.lqqq.cc，要填辅助邮箱收件接口地址（默认 http://15.204.106.173:16347）。";
-      else if(location.protocol==="https:"&&((main.length&&/^http:\/\//i.test(b))||(hasEven()&&/^http:\/\//i.test(eb))))warn="⚠️ 本页是 https，浏览器会拦截 http 接口（混合内容），请给接口配 https，或把本页以 http / 本地文件方式打开。";
+      else if(isHttpsPage()&&((main.length&&/^http:\/\//i.test(b))||(hasEven()&&/^http:\/\//i.test(eb))))warn="⚠️ 本页是 https，浏览器会拦截 http 接口（混合内容）。解决：在「HTTPS 代理地址」填一个 https 代理（如 Cloudflare Worker，见 aux-mail-proxy 文件夹），或把本页以本地文件 / http 方式打开。";
+      else if(isHttpsPage()&&proxyBase()&&((main.length&&/^http:\/\//i.test(rawBase(main[0]||"ms_imap")))||(hasEven()&&/^http:\/\//i.test(rawBase("even_imap")))))warn="ℹ️ 本页是 https，http 接口已自动改走 HTTPS 代理 "+proxyBase()+"。";
       else if(main.length&&!b)warn=noBase("");
       else if(hasEven()&&!eb)warn=noBase("even_imap ");
       h.classList.toggle("warn",!!warn);
@@ -2385,7 +2392,10 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
       h.textContent=(warn?warn+"　":"")+"请求示例："+(eg.join("　|　")||"—")+"　·　点每行的「📩 收件」即调用；找到验证码会自动复制。接口需允许跨域（CORS）；设置只保存在本浏览器。"
         +(t.length>1?"　已勾选 "+t.length+" 个类型，每行会有 "+t.length+" 个独立的收件按钮（"+t.map(x=>"📩 "+TYPE_LABEL[x]).join("、")+"），各自单独收取、单独显示结果。":"")
         +(hasEven()?"　even_imap 用每行的「辅助邮箱 + 辅助邮箱密码」登录收件服务器（默认 mail.evenemail.com，可在「收件服务器」栏改成别的邮局，支持 主机:端口）。":""); }
-    function syncType(){ const e=hasEven(); const w=$$("apiServerWrap"), ew=$$("apiEvenWrap"); if(w)w.style.display=e?"":"none"; if(ew)ew.style.display=e?"":"none"; paintType(); }
+    function syncType(){ const e=hasEven(); const w=$$("apiServerWrap"), ew=$$("apiEvenWrap"), pw=$$("apiProxyWrap"); if(w)w.style.display=e?"":"none"; if(ew)ew.style.display=e?"":"none";
+      /* 代理栏：勾了 even_imap，或任一地址是 http 且本页是 https，或已填过代理 → 显示 */
+      const anyHttp=/^http:\/\//i.test(rawBase("ms_imap"))||(e&&/^http:\/\//i.test(rawBase("even_imap")));
+      if(pw)pw.style.display=(e||(isHttpsPage()&&anyHttp)||proxyBase())?"":"none"; paintType(); }
     ["input","change"].forEach(ev=>Object.values(els).forEach(el=>{ if(!el)return; el.addEventListener(ev,()=>{ save(); syncType(); hint(); }); }));
     typeBtn.addEventListener("click",e=>{ e.stopPropagation(); typeBox.classList.toggle("open"); });
     typePop.addEventListener("click",e=>{ e.stopPropagation(); const b=e.target.closest("[data-all]"); if(b){ typeChecks().forEach(c=>{ c.checked=b.dataset.all==="1"; }); save(); syncType(); hint(); repaintAll(); } });
@@ -2430,7 +2440,10 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
       return { subject, from:fmtAddr(m.from), date, folder:String(m.folder||m.folder_key||m.folder_type||""), body, links:Array.isArray(m.links)?m.links.map(l=>typeof l==="string"?l:(l&&(l.url||l.href))||"").filter(l=>/^https?:\/\//i.test(l)):[], codes:extractCodes(subject,body), id:String(m.id||m.uid||"") }; }
     async function fetchType(i,type){ const cred=credsOf(i,type); const url=buildUrl(cred,type); const ac=new AbortController(); const tm=setTimeout(()=>ac.abort(),45000); let resp,txt,data;
       try{ resp=await fetch(url,{signal:ac.signal,headers:{Accept:"application/json"},cache:"no-store"}); txt=await resp.text(); }
-      catch(e){ throw new Error(e&&e.name==="AbortError"?"请求超时（45 秒）":"网络请求失败：接口地址不对、服务未开 CORS，或 https 页面调用了 http 接口"); }
+      catch(e){ if(e&&e.name==="AbortError")throw new Error("请求超时（45 秒）");
+        if(isHttpsPage()&&/^http:\/\//i.test(url))throw new Error("本页是 https，浏览器拦截了 http 接口（混合内容）。请在上方「HTTPS 代理地址」填 https 代理（Cloudflare Worker，见 aux-mail-proxy 文件夹），或把本页以本地文件方式打开");
+        if(/^https:\/\//i.test(url)&&proxyBase()&&url.startsWith(proxyBase()))throw new Error("HTTPS 代理无法访问："+proxyBase()+"（代理没部署好、地址填错，或代理后端连不上接口）");
+        throw new Error("网络请求失败：接口地址不对、服务未开 CORS，或网络不通"); }
       finally{ clearTimeout(tm); }
       try{ data=JSON.parse(txt); }catch(e){ if(/^\s*<(!doctype|html)/i.test(txt))throw new Error("HTTP "+resp.status+"，"+(baseUrl(type)?"这个地址返回的是网页而不是接口 JSON，请检查「收件 API 地址」是否填对（不用带 /api）":"还没填「收件 API 地址」，请求发到了本页所在站点；请在表格上方填写接口所在站点，如 https://接口域名")); throw new Error("HTTP "+resp.status+"，返回的不是 JSON："+txt.slice(0,100)); }
       if(!data||typeof data!=="object")throw new Error("HTTP "+resp.status+"，返回内容异常");
@@ -2486,7 +2499,7 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
       const worker=async()=>{ while(q.length&&!batchStop){ const [i,t]=q.shift(); const r=await fetchRow(i,t); done++; if(r.status==="success"){okN++; if(r.emails[0].codes.length)codeN++;} btn.textContent=`⏹ 停止 (${done}/${total})`; } };
       await Promise.all([worker(),worker()]);
       batchRun=false; btn.textContent="📩 收取勾选行"; toast((batchStop?`已停止：完成 ${done}/${total}`:`批量收件完成 ${idx.length} 行`+(tl.length>1?` × ${tl.length} 个类型`:""))+`，有邮件 ${okN} 次，含验证码 ${codeN} 次`); };
-    return { cellHTML, reset:()=>{ res.clear(); closeModal(); }, fetchRow, credsOf, buildUrl, extractCodes, toText, norm, results:res, types, setTypes, repaintAll };
+    return { cellHTML, reset:()=>{ res.clear(); closeModal(); }, fetchRow, credsOf, buildUrl, extractCodes, toText, norm, results:res, types, setTypes, repaintAll, baseUrl, rawBase };
   }
 
   function accountTab(P,opts){
