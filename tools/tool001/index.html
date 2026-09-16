@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>文本处理工具 · 合并去重 / 分割 / 清洗 / 随机密码</title>
+<title>文本处理工具 · 合并去重 / 分割 / 清洗 / 随机密码 / 谷歌邮箱</title>
 <style>
   :root{
     --bg:#f5f5f7;--bg-grad-1:#f5f5f7;--bg-grad-2:#ebebef;
@@ -40,7 +40,7 @@
   header p{color:var(--text-2);font-size:14px;margin:0}
 
   /* 顶部标签 */
-  .maintabs{display:flex;gap:6px;background:var(--chip);border-radius:14px;padding:5px;margin:0 auto 26px;max-width:860px;flex-wrap:wrap}
+  .maintabs{display:flex;gap:6px;background:var(--chip);border-radius:14px;padding:5px;margin:0 auto 26px;max-width:980px;flex-wrap:wrap}
   .maintab{flex:1;text-align:center;border:none;background:none;cursor:pointer;padding:11px 10px;border-radius:10px;font-size:15px;font-weight:600;color:var(--text-2);font-family:inherit;transition:.15s}
   .maintab.active{background:var(--card-solid);color:var(--text);box-shadow:var(--shadow)}
 
@@ -222,26 +222,86 @@
   .pw-tips li b{color:var(--text)}
   .pw-inline{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   .pw-inline .field{flex:1;min-width:180px}
+
+  /* ===== 谷歌邮箱专用 ===== */
+  .gm-tablewrap{overflow:auto;max-height:600px;border:1px solid var(--line);border-radius:14px;background:var(--card-solid);overscroll-behavior:contain}
+  .gm-table{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;min-width:860px}
+  .gm-table th{position:sticky;top:0;z-index:1;background:#ffc000;color:#1d1d1f;font-weight:700;padding:11px 12px;text-align:center;border-bottom:1px solid rgba(0,0,0,.14);border-right:1px solid rgba(0,0,0,.08);white-space:nowrap;font-size:14px}
+  .gm-table th:last-child{border-right:none}
+  .gm-table td{padding:9px 12px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);text-align:center;vertical-align:middle;font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;white-space:pre-line;line-height:1.65;word-break:break-all}
+  .gm-table td:last-child{border-right:none}
+  .gm-table tr:last-child td{border-bottom:none}
+  .gm-table td.ix{color:var(--text-2);font-variant-numeric:tabular-nums;width:56px}
+  .gm-table td.email{color:var(--accent)}
+  .gm-table td.codes{font-variant-numeric:tabular-nums}
+  .gm-table td.extra{color:var(--orange)}
+  .gm-table td.empty{color:var(--text-3)}
+  .gm-table tbody tr:hover td{background:var(--chip)}
+  .gm-table td.cell-click{cursor:pointer}
+  .gm-table td.cell-click:hover{box-shadow:inset 0 0 0 2px var(--accent-soft)}
+  .gm-table th.sel,.gm-table td.sel{width:38px;padding:6px 8px}
+  .gm-table input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);margin:0;cursor:pointer;vertical-align:middle}
+  .gm-table tbody tr.selected td{background:var(--accent-soft)}
+  .toggle-sm{padding:5px 11px;font-size:13px;gap:7px}
+  .toggle-sm .sw{width:32px;height:20px}
+  .toggle-sm .sw::after{width:16px;height:16px}
+  .toggle-sm input:checked + .sw::after{transform:translateX(12px)}
+
+  /* ===== 左侧边栏导航 ===== */
+  :root{--side:rgba(255,255,255,.58)}
+  @media (prefers-color-scheme:dark){ :root{--side:rgba(28,28,30,.72)} }
+  .app{display:flex;min-height:100vh;align-items:flex-start}
+  .sidebar{width:240px;flex:none;position:sticky;top:0;height:100vh;padding:22px 12px 16px;display:flex;flex-direction:column;gap:4px;background:var(--side);-webkit-backdrop-filter:saturate(180%) blur(24px);backdrop-filter:saturate(180%) blur(24px);border-right:1px solid var(--line);overflow:auto;z-index:5}
+  .brand{padding:4px 10px 16px}
+  .brand h1{font-size:19px;font-weight:700;margin:0;letter-spacing:-.02em}
+  .brand p{font-size:12px;color:var(--text-2);margin:4px 0 0;line-height:1.5}
+  .maintabs{display:flex;flex-direction:column;gap:2px;background:none;border-radius:0;padding:0;margin:0;max-width:none}
+  .maintab{display:flex;align-items:center;gap:11px;text-align:left;padding:8px 10px;border-radius:10px;font-size:14px;font-weight:500;color:var(--text);flex:none;line-height:1.2}
+  .maintab .ic{width:27px;height:27px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;font-size:15px;background:var(--ic,#8e8e93);color:#fff;flex:none;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.12),0 1px 1px rgba(0,0,0,.08)}
+  .maintab:hover{background:var(--chip);color:var(--text)}
+  .maintab.active{background:var(--accent);color:#fff;box-shadow:none}
+  .maintab.active .ic{box-shadow:inset 0 0 0 .5px rgba(255,255,255,.35)}
+  .side-group{font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.04em;padding:14px 12px 6px}
+  .side-foot{margin-top:auto;padding:14px 10px 0;font-size:11px;color:var(--text-3);line-height:1.6}
+  .wrap{flex:1;min-width:0;max-width:1120px;margin:0 auto;padding:30px 30px 80px}
+  .pagehead{margin:0 0 20px;display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap}
+  .pagehead h1{font-size:26px;font-weight:700;letter-spacing:-.02em;margin:0}
+  .pagehead p{margin:0 0 3px;color:var(--text-2);font-size:13px}
+  @media(max-width:880px){
+    .app{display:block}
+    .sidebar{position:sticky;top:0;height:auto;width:auto;flex-direction:row;align-items:center;padding:8px 10px;gap:8px;border-right:none;border-bottom:1px solid var(--line)}
+    .brand,.side-group,.side-foot{display:none}
+    .maintabs{flex-direction:row;overflow-x:auto;flex:1;gap:4px;scrollbar-width:none}
+    .maintabs::-webkit-scrollbar{display:none}
+    .maintab{padding:6px 10px 6px 6px;white-space:nowrap;font-size:13px}
+    .maintab .ic{width:24px;height:24px;font-size:13px}
+    .wrap{padding:18px 14px 60px}
+    .pagehead h1{font-size:22px}
+  }
   footer{text-align:center;color:var(--text-3);font-size:12px;margin-top:28px;line-height:1.7}
 </style>
   <link rel="icon" href="./icon.png">
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <h1>文本处理工具</h1>
-    <p>合并去重 · 存档比对 · 分割 · 清洗 · 随机密码　—　流式引擎，支持大文件，全程本地不上传</p>
-  </header>
-
-  <nav class="maintabs">
-    <button class="maintab active" data-page="merge">合并去重</button>
-    <button class="maintab" data-page="convert">分隔符转换</button>
-    <button class="maintab" data-page="dedup">文本去重</button>
-    <button class="maintab" data-page="split">文本分割</button>
-    <button class="maintab" data-page="clean">文本清洗</button>
-    <button class="maintab" data-page="extract">提取匹配</button>
-    <button class="maintab" data-page="pw">随机密码</button>
-  </nav>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><h1>文本处理工具</h1><p>流式引擎 · 支持大文件<br>全程本地，不上传</p></div>
+    <div class="side-group">文本处理</div>
+    <nav class="maintabs" id="maintabs">
+      <button class="maintab active" data-page="merge" data-sub="导入新文件，与存档比对去重，输出新增 / 异常 / 重复" style="--ic:#0a84ff"><span class="ic">🧩</span>合并去重</button>
+      <button class="maintab" data-page="convert" data-sub="把 Tab、空格等分隔的行统一换成指定分隔符" style="--ic:#5e5ce6"><span class="ic">🔗</span>分隔符转换</button>
+      <button class="maintab" data-page="dedup" data-sub="整行或按账号去重，严格保留第一次出现" style="--ic:#30d158"><span class="ic">♻️</span>文本去重</button>
+      <button class="maintab" data-page="split" data-sub="按行数 / 份数 / 大小切分成多个文件" style="--ic:#ff9f0a"><span class="ic">✂️</span>文本分割</button>
+      <button class="maintab" data-page="clean" data-sub="截断、替换、加前后缀、关键词过滤" style="--ic:#64d2ff"><span class="ic">🧹</span>文本清洗</button>
+      <button class="maintab" data-page="extract" data-sub="按邮箱名单从数据源里捞出整行" style="--ic:#bf5af2"><span class="ic">🔎</span>提取匹配</button>
+      <div class="side-group">账号工具</div>
+      <button class="maintab" data-page="pw" data-sub="随机字符 / 密码短语 / PIN / 模板组合，加密级随机源" style="--ic:#ff375f"><span class="ic">🔐</span>随机密码</button>
+      <button class="maintab" data-page="gm" data-sub="把账号信息整理成表格，一键粘进 Excel / WPS" style="--ic:#ffb340"><span class="ic">📬</span>谷歌邮箱专用</button>
+    </nav>
+    <div class="side-foot">界面仅预览前 5000 行<br>大文件请开「写入文件夹」</div>
+  </aside>
+  <main class="wrap">
+  <div class="pagehead"><h1 id="pageTitle">合并去重</h1><p id="pageSub"></p></div>
 
   <!-- ================= 合并去重 ================= -->
   <section class="page active" id="page-merge">
@@ -831,9 +891,70 @@
     </div>
   </section>
 
+  <!-- ================= 谷歌邮箱专用 ================= -->
+  <section class="page" id="page-gm">
+    <div class="card">
+      <h2>① 导入 / 输入</h2>
+      <div class="drop" id="gm-drop">
+        <input type="file" id="gm-file" accept=".txt,.csv,.tsv,text/plain" multiple>
+        <div class="icon">📬</div>
+        <div class="big">点击选择 或 拖拽 TXT</div>
+        <div class="sub">每行一个账号：邮箱 ⇥ 密码 ⇥ 辅助邮箱 ⇥ 2FA 密钥 ⇥ 备份代码…（Tab 或空格分隔，顺序可乱、字段可缺）</div>
+      </div>
+      <div class="files" id="gm-list"></div>
+      <div class="or-divider"><span>或 直接粘贴内容</span></div>
+      <textarea id="gm-paste" class="paste" spellcheck="false" placeholder="mokrigen@gmail.com&#9;Mameen@432&#9;qewasyuh@gmail.com&#9;vtrz osbd gvir mwxp&#9;84216386&#9;56466080&#9;29699561&#9;17176274&#9;97588457&#9;22670658&#9;45095568&#9;93573951&#9;73158117"></textarea>
+      <div class="hint" id="gm-pasteHint">尚未输入</div>
+    </div>
+
+    <div class="card">
+      <h2>② 表格选项</h2>
+      <div class="grid">
+        <div class="field"><label>备份代码排列</label>
+          <select id="gm-codeMode"><option value="lines" selected>同一单元格内换行（如截图）</option><option value="space">同一单元格内用空格隔开</option><option value="comma">同一单元格内用逗号隔开</option><option value="cols">每个代码单独一列</option></select>
+        </div>
+        <div class="field"><label>2FA 密钥</label>
+          <select id="gm-tfaMode"><option value="keep" selected>保持原样（vtrz osbd gvir mwxp）</option><option value="strip">去掉空格（vtrzosbdgvirmwxp）</option><option value="upper">去空格并大写（VTRZOSBDGVIRMWXP）</option></select>
+        </div>
+        <div class="field"><label>序号起始</label><input type="number" id="gm-start" value="1" min="0"><div class="hint">接着上一批填表时可从上次的下一号开始</div></div>
+      </div>
+      <div class="toggles">
+        <label class="toggle"><input type="checkbox" id="gm-lower" checked><span class="sw"></span>邮箱转小写</label>
+        <label class="toggle"><input type="checkbox" id="gm-dedup"><span class="sw"></span>按邮箱去重（保留第一条）</label>
+      </div>
+      <div class="hint" style="margin-top:12px;line-height:1.7">识别规则：邮箱按 @ 判断（第 1 个是主邮箱、第 2 个是辅助邮箱）；6–12 位纯数字视为备份代码；4 组 4 位字母数字视为 2FA 密钥；紧跟主邮箱后的那段视为密码。识别不了的内容会放进「未识别」列并计入异常，不会丢。</div>
+      <div class="actions"><button class="btn btn-primary" id="gm-run" disabled>📋 整理成表格</button><button class="btn btn-ghost" id="gm-clear">清空</button></div>
+      <div class="progress" id="gm-progress"><div class="bar"><div class="fill" id="gm-fill"></div></div><div class="ptext" id="gm-text">处理中…</div></div>
+    </div>
+
+    <div class="result" id="gm-result">
+      <div class="stats" id="gm-stats"></div>
+      <div class="card">
+        <div class="pane-head"><span class="desc">整理结果 · 预览前 <b id="gm-previewN">0</b> 行 · 已勾选 <b id="gm-selN">0</b> 行</span>
+          <div class="tools">
+            <label class="toggle toggle-sm" title="复制 / 下载时是否带第一行表头"><input type="checkbox" id="gm-header" checked><span class="sw"></span>带表头</label>
+            <button class="btn btn-primary btn-sm" id="gm-copySel">📋 复制所选</button>
+            <button class="btn btn-primary btn-sm" id="gm-copyTable">📋 复制全部</button>
+            <button class="btn btn-ghost btn-sm" id="gm-copyTsv">复制纯文本</button>
+            <button class="btn btn-ghost btn-sm" id="gm-dlXlsx">下载 Excel</button>
+            <button class="btn btn-ghost btn-sm" id="gm-dlCsv">下载 CSV</button>
+          </div>
+        </div>
+        <div class="note" id="gm-note"></div>
+        <div class="gm-tablewrap"><table class="gm-table" id="gm-table"></table></div>
+        <div class="hint" style="margin-top:10px">勾选左侧方框后「复制所选」只复制勾中的行（序号保持原编号）；「复制全部 / 复制所选」都带格式与单元格内换行，在 Excel / WPS 里 Ctrl+V 即得截图效果；「带表头」控制复制和下载是否包含第一行标题；点任意单元格可单独复制该格。</div>
+      </div>
+      <div class="card" id="gm-badCard" style="display:none">
+        <div class="pane-head"><span class="desc">⚠️ 异常行（没有识别到邮箱，或含未识别字段）<span class="cnt" id="gm-c-bad">0</span></span><div class="tools"><button class="btn btn-ghost btn-sm" id="gm-copyBad">复制</button><button class="btn btn-primary btn-sm" id="gm-dlBad">下载</button></div></div>
+        <textarea id="gm-ta-bad" readonly spellcheck="false" style="min-height:160px"></textarea>
+      </div>
+    </div>
+  </section>
+
   <footer>
     全程在浏览器本地完成，文件不会离开电脑。大文件建议开启「写入文件夹」（Chrome / Edge），结果直接写盘、内存占用最低；界面仅预览前 5000 行。
   </footer>
+  </main>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -936,10 +1057,16 @@ function renderFileList(box,files,onChange){ box.innerHTML=""; files.forEach((f,
 function countPasteLines(v){ v=v.replace(/[\r\n]+$/,""); if(v.trim()==="")return 0; let n=1; for(let i=0;i<v.length;i++)if(v.charCodeAt(i)===10)n++; return n; }
 
 /* ===================== 顶部标签切换 ===================== */
-document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>{
-  document.querySelectorAll(".maintab").forEach(x=>x.classList.toggle("active",x===b));
-  document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id==="page-"+b.dataset.page));
-}));
+function showPage(name){
+  const btn=document.querySelector('.maintab[data-page="'+name+'"]'); if(!btn)return;
+  document.querySelectorAll(".maintab").forEach(x=>x.classList.toggle("active",x===btn));
+  document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id==="page-"+name));
+  $("#pageTitle").textContent=(btn.querySelector(".ic")?btn.querySelector(".ic").textContent+" ":"")+btn.lastChild.textContent.trim(); $("#pageSub").textContent=btn.dataset.sub||"";
+  try{ localStorage.setItem("tt.page",name); }catch(e){}
+  window.scrollTo({top:0});
+}
+document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.page)));
+(function(){ let last=null; try{ last=localStorage.getItem("tt.page"); }catch(e){} showPage(last&&document.querySelector('.maintab[data-page="'+last+'"]')?last:"merge"); })();
 
 /* ===================== 模块一：合并去重 ===================== */
 (function(){
@@ -1738,6 +1865,146 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
 
   window.__pwTest={numbered,withIndex,getBatch:()=>batch,setBatch:b=>{batch=b;},genRandom,cfgRandom,genPhrase,cfgPhrase,genPin,cfgPin,genPattern,parsePattern,estimate,rint};
   generate();
+})();
+
+/* ===================== 模块八：谷歌邮箱专用（账号信息整理成表） ===================== */
+(function(){
+  const files=[]; let running=false, rows=[], bad=[], lastCfg=null, stats={inN:0,dupN:0};
+  const paste=$("#gm-paste");
+  const prog=progressCtl($("#gm-progress"),$("#gm-fill"),$("#gm-text"));
+  bindDrop($("#gm-drop"),$("#gm-file"),list=>{ const a=[...list].filter(f=>/\.(txt|csv|tsv)$/i.test(f.name)||f.type==="text/plain"); if(!a.length){toast("请选择 .txt / .csv / .tsv");return;} files.push(...a); render(); });
+  function render(){ renderFileList($("#gm-list"),files,render); updateRun(); }
+  function updateRun(){ $("#gm-run").disabled=!(files.length||paste.value.trim()); const n=countPasteLines(paste.value); $("#gm-pasteHint").textContent=n?`已输入约 ${n.toLocaleString()} 行`:"尚未输入"; }
+  paste.addEventListener("input",updateRun);
+  $("#gm-clear").onclick=()=>{ files.length=0; render(); paste.value=""; updateRun(); $("#gm-result").style.display="none"; rows=[]; bad=[]; toast("已清空"); };
+
+  /* ---- 识别一行 ---- */
+  const EMAIL=/^[^\s@]+@[^\s@]+\.[^\s@]+$/, CODE=/^\d{6,12}$/, TFA_FULL=/^(?:[a-z2-7]{4}[ \-]?){4,16}$/i, TFA_RAW=/^[a-z2-7]{16,64}$/i, TFA_GRP=/^[a-z2-7]{4}$/i;
+  function parseLine(raw){
+    const line=raw.replace(/\r$/,""); if(!line.trim())return null;
+    const tabMode=line.includes("\t");
+    const toks=tabMode?line.split("\t").map(s=>s.trim()).filter(s=>s!==""):line.trim().split(/\s+/);
+    const r={email:"",pw:"",rec:"",tfa:"",codes:[],extra:[],raw:line};
+    let rest=toks;
+    if(toks.length&&EMAIL.test(toks[0])){ r.email=toks[0]; r.pw=toks.length>1?toks[1]:""; rest=toks.slice(2); } // 位置优先：第 1 段邮箱、第 2 段密码
+    const grp=[]; const flush=()=>{ if(!grp.length)return; if(grp.length>=4)r.tfa=r.tfa?r.tfa+" "+grp.join(" "):grp.join(" "); else r.extra.push(...grp); grp.length=0; };
+    for(const t of rest){
+      if(!tabMode&&TFA_GRP.test(t)&&!/^\d+$/.test(t)){ grp.push(t); continue; } // 空格分隔时 2FA 是 4 个一组的小段
+      flush();
+      if(EMAIL.test(t)){ if(!r.email)r.email=t; else if(!r.rec)r.rec=t; else r.extra.push(t); }
+      else if(CODE.test(t))r.codes.push(t);
+      else if(TFA_FULL.test(t)||TFA_RAW.test(t)){ if(!r.tfa)r.tfa=t; else r.extra.push(t); }
+      else r.extra.push(t);
+    }
+    flush();
+    if(r.email&&!r.pw&&r.extra.length)r.pw=r.extra.shift();
+    r.ok=!!r.email;
+    return r;
+  }
+
+  /* ---- 生成表格数据 ---- */
+  function cfg(){ return { codeMode:$("#gm-codeMode").value, tfaMode:$("#gm-tfaMode").value, start:parseInt($("#gm-start").value)||0, header:$("#gm-header").checked, lower:$("#gm-lower").checked, dedup:$("#gm-dedup").checked }; }
+  function tfaOf(r,c){ if(c.tfaMode==="strip")return r.tfa.replace(/[\s-]+/g,""); if(c.tfaMode==="upper")return r.tfa.replace(/[\s-]+/g,"").toUpperCase(); return r.tfa; }
+  function table(c,idx){ // idx：只输出这些行（保持原序号）
+    const list=idx?idx.map(i=>rows[i]):rows;
+    const maxCodes=rows.reduce((a,r)=>Math.max(a,r.codes.length),0), hasExtra=rows.some(r=>r.extra.length);
+    const head=["序号","邮箱","密码","辅助邮箱","2FA"];
+    if(c.codeMode==="cols"){ for(let i=1;i<=maxCodes;i++)head.push("备份代码"+i); } else head.push("备份代码");
+    if(hasExtra)head.push("未识别");
+    const body=list.map((r,k)=>{ const i=idx?idx[k]:k; const cells=[String(c.start+i),r.email,r.pw,r.rec,tfaOf(r,c)];
+      if(c.codeMode==="cols"){ for(let k=0;k<maxCodes;k++)cells.push(r.codes[k]||""); } else cells.push(r.codes.join(c.codeMode==="space"?" ":c.codeMode==="comma"?",":"\n"));
+      if(hasExtra)cells.push(r.extra.join(" ")); return cells; });
+    return { head, body, hasExtra, maxCodes };
+  }
+  const kinds=t=>t.head.map((h,i)=>i===0?"ix":h==="邮箱"||h==="辅助邮箱"?"email":h.startsWith("备份代码")?"codes":h==="未识别"?"extra":"");
+
+  /* ---- 输出：TSV / CSV / HTML / XLSX ---- */
+  const q=(s,sep)=>(s.includes('"')||s.includes("\n")||s.includes(sep))?'"'+s.replace(/"/g,'""')+'"':s;
+  function toDelimited(t,c,sep){ const lines=[]; if(c.header)lines.push(t.head.map(h=>q(h,sep)).join(sep)); for(const row of t.body)lines.push(row.map(s=>q(s,sep)).join(sep)); return lines.join("\r\n"); }
+  function toHTML(t,c){
+    const k=kinds(t); const td=(s,i)=>{ const num=k[i]==="ix"; const style=`border:1px solid #bfbfbf;padding:4px 8px;text-align:center;vertical-align:middle;white-space:normal;${num?"":"mso-number-format:'\\@';"}`; return `<td style="${style}">${escHTML(s).replace(/\n/g,"<br>")}</td>`; };
+    let h=`<table border="1" cellspacing="0" cellpadding="4" style="border-collapse:collapse;font-family:Consolas,'Microsoft YaHei',monospace;font-size:11pt">`;
+    if(c.header)h+="<thead><tr>"+t.head.map(x=>`<th style="background:#ffc000;color:#000;font-weight:700;text-align:center;border:1px solid #bfbfbf;padding:4px 10px">${escHTML(x)}</th>`).join("")+"</tr></thead>";
+    h+="<tbody>"+t.body.map(row=>"<tr>"+row.map(td).join("")+"</tr>").join("")+"</tbody></table>";
+    return h;
+  }
+  const xml=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g,"");
+  function colName(n){ let s=""; n++; while(n>0){ const m=(n-1)%26; s=String.fromCharCode(65+m)+s; n=(n-m-1)/26; } return s; }
+  function toXLSX(t,c){
+    const enc=new TextEncoder(); const k=kinds(t);
+    const widths=t.head.map((h,i)=>{ let w=Math.max(h.length*2.2,6); for(const row of t.body){ for(const part of row[i].split("\n"))w=Math.max(w,part.length*1.15+2); } return Math.min(60,Math.ceil(w)); });
+    let sheet=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0">${c.header?'<pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/>':""}</sheetView></sheetViews><sheetFormatPr defaultRowHeight="18"/><cols>${widths.map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join("")}</cols><sheetData>`;
+    let rn=1;
+    if(c.header){ sheet+=`<row r="1" ht="22" customHeight="1">`+t.head.map((h,i)=>`<c r="${colName(i)}1" s="1" t="inlineStr"><is><t>${xml(h)}</t></is></c>`).join("")+"</row>"; rn=2; }
+    for(const row of t.body){ const lines=row.reduce((a,s)=>Math.max(a,s.split("\n").length),1); sheet+=`<row r="${rn}" ht="${Math.min(409,lines*18+4)}" customHeight="1">`;
+      row.forEach((s,i)=>{ const ref=colName(i)+rn; if(k[i]==="ix"&&/^\d+$/.test(s))sheet+=`<c r="${ref}" s="2"><v>${s}</v></c>`; else if(s!=="")sheet+=`<c r="${ref}" s="2" t="inlineStr"><is><t xml:space="preserve">${xml(s)}</t></is></c>`; });
+      sheet+="</row>"; rn++; }
+    sheet+="</sheetData></worksheet>";
+    const styles=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Microsoft YaHei"/></font><font><b/><sz val="12"/><name val="Microsoft YaHei"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFC000"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="FFBFBFBF"/></left><right style="thin"><color rgb="FFBFBFBF"/></right><top style="thin"><color rgb="FFBFBFBF"/></top><bottom style="thin"><color rgb="FFBFBFBF"/></bottom><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="3"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="49" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+    const ct=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`;
+    const rels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`;
+    const wb=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="谷歌邮箱" sheetId="1" r:id="rId1"/></sheets></workbook>`;
+    const wbrels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`;
+    const entries=[["[Content_Types].xml",ct],["_rels/.rels",rels],["xl/workbook.xml",wb],["xl/_rels/workbook.xml.rels",wbrels],["xl/styles.xml",styles],["xl/worksheets/sheet1.xml",sheet]].map(([name,body])=>({name,bytes:enc.encode(body)}));
+    const blob=buildZip(entries); return new Blob([blob],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+  }
+
+  /* ---- 复制：带格式 + 纯文本 ---- */
+  async function copyRich(html,text){
+    try{ if(navigator.clipboard&&window.ClipboardItem){ await navigator.clipboard.write([new ClipboardItem({"text/html":new Blob([html],{type:"text/html"}),"text/plain":new Blob([text],{type:"text/plain"})})]); return true; } }catch(e){}
+    try{ const div=document.createElement("div"); div.style.cssText="position:fixed;left:-9999px;top:0;opacity:0"; div.innerHTML=html; document.body.appendChild(div); const range=document.createRange(); range.selectNodeContents(div); const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range); const ok=document.execCommand("copy"); sel.removeAllRanges(); document.body.removeChild(div); if(ok)return true; }catch(e){}
+    try{ await navigator.clipboard.writeText(text); return true; }catch(e){ return false; }
+  }
+
+  /* ---- 处理 ---- */
+  function sources(){ const s=files.map(f=>({file:f})); if(paste.value.trim())s.push({text:paste.value}); return s; }
+  $("#gm-run").onclick=()=>{ if(running)return; run().catch(e=>{ running=false; $("#gm-run").disabled=false; prog.hide(); console.error(e); toast("处理失败："+(e&&e.message||e)); }); };
+  async function run(){
+    const srcs=sources(); if(!srcs.length){toast("请先导入或粘贴");return;}
+    running=true; $("#gm-run").disabled=true; $("#gm-result").style.display="none";
+    prog.show("整理中…"); await tick();
+    const c=cfg(); rows=[]; bad=[]; let inN=0, dupN=0; const seen=c.dedup?new Set():null;
+    let procBytes=0; const tot=srcs.reduce((a,s)=>a+(s.file?s.file.size:new Blob([s.text]).size),0)||1;
+    function onLine(raw){ const r=parseLine(raw); if(!r)return null; inN++;
+      if(r.ok&&c.lower){ r.email=r.email.toLowerCase(); r.rec=r.rec.toLowerCase(); }
+      if(!r.ok){ bad.push(r.raw); return null; }
+      if(seen){ if(seen.has(r.email)){dupN++;return null;} seen.add(r.email); }
+      rows.push(r); if(r.extra.length)bad.push(r.raw+"　　← 未识别："+r.extra.join(" "));
+      return null; }
+    for(const s of srcs){ await streamSource(s,onLine,n=>{procBytes+=n;prog.set(procBytes/tot*100,`整理中…　${fmtSize(procBytes)} / ${fmtSize(tot)}`);}); }
+    lastCfg=c; stats={inN,dupN}; renderResult();
+    prog.hide(); running=false; $("#gm-run").disabled=false; $("#gm-result").scrollIntoView({behavior:"smooth",block:"start"});
+    toast(`整理完成：${rows.length.toLocaleString()} 个账号${bad.length?`，异常 ${bad.length}`:""}`);
+  }
+  const PREVIEW=500;
+  function renderResult(){
+    const c=lastCfg, t=table(c), k=kinds(t), {inN,dupN}=stats;
+    const codesTotal=rows.reduce((a,r)=>a+r.codes.length,0), noRec=rows.filter(r=>!r.rec).length, noTfa=rows.filter(r=>!r.tfa).length;
+    $("#gm-stats").innerHTML=`<div class="stat"><div class="n">${inN.toLocaleString()}</div><div class="l">输入行数</div></div><div class="stat ok"><div class="n">${rows.length.toLocaleString()}</div><div class="l">账号</div></div><div class="stat arc"><div class="n">${codesTotal.toLocaleString()}</div><div class="l">备份代码</div></div><div class="stat warn"><div class="n">${(noRec+noTfa).toLocaleString()}</div><div class="l">缺辅助邮箱/2FA</div></div><div class="stat dup"><div class="n">${bad.length.toLocaleString()}</div><div class="l">异常</div></div>`+(c.dedup?`<div class="stat dup"><div class="n">${dupN.toLocaleString()}</div><div class="l">去重</div></div>`:"");
+    const tb=$("#gm-table"); const n=Math.min(PREVIEW,t.body.length); $("#gm-previewN").textContent=n.toLocaleString();
+    let h='<thead><tr><th class="sel"><input type="checkbox" id="gm-selall" title="全选 / 取消全选"></th>'+t.head.map(x=>`<th>${escHTML(x)}</th>`).join("")+"</tr></thead><tbody>";
+    for(let i=0;i<n;i++){ h+=`<tr><td class="sel"><input type="checkbox" class="gm-cb" data-i="${i}"></td>`+t.body[i].map((s,j)=>`<td class="${k[j]} ${s?"":"empty"} ${j?"cell-click":""}" ${j?'title="点击复制该格"':""}>${s?escHTML(s):"—"}</td>`).join("")+"</tr>"; }
+    tb.innerHTML=h+"</tbody>"; updateSel();
+    $("#gm-selall").addEventListener("change",e=>{ tb.querySelectorAll(".gm-cb").forEach(cb=>cb.checked=e.target.checked); updateSel(); });
+    const note=$("#gm-note"); if(t.body.length>PREVIEW){ note.style.display="block"; note.textContent=`共 ${t.body.length.toLocaleString()} 行，仅预览前 ${PREVIEW} 行；复制 / 下载包含全部。`; } else note.style.display="none";
+    $("#gm-badCard").style.display=bad.length?"block":"none"; $("#gm-c-bad").textContent=bad.length.toLocaleString(); $("#gm-ta-bad").value=bad.slice(0,PREVIEW).join("\n");
+    $("#gm-result").style.display="block";
+  }
+  const selected=()=>[...$("#gm-table").querySelectorAll(".gm-cb:checked")].map(cb=>+cb.dataset.i);
+  function updateSel(){ const cbs=[...$("#gm-table").querySelectorAll(".gm-cb")]; let n=0; cbs.forEach(cb=>{ cb.closest("tr").classList.toggle("selected",cb.checked); if(cb.checked)n++; }); $("#gm-selN").textContent=n.toLocaleString(); const all=$("#gm-selall"); if(all){ all.checked=n>0&&n===cbs.length; all.indeterminate=n>0&&n<cbs.length; } }
+  $("#gm-table").addEventListener("change",e=>{ if(e.target.classList.contains("gm-cb"))updateSel(); });
+  $("#gm-copySel").onclick=async ()=>{ if(!need())return; const idx=selected(); if(!idx.length){toast("请先在表格左侧勾选要复制的行");return;} const t=table(lastCfg,idx); const ok=await copyRich(toHTML(t,lastCfg),toDelimited(t,lastCfg,"\t")); toast(ok?`已复制所选 ${idx.length} 行${lastCfg.header?"（带表头）":""}`:"复制失败，请改用下载"); };
+  $("#gm-table").addEventListener("click",async e=>{ const td=e.target.closest("td.cell-click"); if(!td)return; const txt=td.classList.contains("empty")?"":td.textContent; if(!txt){toast("该格为空");return;} try{ await navigator.clipboard.writeText(txt); toast("已复制："+(txt.length>30?txt.slice(0,30)+"…":txt).replace(/\n/g," ")); }catch{ toast("复制失败"); } });
+  ["gm-codeMode","gm-tfaMode","gm-start"].forEach(id=>$("#"+id).addEventListener("change",()=>{ if(rows.length){ lastCfg=cfg(); renderResult(); } }));
+  const need=()=>{ if(!rows.length){toast("请先整理");return false;} lastCfg=cfg(); return true; };
+  $("#gm-copyTable").onclick=async ()=>{ if(!need())return; const t=table(lastCfg); const ok=await copyRich(toHTML(t,lastCfg),toDelimited(t,lastCfg,"\t")); toast(ok?`已复制全部 ${t.body.length.toLocaleString()} 行${lastCfg.header?"（带表头）":""}，去 Excel / WPS 里粘贴`:"复制失败，请改用下载"); };
+  $("#gm-copyTsv").onclick=async ()=>{ if(!need())return; const t=table(lastCfg); try{ await navigator.clipboard.writeText(toDelimited(t,lastCfg,"\t")); toast(`已复制 ${t.body.length.toLocaleString()} 行纯文本（Tab 分隔）`); }catch{ toast("复制失败，请改用下载"); } };
+  $("#gm-dlXlsx").onclick=()=>{ if(!need())return; download(toXLSX(table(lastCfg),lastCfg),"谷歌邮箱.xlsx"); };
+  $("#gm-dlCsv").onclick=()=>{ if(!need())return; download(new Blob(["﻿"+toDelimited(table(lastCfg),lastCfg,",")],{type:"text/csv;charset=utf-8"}),"谷歌邮箱.csv"); };
+  $("#gm-copyBad").onclick=async ()=>{ if(!bad.length){toast("没有异常行");return;} try{ await navigator.clipboard.writeText(bad.join("\n")); toast(`已复制 ${bad.length} 行`); }catch{ toast("复制失败"); } };
+  $("#gm-dlBad").onclick=()=>{ if(!bad.length){toast("没有异常行");return;} download(new Blob([bad.join("\n")+"\n"],{type:"text/plain;charset=utf-8"}),"异常行.txt"); };
+  window.__gmTest={parseLine,table,toDelimited,toHTML,toXLSX,setRows:r=>{rows=r;},cfg};
+  updateRun();
 })();
 </script>
 </body>
