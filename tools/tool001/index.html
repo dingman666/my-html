@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>文本处理工具 · 合并去重 / 分割 / 清洗 / 随机密码 / 谷歌邮箱 / 微软 / 2FA</title>
+<link rel="icon" href="./icon.png">
 <style>
   :root{
     --bg:#f5f5f7;--bg-grad-1:#f5f5f7;--bg-grad-2:#ebebef;
@@ -232,6 +233,11 @@
   .gm-table td:last-child{border-right:none}
   .gm-table tr:last-child td{border-bottom:none}
   .gm-table td.ix{color:var(--text-2);font-variant-numeric:tabular-nums;width:56px}
+  .gm-table tr.fixed td.ix{white-space:nowrap}
+  .fixbadge{display:inline-block;font-size:10px;font-weight:700;line-height:1;background:var(--green);color:#fff;border-radius:999px;padding:3px 6px;margin-left:5px;vertical-align:middle;font-family:inherit;letter-spacing:0}
+  .gm-table td.fixed-cell{background:rgba(52,199,89,.14);box-shadow:inset 3px 0 0 var(--green);position:relative}
+  .gm-table td.fixed-cell::after{content:"✎";position:absolute;top:2px;right:4px;font-size:10px;color:var(--green);font-family:inherit}
+  .gm-table td.fixed-cell .oldv{display:block;font-size:10px;color:var(--text-3);text-decoration:line-through;margin-top:2px;font-weight:400}
   .gm-table td.email{color:var(--accent)}
   .gm-table td.codes{font-variant-numeric:tabular-nums}
   .gm-table td.extra{color:var(--orange)}
@@ -396,7 +402,6 @@
   }
   footer{text-align:center;color:var(--text-3);font-size:12px;margin-top:28px;line-height:1.7}
 </style>
-  <link rel="icon" href="./icon.png">
 </head>
 <body>
 <div class="app">
@@ -1209,6 +1214,7 @@
           <div class="field xs"><label>取最新几封 limit</label><select id="ms-apiLimit"><option value="1">1 封</option><option value="2">2 封</option><option value="3">3 封</option><option value="4">4 封</option><option value="5">5 封</option></select></div>
           <div class="field"><label>凭据模板（/api/ 后面那段，可用 {列名}）</label><input type="text" id="ms-apiTpl" placeholder="留空 = 自动：邮箱----密码" spellcheck="false" autocomplete="off"></div>
           <button class="btn btn-primary btn-sm" id="ms-apiBatch" type="button" title="对左侧勾选的行依次调用接口">📩 收取勾选行</button>
+          <button class="btn btn-ghost btn-sm" id="ms-apiInfo" type="button" title="对勾选的行调用 /info/邮箱----密码，用返回的最新数据（密码、辅助邮箱、辅助邮箱密码）覆盖表格，辅助收件报密码错误时用">🔄 批量检测辅助</button>
         </div>
         <div class="api-hint" id="ms-apiHint"></div>
         <div class="note" id="ms-note"></div>
@@ -2354,7 +2360,7 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
     const els={base:$$("apiBase"),limit:$$("apiLimit"),tpl:$$("apiTpl"),server:$$("apiServer"),evenBase:$$("apiEvenBase"),proxy:$$("apiProxy")};
     /* 邮箱类型：多选下拉（可同时勾选多个，收件时按列表顺序依次尝试，先收到邮件的算） */
     const typeBox=$$("apiType"), typeBtn=$$("apiTypeBtn"), typePop=$$("apiTypePop");
-    const TYPE_LABEL={ms_imap:"IMAP",ms_graph:"Graph",mail_com:"Mail.com",temp_api:"临时",even_imap:"辅助"}; const tlabel=t=>TYPE_LABEL[t]||t;
+    const TYPE_LABEL={ms_imap:"IMAP",ms_graph:"Graph",mail_com:"Mail.com",temp_api:"临时",even_imap:"辅助",info:"检测辅助"}; const tlabel=t=>TYPE_LABEL[t]||t;
     const rk=(i,t)=>i+":"+t; /* 结果按「行 + 类型」分别保存 */
     const typeChecks=()=>[...typePop.querySelectorAll('input[type=checkbox]')];
     const types=()=>typeChecks().filter(c=>c.checked).map(c=>c.value);
@@ -2383,7 +2389,7 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
       const noBase=x=>location.protocol==="file:"?"⚠️ "+x+"地址留空表示「本页所在站点」，但本页是本地文件，请填写完整接口地址。":"⚠️ 还没填"+x+"接口地址：留空表示接口和本页在同一站点（"+location.host+"），如果接口在别处请填完整地址，如 https://接口域名。";
       if(!t.length)warn="⚠️ 还没勾选邮箱类型，请在「邮箱类型」里至少勾选一个。";
       else if(hasEven()&&/ms\.lqqq\.cc/i.test(eb))warn="⚠️ even_imap 是辅助邮箱自建收件（IMAP），「even_imap 收件 API 地址」不能填 ms.lqqq.cc，要填辅助邮箱收件接口地址（默认 http://15.204.106.173:16347）。";
-      else if(isHttpsPage()&&((main.length&&/^http:\/\//i.test(b))||(hasEven()&&/^http:\/\//i.test(eb))))warn="⚠️ 本页是 https，浏览器会拦截 http 接口（混合内容）。解决：在「HTTPS 代理地址」填一个 https 代理（如 Cloudflare Worker，见 aux-mail-proxy 文件夹），或把本页以本地文件 / http 方式打开。";
+      else if(isHttpsPage()&&((main.length&&/^http:\/\//i.test(b))||(hasEven()&&/^http:\/\//i.test(eb))))warn="⚠️ 本页是 https，浏览器默认拦截 http 接口（混合内容）。解决（免部署）：Chrome / Edge 点地址栏左边的锁图标 → 网站设置（此站点的权限）→ 把「不安全内容」改成「允许」→ 刷新本页即可，只需设一次；或把本页以本地文件方式打开。也可在「HTTPS 代理地址」填 https 代理。";
       else if(isHttpsPage()&&proxyBase()&&((main.length&&/^http:\/\//i.test(rawBase(main[0]||"ms_imap")))||(hasEven()&&/^http:\/\//i.test(rawBase("even_imap")))))warn="ℹ️ 本页是 https，http 接口已自动改走 HTTPS 代理 "+proxyBase()+"。";
       else if(main.length&&!b)warn=noBase("");
       else if(hasEven()&&!eb)warn=noBase("even_imap ");
@@ -2441,7 +2447,7 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
     async function fetchType(i,type){ const cred=credsOf(i,type); const url=buildUrl(cred,type); const ac=new AbortController(); const tm=setTimeout(()=>ac.abort(),45000); let resp,txt,data;
       try{ resp=await fetch(url,{signal:ac.signal,headers:{Accept:"application/json"},cache:"no-store"}); txt=await resp.text(); }
       catch(e){ if(e&&e.name==="AbortError")throw new Error("请求超时（45 秒）");
-        if(isHttpsPage()&&/^http:\/\//i.test(url))throw new Error("本页是 https，浏览器拦截了 http 接口（混合内容）。请在上方「HTTPS 代理地址」填 https 代理（Cloudflare Worker，见 aux-mail-proxy 文件夹），或把本页以本地文件方式打开");
+        if(isHttpsPage()&&/^http:\/\//i.test(url))throw new Error("本页是 https，浏览器拦截了 http 接口（混合内容）。解决（免部署）：Chrome / Edge 点地址栏左边的锁图标 → 网站设置（此站点的权限）→ 把「不安全内容」改成「允许」→ 刷新本页即可，只需设一次；或把本页以本地文件方式打开。也可在「HTTPS 代理地址」填 https 代理。");
         if(/^https:\/\//i.test(url)&&proxyBase()&&url.startsWith(proxyBase()))throw new Error("HTTPS 代理无法访问："+proxyBase()+"（代理没部署好、地址填错，或代理后端连不上接口）");
         throw new Error("网络请求失败：接口地址不对、服务未开 CORS，或网络不通"); }
       finally{ clearTimeout(tm); }
@@ -2458,7 +2464,63 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
         else { const m=r.emails[0]; st=m.codes.length?`<span class="api-st code" ${o} data-code="${escHTML(m.codes[0])}" title="点击复制并查看 · ${escHTML(m.subject)}">${escHTML(m.codes[0])}</span>`:`<span class="api-st ok" ${o} title="${escHTML(m.subject)}（点击查看）">✉ ${escHTML(m.subject||"(无主题)")}</span>`; } }
       const who=type==="even_imap"?"辅助邮箱----辅助邮箱密码":"邮箱----密码";
       return `<div class="api-row"><button type="button" class="api-btn" data-i="${i}" data-t="${type}" title="email_type=${type}：用这一行的${who}调接口，取最新邮件"${r&&r.status==="loading"?" disabled":""}>📩 ${multi?`<span class="tp">${escHTML(tlabel(type))}</span>`:"收件"}</button>${st}</div>`; }
-    function cellHTML(i){ const t=types(); return `<td class="api" data-i="${i}">${t.length?t.map(x=>rowHTML(i,x,t.length>1)).join(""):'<span class="api-st empty" title="请先在上方「邮箱类型」里勾选">未勾选类型</span>'}</td>`; }
+    function infoRowHTML(i){ const r=res.get(rk(i,"info")); let st=""; const o=`data-open="${i}" data-t="info"`;
+      if(r){ if(r.status==="loading")st='<span class="api-st load">检测中</span>';
+        else if(r.status==="error")st=`<span class="api-st err" ${o} title="${escHTML(r.error)}（点击看详情）">✕ ${escHTML(r.error)}</span>`;
+        else if(r.status==="same")st=`<span class="api-st empty" ${o} title="接口返回的数据和表格一致（点击看详情）">＝ 无变化</span>`;
+        else st=`<span class="api-st ok" ${o} title="已用接口返回的新数据覆盖：${escHTML(r.changed.join("、"))}（点击看详情）">✔ 已更新 ${escHTML(r.changed.join("、"))}</span>`; }
+      return `<div class="api-row"><button type="button" class="api-btn info-btn" data-info="${i}" title="调用 /info/邮箱----密码 取这一行的最新数据并覆盖表格（辅助收件报密码错误时用）"${r&&r.status==="loading"?" disabled":""}>🔄 检测</button>${st}</div>`; }
+    function cellHTML(i){ const t=types(); return `<td class="api" data-i="${i}">${t.length?t.map(x=>rowHTML(i,x,t.length>1)).join(""):'<span class="api-st empty" title="请先在上方「邮箱类型」里勾选">未勾选类型</span>'}${infoRowHTML(i)}</td>`; }
+    /* ---------- /info：取账号最新数据并覆盖表格 ---------- */
+    const AUXK=/辅助|备用|恢复|recover|backup|second|aux|alt/i, PWK=/密码|pass|pwd|^pw$|secret/i, MAILK=/邮箱|mail|account|user|login/i;
+    function infoUrl(i){ const cred=credsOf(i,"ms_imap"); const seg=cred.split("----").map(encodeURIComponent).join("----"); return baseUrl("ms_imap")+"/info/"+seg; }
+    /* 解析接口返回：JSON（按键名找）或文本（按 ---- 拆，第 1 个邮箱是主邮箱、后一个是密码，第 2 个邮箱是辅助邮箱、后一个是辅助密码） */
+    function parseInfo(txt){ const out={mainEmail:"",mainPw:"",auxEmail:"",auxPw:"",fields:[]}; let data=null; try{ data=JSON.parse(txt); }catch(e){}
+      const fromText=t=>{ const toks=String(t||"").split(/----|\r?\n|\t|\|/).map(x=>x.trim()).filter(Boolean); if(toks.length<2&&/\s/.test(String(t||"")))toks.splice(0,toks.length,...String(t).trim().split(/\s+/));
+        const ei=toks.findIndex(x=>EMAIL.test(x)); if(ei<0)return; if(!out.mainEmail)out.mainEmail=toks[ei]; if(!out.mainPw&&toks[ei+1]&&!EMAIL.test(toks[ei+1]))out.mainPw=toks[ei+1];
+        const ai=toks.findIndex((x,k)=>k>ei&&EMAIL.test(x)); if(ai<0)return; if(!out.auxEmail)out.auxEmail=toks[ai]; if(!out.auxPw&&toks[ai+1]&&!EMAIL.test(toks[ai+1]))out.auxPw=toks[ai+1]; };
+      if(data&&typeof data==="object"){ const flat=[]; const walk=(o,pre)=>{ for(const k of Object.keys(o)){ const v=o[k]; if(v&&typeof v==="object"&&!Array.isArray(v)&&pre.split(".").length<3)walk(v,pre+k+"."); else if(v!=null&&typeof v!=="object")flat.push({k:pre+k,leaf:k,v:String(v)}); } }; walk(data,"");
+        out.fields=flat; if(data.success===false||data.status==="error")throw new Error(String(data.error||data.message||"接口返回错误"));
+        for(const f of flat){ const k=f.leaf; if(!f.v)continue;
+          if(EMAIL.test(f.v)){ if(AUXK.test(k)){ if(!out.auxEmail)out.auxEmail=f.v; } else if(!out.mainEmail&&MAILK.test(k))out.mainEmail=f.v; continue; }
+          if(PWK.test(k)){ if(AUXK.test(k)){ if(!out.auxPw)out.auxPw=f.v; } else if(!out.mainPw)out.mainPw=f.v; continue; }
+          if(/----/.test(f.v))fromText(f.v); }
+        if(!out.auxEmail&&!out.auxPw&&!out.mainPw){ for(const f of flat)if(/----/.test(f.v))fromText(f.v); } }
+      else { if(/^\s*<(!doctype|html)/i.test(txt))throw new Error("返回的是网页而不是数据，请检查「收件 API 地址」"); if(/not found/i.test(txt)&&txt.length<80)throw new Error("接口没有这个账号（"+txt.trim()+"）"); fromText(txt); }
+      if(!out.mainEmail&&!out.auxEmail&&!out.mainPw&&!out.auxPw)throw new Error("看不懂接口返回的内容（点击查看原文）");
+      return out; }
+    /* 找到这一行的 主密码 / 辅助邮箱 / 辅助密码 三个字段位置（和收件用的识别规则一致） */
+    function locate(i){ const f=ctx.rowFields(i)||[]; const isAux=/辅助|备用|恢复|recover|backup|second|aux/i; const ei=f.findIndex(x=>EMAIL.test(x.value));
+      let pi=f.findIndex((x,k)=>k!==ei&&x.value&&PWK.test(x.name)&&!isAux.test(x.name)); if(pi<0&&ei>=0)pi=f.findIndex((x,k)=>k>ei&&x.value!==""&&!EMAIL.test(x.value));
+      let ai=f.findIndex(x=>isAux.test(x.name)&&(EMAIL.test(x.value)||!x.value)&&!PWK.test(x.name)); if(ai<0)ai=f.findIndex((x,k)=>EMAIL.test(x.value)&&k>ei);
+      let api_=f.findIndex((x,k)=>k!==ai&&PWK.test(x.name)&&isAux.test(x.name)); if(api_<0&&ai>=0)api_=f.findIndex((x,k)=>k>ai&&k!==pi&&!EMAIL.test(x.value));
+      return { f, ei, pi, ai, api:api_ }; }
+    async function infoRow(i){ const k=rk(i,"info"); if(res.get(k)&&res.get(k).status==="loading")return res.get(k); res.set(k,{status:"loading",at:Date.now()}); paint(i);
+      let r; try{ const url=infoUrl(i); const ac=new AbortController(); const tm=setTimeout(()=>ac.abort(),45000); let resp,txt;
+        try{ resp=await fetch(url,{signal:ac.signal,headers:{Accept:"application/json"},cache:"no-store"}); txt=await resp.text(); }
+        catch(e){ if(e&&e.name==="AbortError")throw new Error("请求超时（45 秒）"); if(isHttpsPage()&&/^http:\/\//i.test(url))throw new Error("本页是 https，浏览器拦截了 http 接口（混合内容）"); throw new Error("网络请求失败：接口地址不对、服务未开 CORS，或网络不通"); }
+        finally{ clearTimeout(tm); }
+        let parsed; try{ parsed=parseInfo(txt); }catch(e){ throw Object.assign(new Error((e&&e.message)||String(e)),{raw:txt,url}); }
+        const loc=locate(i); const rowEmail=loc.ei>=0?loc.f[loc.ei].value:"";
+        if(parsed.mainEmail&&rowEmail&&parsed.mainEmail.toLowerCase()!==rowEmail.toLowerCase())throw Object.assign(new Error("接口返回的是另一个账号 "+parsed.mainEmail+"，未覆盖"),{raw:txt,url,parsed});
+        const upd=[], changed=[], skipped=[];
+        const want=[["mainPw",loc.pi,"密码"],["auxEmail",loc.ai,"辅助邮箱"],["auxPw",loc.api,"辅助邮箱密码"]];
+        for(const [key,idx,label] of want){ const nv=parsed[key]; if(!nv)continue; if(idx<0){ skipped.push(label+"（表里没有这一列）"); continue; } const cur=loc.f[idx]; if(cur.value===nv)continue; upd.push({name:cur.name,value:nv}); changed.push(cur.name+"："+(cur.value||"（空）")+" → "+nv); }
+        if(upd.length){ markFixed(i,upd,loc); ctx.setRowFields(i,upd); res.delete(rk(i,"even_imap")); if(upd.some(u=>/密码|pass|pwd/i.test(u.name)&&!AUXK.test(u.name)))res.delete(rk(i,"ms_imap")); }
+        r={status:upd.length?"updated":"same",changed:upd.map(u=>u.name),detail:changed,skipped,parsed,raw:txt,url,at:Date.now()}; }
+      catch(e){ r={status:"error",error:(e&&e.message)||String(e),raw:e&&e.raw,url:e&&e.url,parsed:e&&e.parsed,at:Date.now()}; }
+      res.set(k,r); return r; }
+    function renderInfoModal(i,r){ const email=emailOf(i);
+      mTitle.innerHTML=`${escHTML(email||"检测辅助")}<small>${escHTML((r.status==="loading"?"检测中…":new Date(r.at).toLocaleString())+" · /info 检测辅助")}</small>`;
+      if(r.status==="loading"){ mBody.innerHTML='<div class="mail-empty"><span class="api-st load">检测中…</span></div>'; return; }
+      let h=""; if(r.status==="error")h+=`<div class="mail-err">✕ ${escHTML(r.error)}</div>`;
+      else if(r.status==="same")h+='<div class="mail-empty">＝ 接口返回的数据和表格里的一致，没有改动</div>';
+      else h+=`<div class="mail"><div class="subj">✔ 已用接口返回的新数据覆盖这一行</div><div class="body">${r.detail.map(escHTML).join("\n")}</div><div class="hint" style="margin-top:8px">旧的辅助收件结果已清除，现在再点该行的「📩 辅助」即可用新密码收件。</div></div>`;
+      if(r.skipped&&r.skipped.length)h+=`<div class="hint" style="margin-top:8px">未写入：${escHTML(r.skipped.join("；"))}</div>`;
+      if(r.parsed)h+=`<div class="mail" style="margin-top:10px"><div class="subj">接口识别到的字段</div><div class="body">${escHTML(["邮箱："+(r.parsed.mainEmail||"—"),"密码："+(r.parsed.mainPw||"—"),"辅助邮箱："+(r.parsed.auxEmail||"—"),"辅助邮箱密码："+(r.parsed.auxPw||"—")].join("\n"))}</div></div>`;
+      if(r.raw)h+=`<div class="mail" style="margin-top:10px"><div class="subj">接口原始返回</div><div class="body">${escHTML(String(r.raw).slice(0,4000))}</div><div class="mtools"><button type="button" class="btn btn-ghost btn-sm" data-cp="raw" data-v="${escHTML(String(r.raw).slice(0,20000))}">复制原文</button></div></div>`;
+      if(r.url)h+=`<div class="hint" style="margin-top:10px">请求：${escHTML(maskUrl(r.url))}</div>`;
+      mBody.innerHTML=h; }
     function paint(i){ const td=$$("table").querySelector('td.api[data-i="'+i+'"]'); if(td)td.outerHTML=cellHTML(i); if(openI===i&&modal.classList.contains("show"))renderModal(i,openT); }
     function repaintAll(){ $$("table").querySelectorAll("td.api[data-i]").forEach(td=>{ td.outerHTML=cellHTML(+td.dataset.i); }); }
     async function fetchRow(i,type){ if(type===undefined)type=types()[0]; if(!type)return {status:"error",error:"还没勾选邮箱类型，请在「邮箱类型」里至少勾选一个",at:Date.now()};
@@ -2468,22 +2530,25 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
     /* 弹窗 */
     const modal=$("#"+P+"-apiModal"), mBody=$("#"+P+"-apiMBody"), mTitle=$("#"+P+"-apiMTitle");
     function mailHTML(m,k){ return `<div class="mail" data-k="${k}"><div class="subj">${escHTML(m.subject||"(无主题)")}</div><div class="meta">${m.from?`<span><b>发件人</b>${escHTML(m.from)}</span>`:""}${m.date?`<span><b>时间</b>${escHTML(m.date)}</span>`:""}${m.folder?`<span><b>文件夹</b>${escHTML(m.folder)}</span>`:""}</div>${m.codes.length?`<div class="codes"><span class="lb">验证码</span>${m.codes.map((c,j)=>`<button type="button" class="codechip${j?" alt":""}" data-cp="code" data-v="${escHTML(c)}" title="点击复制">${escHTML(c)}</button>`).join("")}</div>`:""}<div class="body">${m.body?escHTML(m.body):'<span style="color:var(--text-3)">（正文为空）</span>'}</div>${m.links.length?`<div class="links"><b>链接 ${m.links.length} 个</b>${m.links.slice(0,30).map(l=>`<a href="${escHTML(l)}" target="_blank" rel="noopener noreferrer">${escHTML(l)}</a>`).join("")}</div>`:""}<div class="mtools"><button type="button" class="btn btn-ghost btn-sm" data-cp="body" data-k="${k}">复制正文</button><button type="button" class="btn btn-ghost btn-sm" data-cp="subject" data-k="${k}">复制主题</button>${m.links.length?`<button type="button" class="btn btn-ghost btn-sm" data-cp="links" data-k="${k}">复制全部链接</button>`:""}</div></div>`; }
-    function renderModal(i,type){ const r=res.get(rk(i,type)); if(!r)return; const email=type==="even_imap"?(credsOf(i,type).split("----")[0]||emailOf(i)):emailOf(i);
+    function renderModal(i,type){ const r=res.get(rk(i,type)); if(!r)return; if(type==="info")return renderInfoModal(i,r); const email=type==="even_imap"?(credsOf(i,type).split("----")[0]||emailOf(i)):emailOf(i);
       mTitle.innerHTML=`${escHTML(email||"收件结果")}<small>${escHTML((r.status==="loading"?"收取中…":new Date(r.at).toLocaleString())+" · "+type+"（"+tlabel(type)+"） · limit "+els.limit.value+(r.emails?" · 共 "+r.emails.length+" 封":""))}</small>`;
       if(r.status==="loading")mBody.innerHTML='<div class="mail-empty"><span class="api-st load">收取中…</span></div>';
-      else if(r.status==="error")mBody.innerHTML=`<div class="mail-err">✕ ${escHTML(r.error)}</div>${r.url?`<div class="hint" style="margin-top:10px">请求：${escHTML(maskUrl(r.url))}</div>`:""}`;
+      else if(r.status==="error"){ const mixed=isHttpsPage()&&r.url&&/^http:\/\//i.test(r.url); const su="chrome://settings/content/siteDetails?site="+encodeURIComponent(location.origin);
+        mBody.innerHTML=`<div class="mail-err">✕ ${escHTML(r.error)}</div>${r.url?`<div class="hint" style="margin-top:10px">请求：${escHTML(maskUrl(r.url))}</div>`:""}`+(mixed?`<div class="hint" style="margin-top:10px">快捷方式：复制下面的地址粘到浏览器地址栏打开，把「不安全内容」改成「允许」（Edge 把 chrome:// 换成 edge://）。<br><code style="user-select:all">${escHTML(su)}</code> <button type="button" class="btn btn-ghost btn-sm" data-cp="raw" data-v="${escHTML(su)}">复制设置地址</button></div>`:""); }
       else if(r.status==="empty")mBody.innerHTML='<div class="mail-empty">📭 收件箱里没有邮件（No emails found）<br><span style="font-size:12px">可以稍等片刻再点「↻ 重新收取」</span></div>';
       else mBody.innerHTML=r.emails.map(mailHTML).join(""); }
     function openModal(i,type){ if(!res.get(rk(i,type)))return; openI=i; openT=type; renderModal(i,type); modal.classList.add("show"); $("#"+P+"-apiMClose").focus(); }
     function closeModal(){ modal.classList.remove("show"); openI=-1; openT=""; }
     modal.addEventListener("click",async e=>{ if(e.target===modal){closeModal();return;} const b=e.target.closest("[data-cp]"); if(!b)return; const r=res.get(rk(openI,openT)); let v="";
-      if(b.dataset.cp==="code")v=b.dataset.v; else if(r&&r.emails){ const m=r.emails[+b.dataset.k]; if(m)v=b.dataset.cp==="links"?m.links.join(EOL):m[b.dataset.cp]||""; }
+      if(b.dataset.cp==="code"||b.dataset.cp==="raw")v=b.dataset.v; else if(r&&r.emails){ const m=r.emails[+b.dataset.k]; if(m)v=b.dataset.cp==="links"?m.links.join(EOL):m[b.dataset.cp]||""; }
       if(!v){toast("没有内容可复制");return;} toast(await copyTextSafe(v)?(b.dataset.cp==="code"?"已复制验证码 "+v:"已复制"):"复制失败"); });
     $("#"+P+"-apiMClose").onclick=closeModal;
-    $("#"+P+"-apiMRefresh").onclick=async ()=>{ if(openI<0)return; const i=openI,t=openT; const r=await fetchRow(i,t); if(r.status==="success"&&r.emails[0].codes.length){ const c=r.emails[0].codes[0]; toast(await copyTextSafe(c)?"已收到并复制验证码 "+c:"收到验证码 "+c); } };
+    $("#"+P+"-apiMRefresh").onclick=async ()=>{ if(openI<0)return; const i=openI,t=openT; if(t==="info"){ await infoRow(i); ctx.rerender(); renderModal(i,"info"); return; } const r=await fetchRow(i,t); if(r.status==="success"&&r.emails[0].codes.length){ const c=r.emails[0].codes[0]; toast(await copyTextSafe(c)?"已收到并复制验证码 "+c:"收到验证码 "+c); } };
     document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&modal.classList.contains("show"))closeModal(); });
     /* 表格里的按钮 / 状态 */
-    $$("table").addEventListener("click",async e=>{ const btn=e.target.closest(".api-btn"); const st=e.target.closest(".api-st[data-open]");
+    $$("table").addEventListener("click",async e=>{ const ib=e.target.closest(".info-btn"); if(ib){ const i=+ib.dataset.info; const r=await infoRow(i); ctx.rerender();
+        if(r.status==="error")toast("检测失败："+r.error); else if(r.status==="same")toast("＝ "+emailOf(i)+" 数据无变化"); else toast("✔ 已更新 "+r.changed.join("、")+"，再点「📩 辅助」即可收件"); return; }
+      const btn=e.target.closest(".api-btn"); const st=e.target.closest(".api-st[data-open]");
       if(btn){ const i=+btn.dataset.i, t=btn.dataset.t; const r=await fetchRow(i,t); const tag=types().length>1?"["+tlabel(t)+"] ":"";
         if(r.status==="error")toast(tag+"收件失败："+r.error);
         else if(r.status==="empty")toast("📭 "+tag+emailOf(i)+" 没有邮件");
@@ -2499,7 +2564,17 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
       const worker=async()=>{ while(q.length&&!batchStop){ const [i,t]=q.shift(); const r=await fetchRow(i,t); done++; if(r.status==="success"){okN++; if(r.emails[0].codes.length)codeN++;} btn.textContent=`⏹ 停止 (${done}/${total})`; } };
       await Promise.all([worker(),worker()]);
       batchRun=false; btn.textContent="📩 收取勾选行"; toast((batchStop?`已停止：完成 ${done}/${total}`:`批量收件完成 ${idx.length} 行`+(tl.length>1?` × ${tl.length} 个类型`:""))+`，有邮件 ${okN} 次，含验证码 ${codeN} 次`); };
-    return { cellHTML, reset:()=>{ res.clear(); closeModal(); }, fetchRow, credsOf, buildUrl, extractCodes, toText, norm, results:res, types, setTypes, repaintAll, baseUrl, rawBase };
+    const fixed=new Map(); /* i → { at, fields:{ 列名:{old,new} } }：被 /info 更正过的行，表格里高亮 */
+    function markFixed(i,upd,loc){ const e=fixed.get(i)||{at:0,fields:{}}; e.at=Date.now(); for(const u of upd){ const cur=loc.f.find(x=>x.name===u.name); const prev=e.fields[u.name]; e.fields[u.name]={old:prev?prev.old:(cur?cur.value:""),new:u.value}; } fixed.set(i,e); }
+    let infoRun=false, infoStop=false;
+    $$("apiInfo").onclick=async ()=>{ const btn=$$("apiInfo"); if(infoRun){ infoStop=true; btn.textContent="正在停止…"; return; }
+      const idx=ctx.selected(); if(!idx.length){toast("请先在表格左侧勾选要检测的行");return;}
+      infoRun=true; infoStop=false; let done=0,updN=0,sameN=0,errN=0; const q=idx.slice(); btn.textContent=`⏹ 停止 (0/${idx.length})`;
+      const worker=async()=>{ while(q.length&&!infoStop){ const i=q.shift(); const r=await infoRow(i); done++; if(r.status==="updated")updN++; else if(r.status==="same")sameN++; else errN++; btn.textContent=`⏹ 停止 (${done}/${idx.length})`; } };
+      await Promise.all([worker(),worker()]);
+      infoRun=false; btn.textContent="🔄 批量检测辅助"; ctx.rerender();
+      toast((infoStop?`已停止：完成 ${done}/${idx.length}`:`检测完成 ${idx.length} 行`)+`，已更新 ${updN} 行，无变化 ${sameN} 行，失败 ${errN} 行`+(updN?"；再点「📩 辅助」或「收取勾选行」即可用新密码收件":"")); };
+    return { cellHTML, reset:()=>{ res.clear(); fixed.clear(); closeModal(); }, fixedOf:i=>fixed.get(i)||null, fixedCount:()=>fixed.size, fetchRow, credsOf, buildUrl, extractCodes, toText, norm, results:res, types, setTypes, repaintAll, baseUrl, rawBase, infoRow, parseInfo, locate };
   }
 
   function accountTab(P,opts){
@@ -2572,10 +2647,13 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
     const PREVIEW=500;
     function renderResult(){
       const c=lastCfg, t=table(c), {inN,dupN}=stats;
-      $$("stats").innerHTML=`<div class="stat"><div class="n">${inN.toLocaleString()}</div><div class="l">输入行数</div></div><div class="stat ok"><div class="n">${rows.length.toLocaleString()}</div><div class="l">账号</div></div><div class="stat arc"><div class="n">${(t.head.length-1).toLocaleString()}</div><div class="l">输出列</div></div><div class="stat dup"><div class="n">${bad.length.toLocaleString()}</div><div class="l">异常</div></div>`+(c.dedup?`<div class="stat dup"><div class="n">${dupN.toLocaleString()}</div><div class="l">去重</div></div>`:"")+(opts.statsExtra?opts.statsExtra(rows):"");
+      $$("stats").innerHTML=`<div class="stat"><div class="n">${inN.toLocaleString()}</div><div class="l">输入行数</div></div><div class="stat ok"><div class="n">${rows.length.toLocaleString()}</div><div class="l">账号</div></div><div class="stat arc"><div class="n">${(t.head.length-1).toLocaleString()}</div><div class="l">输出列</div></div><div class="stat dup"><div class="n">${bad.length.toLocaleString()}</div><div class="l">异常</div></div>`+(c.dedup?`<div class="stat dup"><div class="n">${dupN.toLocaleString()}</div><div class="l">去重</div></div>`:"")+(api&&api.fixedCount()?`<div class="stat ok"><div class="n">${api.fixedCount().toLocaleString()}</div><div class="l">已更正</div></div>`:"")+(opts.statsExtra?opts.statsExtra(rows):"");
       const tb=$$("table"); const n=Math.min(PREVIEW,t.body.length); $$("previewN").textContent=n.toLocaleString();
       let h='<thead><tr><th class="sel"><input type="checkbox" class="selall" title="全选 / 取消全选"></th>'+t.head.map(x=>`<th>${escHTML(x)}</th>`).join("")+(api?'<th class="api">📩 收件</th>':"")+"</tr></thead><tbody>";
-      for(let i=0;i<n;i++){ h+=`<tr><td class="sel"><input type="checkbox" class="gm-cb" data-i="${i}"></td>`+t.body[i].map((s,j)=>{ const k=t.kinds[j]==="email"||(t.kinds[j]===""&&EMAIL.test(s))?"email":t.kinds[j]; return `<td class="${k} ${s?"":"empty"} ${j?"cell-click":""}" ${j?'title="点击复制该格"':""}>${s?escHTML(s):"—"}</td>`; }).join("")+(api?api.cellHTML(i):"")+"</tr>"; }
+      for(let i=0;i<n;i++){ const fx=api?api.fixedOf(i):null;
+        h+=`<tr${fx?' class="fixed"':""}><td class="sel"><input type="checkbox" class="gm-cb" data-i="${i}"></td>`+t.body[i].map((s,j)=>{ const k=t.kinds[j]==="email"||(t.kinds[j]===""&&EMAIL.test(s))?"email":t.kinds[j]; const chg=fx&&j&&fx.fields[t.head[j]];
+          if(!j)return `<td class="${k}">${escHTML(s)}${fx?`<span class="fixbadge" title="这一行已用 /info 返回的新数据更正：${escHTML(Object.keys(fx.fields).join("、"))}（${escHTML(new Date(fx.at).toLocaleString())}）">已更正</span>`:""}</td>`;
+          return `<td class="${k} ${s?"":"empty"} cell-click${chg?" fixed-cell":""}" title="${chg?`已更正：${escHTML(chg.old||"（空）")} → ${escHTML(chg.new)}　·　点击复制该格`:"点击复制该格"}">${s?escHTML(s):"—"}${chg?`<span class="oldv">${escHTML(chg.old||"（空）")}</span>`:""}</td>`; }).join("")+(api?api.cellHTML(i):"")+"</tr>"; }
       tb.innerHTML=h+"</tbody>"; updateSel();
       tb.querySelector(".selall").addEventListener("change",e=>{ tb.querySelectorAll(".gm-cb").forEach(cb=>cb.checked=e.target.checked); updateSel(); if($$("joinSelOnly").checked)renderJoin(); });
       const note=$$("note"); if(t.body.length>PREVIEW){ note.style.display="block"; note.textContent=`共 ${t.body.length.toLocaleString()} 行，仅预览前 ${PREVIEW} 行；复制 / 下载包含全部。`; } else note.style.display="none";
@@ -2611,7 +2689,7 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
     const selected=()=>[...$$("table").querySelectorAll(".gm-cb:checked")].map(cb=>+cb.dataset.i);
     function updateSel(){ const tb=$$("table"); const cbs=[...tb.querySelectorAll(".gm-cb")]; let n=0; cbs.forEach(cb=>{ cb.closest("tr").classList.toggle("selected",cb.checked); if(cb.checked)n++; }); $$("selN").textContent=n.toLocaleString(); const all=tb.querySelector(".selall"); if(all){ all.checked=n>0&&n===cbs.length; all.indeterminate=n>0&&n<cbs.length; } }
     $$("table").addEventListener("change",e=>{ if(e.target.classList.contains("gm-cb")){ updateSel(); if($$("joinSelOnly").checked)renderJoin(); } });
-    $$("table").addEventListener("click",async e=>{ const td=e.target.closest("td.cell-click"); if(!td)return; const txt=td.classList.contains("empty")?"":td.textContent; if(!txt){toast("该格为空");return;} if(await copyTextSafe(txt))toast("已复制："+(txt.length>30?txt.slice(0,30)+"…":txt).replace(/\n/g," ")); else toast("复制失败"); });
+    $$("table").addEventListener("click",async e=>{ const td=e.target.closest("td.cell-click"); if(!td)return; const txt=td.classList.contains("empty")?"":[...td.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join(""); if(!txt){toast("该格为空");return;} if(await copyTextSafe(txt))toast("已复制："+(txt.length>30?txt.slice(0,30)+"…":txt).replace(/\n/g," ")); else toast("复制失败"); });
     (opts.rerenderIds||[]).concat(["start"]).forEach(id=>$$(id).addEventListener("change",()=>{ if(rows.length){ lastCfg=cfg(); renderResult(); } }));
     const need=()=>{ if(!rows.length){toast("请先整理");return false;} lastCfg=cfg(); return true; };
     async function doCopy(idx){ const t=idx?table(lastCfg,idx):table(lastCfg); const n=idx?idx.length:t.body.length; const what=idx?"所选":"全部";
@@ -2626,7 +2704,13 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
     $$("dlBad").onclick=()=>{ if(!bad.length){toast("没有异常行");return;} download(new Blob([bad.join("\n")+"\n"],{type:"text/plain;charset=utf-8"}),"异常行.txt"); };
     /* 某一行的全部字段（忽略输出列开关），供收件 API 找邮箱 / 密码 */
     function rowFields(i){ const r=rows[i]; if(!r)return null; const out=[]; if(r.values){ const names=rows.tpl?rows.tpl.fields.map(f=>f.name):[]; r.values.forEach((v,k)=>out.push({name:names[k]||("列"+(k+1)),value:v||""})); } else { for(const col of opts.smartColumns){ const v=r[col.key]; out.push({name:col.label,value:Array.isArray(v)?v.join(" "):(v||"")}); } } return out; }
-    if(opts.api)api=mailApi(P,{rowFields,selected});
+    /* 按字段名把新值写回第 i 行（split/custom 模式写 values[k]，智能模式写对应 key），调用方随后 rerender() */
+    function setRowFields(i,updates){ const r=rows[i]; if(!r)return false; let n=0;
+      if(r.values){ const names=rows.tpl?rows.tpl.fields.map(f=>f.name):[]; for(const u of updates){ let k=names.indexOf(u.name); if(k<0){ const m=/^列(\d+)$/.exec(u.name); if(m)k=+m[1]-1; } if(k>=0){ while(r.values.length<=k)r.values.push(""); r.values[k]=u.value; n++; } } }
+      else { for(const u of updates){ const col=opts.smartColumns.find(c=>c.label===u.name); if(col){ r[col.key]=u.value; n++; } } }
+      return n>0; }
+    function rerender(){ if(!rows.length)return; const tb=$$("table"); const checked=new Set([...tb.querySelectorAll(".gm-cb")].filter(cb=>cb.checked).map(cb=>+cb.dataset.i)); if(!lastCfg)lastCfg=cfg(); renderResult(); tb.querySelectorAll(".gm-cb").forEach(cb=>{ cb.checked=checked.has(+cb.dataset.i); }); updateSel(); renderJoin(); }
+    if(opts.api)api=mailApi(P,{rowFields,selected,setRowFields,rerender});
     $$("tpl").value=opts.defaultTemplate; refreshTpl(); setMode(opts.defaultMode); updateRun();
     return { api, rowFields, parseLine:opts.smartParse, table, toDelimited, toHTML, toXLSX:(t,c)=>toXLSX(t,c,opts.sheet), setRows:r=>{rows=r;}, cfg, setMode, getRows:()=>rows, run, joinLines, textLines, setJoinSep:s=>{joinSep=s;}, setCopyMode:m=>{copyMode=m;}, setSplitSep:s=>{splitSep=s;} };
   }
