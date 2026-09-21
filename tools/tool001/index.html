@@ -1141,8 +1141,8 @@
     <div class="card">
       <h2>② 提取方式</h2>
       <div class="tabs" id="ms-modeTabs">
-        <button class="subtab" data-m="split">按分隔符拆分</button>
         <button class="subtab" data-m="smart">智能识别</button>
+        <button class="subtab" data-m="split">按分隔符拆分</button>
         <button class="subtab" data-m="custom">自定义格式提取</button>
       </div>
       <div class="pane" id="ms-pane-split">
@@ -1200,15 +1200,15 @@
               <button type="button" class="msel-btn" id="ms-apiTypeBtn" title="可同时勾选多个类型：收件时按顺序依次尝试，先成功的算"><span class="t">ms_imap</span><span class="n" style="display:none">1</span><span class="a">▼</span></button>
               <div class="msel-pop" id="ms-apiTypePop">
                 <label><input type="checkbox" value="ms_imap" checked>ms_imap<small>微软 IMAP</small></label>
-                <label><input type="checkbox" value="ms_graph">ms_graph<small>Graph OAuth</small></label>
-                <label><input type="checkbox" value="mail_com">mail_com<small>Mail.com</small></label>
-                <label><input type="checkbox" value="temp_api">temp_api<small>临时邮箱</small></label>
-                <label><input type="checkbox" value="even_imap">even_imap<small>辅助邮箱收件</small></label>
+                <label><input type="checkbox" value="ms_graph" checked>ms_graph<small>Graph OAuth</small></label>
+                <label><input type="checkbox" value="mail_com" checked>mail_com<small>Mail.com</small></label>
+                <label><input type="checkbox" value="temp_api" checked>temp_api<small>临时邮箱</small></label>
+                <label><input type="checkbox" value="even_imap" checked>even_imap<small>辅助邮箱收件</small></label>
                 <div class="msel-tools"><button type="button" data-all="1">全选</button><button type="button" data-all="0">清空</button></div>
               </div>
             </div>
           </div>
-          <div class="field" id="ms-apiEvenWrap" style="display:none"><label>even_imap 收件 API 地址</label><input type="text" id="ms-apiEvenBase" value="http://15.204.106.173:16347" placeholder="默认 http://15.204.106.173:16347 · 部署 aux_mail_api.py 的地址" spellcheck="false" autocomplete="off"></div>
+          <div class="field" id="ms-apiEvenWrap" style="display:none"><label>even_imap 收件 API 地址</label><input type="text" id="ms-apiEvenBase" value="https://ms.lqqq.cc/web" placeholder="默认 https://ms.lqqq.cc/web" spellcheck="false" autocomplete="off"></div>
           <div class="field" id="ms-apiProxyWrap" style="display:none"><label>HTTPS 代理地址（本页在 https 站点时自动走它）</label><input type="text" id="ms-apiProxy" placeholder="如 https://aux-mail-proxy.你的子域.workers.dev · 留空 = 不用代理" spellcheck="false" autocomplete="off"></div>
           <div class="field" id="ms-apiServerWrap" style="display:none"><label>收件服务器（IMAP）</label><input type="text" id="ms-apiServer" placeholder="默认 mail.evenemail.com · 可填 主机:端口" spellcheck="false" autocomplete="off"></div>
           <div class="field xs"><label>取最新几封 limit</label><select id="ms-apiLimit"><option value="1">1 封</option><option value="2">2 封</option><option value="3">3 封</option><option value="4">4 封</option><option value="5">5 封</option></select></div>
@@ -2378,7 +2378,7 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
       if(s.limit)els.limit.value=String(s.limit); if(s.tpl)els.tpl.value=s.tpl; if(s.server&&els.server)els.server.value=s.server; if(s.proxy&&els.proxy)els.proxy.value=s.proxy; }catch(e){}
     function save(){ try{ localStorage.setItem(KEY,JSON.stringify({mainBase:els.base.value.trim(),evenBase:els.evenBase.value.trim(),types:types(),limit:+els.limit.value,tpl:els.tpl.value.trim(),server:els.server?els.server.value.trim():"",proxy:els.proxy?els.proxy.value.trim():""})); }catch(e){} }
     function normBase(v){ let b=String(v||"").trim().replace(/\/+$/,""); if(b&&!/^https?:\/\//i.test(b))b=(/^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/i.test(b)?"http://":"https://")+b; return b.replace(/(?:\/(?:web|api|index\.html?))+\/*$/i,""); }
-    const DEF_EVEN_BASE="http://15.204.106.173:16347";
+    const DEF_EVEN_BASE="https://ms.lqqq.cc/web";
     const isHttpsPage=()=>location.protocol==="https:";
     const proxyBase=()=>normBase(els.proxy?els.proxy.value:"");
     /* 混合内容：本页是 https 而接口是 http 时浏览器必拦；配了 HTTPS 代理就自动改走代理（代理原样转发 /api/... 到 http 接口） */
@@ -2432,7 +2432,8 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
     const maskUrl=u=>String(u).replace(/(\/api\/[^?]*?)----[^?]*/,"$1----••••••");
     /* 验证码提取：先看关键词附近，再退回 6 / 8 / 5 / 4 位纯数字；排除年份 */
     function extractCodes(subject,body){ const out=[]; const push=c=>{ c=String(c).trim(); if(c&&!/^(19|20)\d{2}$/.test(c)&&!out.includes(c))out.push(c); };
-      const txt=(subject||"")+"\n"+(body||""); let m;
+      /* 先剥掉邮箱地址（含其前缀/本地部分）和网址：辅助邮箱如 xk4gcdf8@evenemail.com 的前缀 xk4gcdf8 或纯数字前缀常出现在正文里，不能当成验证码 */
+      const txt=((subject||"")+"\n"+(body||"")).replace(/[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}/g," ").replace(/https?:\/\/\S+/gi," "); let m;
       const kw=/(?:验证码|校验码|动态码|安全码|确认码|验证代码|安全代码|verification code|security code|confirmation code|access code|login code|one[- ]time (?:code|password|passcode)|passcode|otp|your code|the code|代码|コード|인증번호)[\s\S]{0,40}?(?<![\w-])(?=[A-Za-z0-9-]*\d)([A-Z0-9]{3,4}-[A-Z0-9]{3,4}|[A-Za-z0-9]{4,8})(?![\w-])/gi;
       while((m=kw.exec(txt)))push(m[1]);
       for(const r of [/(?<!\d)\d{6}(?!\d)/g,/(?<!\d)\d{8}(?!\d)/g,/(?<!\d)\d{5}(?!\d)/g,/(?<!\d)\d{4}(?!\d)/g,/(?<!\d)\d{7}(?!\d)/g]){ while((m=r.exec(txt)))push(m[0]); if(out.length>=3)break; }
@@ -2721,7 +2722,7 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
     extraCfg:()=>({codeMode:$("#gm-codeMode").value,tfaMode:$("#gm-tfaMode").value}), rerenderIds:["codeMode","tfaMode"],
     statsExtra:rows=>`<div class="stat warn"><div class="n">${rows.filter(r=>r.values?false:(!r.rec||!r.tfa)).length.toLocaleString()}</div><div class="l">缺辅助邮箱/2FA</div></div>`,
     defaultTemplate:"Email[Tab]Password[Tab]辅助邮箱[Tab]2FA[Tab]备份代码*" });
-  window.__msTest=accountTab("ms",{ sheet:"微软邮箱", file:"微软邮箱", defaultMode:"split", api:true, smartParse:msParse, emailKeys:["email","rec"],
+  window.__msTest=accountTab("ms",{ sheet:"微软邮箱", file:"微软邮箱", defaultMode:"smart", api:true, smartParse:msParse, emailKeys:["email","rec"],
     smartColumns:[{key:"email",label:"邮箱",kind:"email"},{key:"pw",label:"密码"},{key:"token",label:"RefreshToken"},{key:"cid",label:"Client_ID"},{key:"rec",label:"辅助邮箱",kind:"email"},{key:"recPw",label:"辅助邮箱密码"}],
     defaultTemplate:"Email----Password----RefreshToken----Client_ID----辅助邮箱----辅助邮箱密码" });
   window.__acctTest={parseTemplate,splitByTemplate,msParse,gmParse};
