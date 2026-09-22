@@ -324,6 +324,36 @@
   .toggle-sm input:checked + .sw::after{transform:translateX(12px)}
   .tabs-mini{display:inline-flex;padding:3px;margin:0;gap:3px;flex-wrap:nowrap}
   .tabs-mini .subtab{padding:5px 12px;font-size:12px;min-width:0;flex:none}
+  /* 自定义字段提取 */
+  .exmodebar{display:flex;gap:6px;background:var(--chip);border-radius:12px;padding:4px;margin-bottom:16px;max-width:560px}
+  .exmode-tab{flex:1;text-align:center;border:none;background:none;cursor:pointer;padding:9px 10px;border-radius:9px;font-size:14px;font-weight:600;color:var(--text-2);transition:.15s}
+  .exmode-tab.on{background:var(--card-solid);color:var(--text);box-shadow:var(--shadow)}
+  .cm-cols{font-size:12px;color:var(--text-2);margin:12px 0 0;line-height:1.9}
+  .cm-cols b{color:var(--text)}
+  .cm-cols .c{display:inline-block;background:var(--chip);border-radius:6px;padding:1px 8px;margin:0 4px 4px 0;font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace}
+  .cm-fhead{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--text-3);padding:0 6px 2px;font-weight:600}
+  .cm-fhead .h1{width:26px;flex:none}
+  .cm-fhead .h2{flex:1 1 140px}
+  .cm-fhead .h3{flex:1 1 130px}
+  .cm-fhead .h4{flex:1 1 110px}
+  .cm-fhead .h5{width:104px;flex:none;text-align:right}
+  .cm-fields{display:flex;flex-direction:column;gap:8px;margin:4px 0 14px}
+  .cm-frow{display:flex;gap:8px;align-items:center;background:var(--chip);border-radius:10px;padding:8px 10px}
+  .cm-frow .fi{flex:none;width:26px;text-align:center;color:var(--text-3);font-size:12px;font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace}
+  .cm-frow input.fout{flex:1 1 140px;min-width:90px}
+  .cm-frow select{flex:1 1 130px;min-width:100px;font-size:13px;padding:8px 10px}
+  .cm-frow select.ftf{flex:1 1 110px}
+  .cm-frow .fbtns{flex:none;display:flex;gap:4px;width:104px;justify-content:flex-end}
+  .cm-frow .fbtn{flex:none;border:none;background:var(--card-solid);color:var(--text-2);border-radius:7px;width:30px;height:30px;cursor:pointer;font-size:14px;line-height:1;transition:.15s}
+  .cm-frow .fbtn:hover{background:var(--line);color:var(--text)}
+  .cm-frow .fdel:hover{color:var(--red)}
+  .cm-frow.miss{outline:1px solid var(--orange);outline-offset:-1px}
+  .cm-frow.miss select.fsrc{color:var(--orange)}
+  .cm-tplbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--accent-soft);border-radius:10px;padding:10px 12px;margin-top:4px}
+  .cm-tplbar .lb{font-size:13px;font-weight:600;color:var(--text-2);flex:none}
+  .cm-tplbar select,.cm-tplbar input{flex:1 1 150px;min-width:110px;width:auto}
+  @media(max-width:640px){ .cm-frow{flex-wrap:wrap} .cm-frow input.fout,.cm-frow select{flex:1 1 100%} .cm-frow .fbtns{width:auto} }
+
 
   /* ===== 2FA 验证码 ===== */
   .tf-heroWrap{display:flex;gap:26px;align-items:center;flex-wrap:wrap}
@@ -771,6 +801,11 @@
 
   <!-- ================= 提取匹配 ================= -->
   <section class="page" id="page-extract">
+    <div class="exmodebar" id="ex-modeTabs">
+      <button type="button" class="exmode-tab on" data-exm="list">📋 按名单匹配</button>
+      <button type="button" class="exmode-tab" data-exm="custom">🧩 自定义字段提取</button>
+    </div>
+    <div id="ex-mode-list">
     <div class="card">
       <h2>① 数据源（左） 与 邮箱名单（右）</h2>
       <div class="twocol">
@@ -829,6 +864,82 @@
         </div>
         <div class="pane active" id="ex-pane-hit"><div class="pane-head"><span class="desc">从数据源里提取出的、命中名单的整行（保持数据源顺序）</span><div class="tools"><button class="btn btn-ghost btn-sm" data-excopy="hit">复制预览</button><button class="btn btn-primary btn-sm" data-exdl="hit">下载</button></div></div><div class="note" id="ex-note-hit"></div><textarea id="ex-ta-hit" readonly spellcheck="false"></textarea></div>
         <div class="pane" id="ex-pane-miss"><div class="pane-head"><span class="desc">名单里在数据源中没找到的邮箱</span><div class="tools"><button class="btn btn-ghost btn-sm" data-excopy="miss">复制预览</button><button class="btn btn-primary btn-sm" data-exdl="miss">下载</button></div></div><div class="note" id="ex-note-miss"></div><textarea id="ex-ta-miss" readonly spellcheck="false"></textarea></div>
+      </div>
+    </div>
+    </div>
+    <div id="ex-mode-custom" hidden>
+      <div class="card">
+        <h2>① 导入 / 粘贴要处理的数据</h2>
+        <div class="drop small" id="cm-drop">
+          <input type="file" id="cm-file" accept=".txt,.csv,.tsv,text/plain" multiple>
+          <div class="icon">📄</div>
+          <div class="big">导入数据文件（.txt / .csv / .tsv）</div>
+          <div class="sub">带列的数据，一行一条；也可直接在下方粘贴</div>
+        </div>
+        <div class="files" id="cm-list"></div>
+        <textarea id="cm-src" class="paste bigbox" spellcheck="false" placeholder="粘贴带列的数据，例如（第一行是列名）：&#10;Order ID	Type	Card Num	Exp Date	CVV	Name	Phone	Full Address	City	State	Zip	Country&#10;1001	visa	4111111111111111	12/28	123	John Smith	13800000000	1 Main St	LA	CA	90001	US"></textarea>
+        <div class="grid" style="margin-top:14px">
+          <div class="field">
+            <label>列分隔符（源数据每行怎么切成列）</label>
+            <div class="chips" id="cm-delimChips">
+              <button type="button" class="chip on" data-d="auto">自动识别</button><button type="button" class="chip" data-d="tab">Tab</button><button type="button" class="chip" data-d="ws2">多空格（对齐表）</button><button type="button" class="chip" data-d="comma">逗号 ,（CSV）</button><button type="button" class="chip" data-d="|">竖线 |</button><button type="button" class="chip" data-d="----">四连字符 ----</button><button type="button" class="chip" data-d=":">冒号 :</button><button type="button" class="chip" data-d=";">分号 ;</button><button type="button" class="chip" data-d="custom">自定义…</button>
+            </div>
+            <div class="field" id="cm-delimCustomWrap" style="display:none;margin-top:10px"><input type="text" id="cm-delimCustom" placeholder="例如 :: 或 [Tab]" spellcheck="false"><div class="hint">Tab 写 [Tab]，空格写 [空格]</div></div>
+          </div>
+          <div class="field">
+            <label>首行</label>
+            <label class="toggle" style="margin-top:2px"><input type="checkbox" id="cm-header" checked><span class="sw"></span>第一行是列名（标题行）</label>
+            <div class="hint">开：用第一行的名字认列，模板可跨文件按列名复用；关：列名自动叫 列1、列2…</div>
+          </div>
+        </div>
+        <div class="actions"><button class="btn btn-primary" id="cm-parse" disabled>🧩 解析列</button><button class="btn btn-ghost" id="cm-clear">清空</button></div>
+        <div class="cm-cols" id="cm-cols" style="display:none"></div>
+        <div class="hint" id="cm-srcHint">尚未输入</div>
+      </div>
+
+      <div class="card" id="cm-mapCard" style="display:none">
+        <h2>② 选择 / 重命名 / 排序 要导出的字段</h2>
+        <div class="pane-head">
+          <span class="desc">勾出要的列、改成你要的输出名、上下排序；「变换」可把「姓名」拆成姓/名等。</span>
+          <div class="tools">
+            <button class="btn btn-ghost btn-sm" id="cm-addField">＋ 添加字段</button>
+            <button class="btn btn-ghost btn-sm" id="cm-allCols">↺ 用所有源列重建</button>
+          </div>
+        </div>
+        <div class="cm-fhead"><span class="h1"></span><span class="h2">输出名（导出后的列名）</span><span class="h3">取自源列</span><span class="h4">变换</span><span class="h5">排序 / 删</span></div>
+        <div class="cm-fields" id="cm-fields"></div>
+
+        <div class="cm-tplbar">
+          <span class="lb">🏷 标签模板</span>
+          <select id="cm-tplSel"><option value="">— 载入已保存的模板 —</option></select>
+          <input type="text" id="cm-tplName" placeholder="给这套字段起个名，如 信用卡导出" spellcheck="false">
+          <button class="btn btn-ghost btn-sm" id="cm-tplSave">💾 保存 / 覆盖</button>
+          <button class="btn btn-ghost btn-sm" id="cm-tplDel">🗑 删除</button>
+        </div>
+
+        <div class="grid" style="margin-top:16px">
+          <div class="field">
+            <label>输出分隔符（导出时列之间用什么隔开）</label>
+            <div class="chips" id="cm-outChips">
+              <button type="button" class="chip on" data-o="tab">Tab（贴进 Excel）</button><button type="button" class="chip" data-o="comma">逗号 ,（CSV）</button><button type="button" class="chip" data-o="|">竖线 |</button><button type="button" class="chip" data-o="----">四连字符 ----</button><button type="button" class="chip" data-o=":">冒号 :</button><button type="button" class="chip" data-o=";">分号 ;</button><button type="button" class="chip" data-o="custom">自定义…</button>
+            </div>
+            <div class="field" id="cm-outCustomWrap" style="display:none;margin-top:10px"><input type="text" id="cm-outCustom" placeholder="例如 :: 或 [Tab]" spellcheck="false"><div class="hint">Tab 写 [Tab]，空格写 [空格]</div></div>
+          </div>
+          <div class="field">
+            <label>选项</label>
+            <label class="toggle" style="margin-top:2px"><input type="checkbox" id="cm-outHeader"><span class="sw"></span>导出结果带列名标题行</label>
+          </div>
+        </div>
+        <div class="actions"><button class="btn btn-primary" id="cm-run">🔎 生成导出</button></div>
+      </div>
+
+      <div class="result" id="cm-outCard" style="display:none">
+        <div class="stats" id="cm-stats"></div>
+        <div class="card">
+          <div class="pane-head"><span class="desc">按你设定的字段与顺序导出</span><div class="tools"><button class="btn btn-ghost btn-sm" id="cm-copy">复制</button><button class="btn btn-primary btn-sm" id="cm-dlTxt">下载 TXT</button><button class="btn btn-ghost btn-sm" id="cm-dlCsv">下载 CSV</button></div></div>
+          <div class="note" id="cm-outNote"></div>
+          <textarea id="cm-out" class="paste bigbox" readonly spellcheck="false"></textarea>
+        </div>
       </div>
     </div>
   </section>
@@ -1929,6 +2040,132 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
   document.querySelectorAll("#page-extract [data-exdl]").forEach(b=>b.onclick=async ()=>{ const s=b.dataset.exdl==="hit"?lastHit:lastMiss; if(!s||!s.count){toast("没有内容");return;} download(new Blob(await s.blobParts(),{type:"text/plain;charset=utf-8"}),b.dataset.exdl==="hit"?"匹配结果.txt":"未找到.txt"); });
   $("#ex-zipAll").onclick=async ()=>{ if(!lastHit){toast("请先提取");return;} await zipDownload([{name:"匹配结果.txt",sink:lastHit},{name:"未找到.txt",sink:lastMiss}],"提取匹配结果.zip"); };
   updateRun();
+})();
+
+/* ===================== 模块六b：自定义字段提取（选列 / 重命名 / 排序 / 命名模板） ===================== */
+(function(){
+  const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+  const TPLKEY="tt.ex.cm.tpl";
+  const files=[];              /* {name,text} */
+  let cols=[];                 /* [{name,idx}] 解析出的源列 */
+  let dataRows=[];             /* [[cell,...]] 数据行（不含标题行） */
+  let fields=[];               /* [{out,srcIdx,srcName,tf}] 输出字段（可排序） */
+  let curDelim="auto", curOut="tab", lastOut="", templates=load();
+  const TF=[["none","原样"],["first","取空格前（姓/名）"],["last","取空格后（名/姓）"],["trim","去首尾空格"],["lower","转小写"],["upper","转大写"]];
+
+  function load(){ try{ const o=JSON.parse(localStorage.getItem(TPLKEY)||"{}"); return o&&typeof o==="object"?o:{}; }catch(e){ return {}; } }
+  function persist(){ try{ localStorage.setItem(TPLKEY,JSON.stringify(templates)); }catch(e){} }
+
+  /* ---------- 模式切换 ---------- */
+  $$("#ex-modeTabs .exmode-tab").forEach(b=>b.onclick=()=>{ const m=b.dataset.exm;
+    $$("#ex-modeTabs .exmode-tab").forEach(x=>x.classList.toggle("on",x===b));
+    $("#ex-mode-list").hidden=m!=="list"; $("#ex-mode-custom").hidden=m!=="custom"; });
+
+  /* ---------- 导入 / 粘贴 ---------- */
+  const okFile=f=>/\.(txt|csv|tsv)$/i.test(f.name)||f.type==="text/plain"||f.type==="text/csv";
+  bindDrop($("#cm-drop"),$("#cm-file"),async list=>{ const a=[...list].filter(okFile); if(!a.length){toast("请选择 .txt / .csv / .tsv");return;}
+    for(const f of a){ try{ files.push({name:f.name,size:f.size,text:await f.text()}); }catch(e){ toast("读取失败："+f.name); } } renderFiles(); updateParse(); });
+  function renderFiles(){ renderFileList($("#cm-list"),files,()=>{ renderFiles(); updateParse(); }); }
+  function updateParse(){ const has=files.length||$("#cm-src").value.trim(); $("#cm-parse").disabled=!has;
+    const n=srcLines().length; $("#cm-srcHint").textContent=has?`约 ${n.toLocaleString()} 行数据`+(cols.length?`；已解析 ${cols.length} 列`:"（点「解析列」开始）"):"尚未输入"; }
+  $("#cm-src").addEventListener("input",updateParse);
+  $("#cm-clear").onclick=()=>{ files.length=0; renderFiles(); $("#cm-src").value=""; cols=[]; dataRows=[]; fields=[]; lastOut="";
+    $("#cm-mapCard").style.display="none"; $("#cm-outCard").style.display="none"; $("#cm-cols").style.display="none"; updateParse(); toast("已清空"); };
+
+  /* ---------- 分隔符 ---------- */
+  $$("#cm-delimChips .chip").forEach(c=>c.onclick=()=>{ $$("#cm-delimChips .chip").forEach(x=>x.classList.toggle("on",x===c)); curDelim=c.dataset.d; $("#cm-delimCustomWrap").style.display=curDelim==="custom"?"":"none"; });
+  $$("#cm-outChips .chip").forEach(c=>c.onclick=()=>{ $$("#cm-outChips .chip").forEach(x=>x.classList.toggle("on",x===c)); curOut=c.dataset.o; $("#cm-outCustomWrap").style.display=curOut==="custom"?"":"none"; });
+  const unesc=d=>String(d||"").replace(/\[Tab\]/gi,"\t").replace(/\[空格\]/g," ");
+  function delimChar(kind,customId){ if(kind==="custom"){ const v=unesc($("#"+customId).value); return v||"\t"; } return kind; }
+  function detect(line){ if(/\t/.test(line))return "tab"; if(/----/.test(line))return "----"; if(/\s{2,}/.test(line))return "ws2"; if(line.includes(","))return "comma"; if(line.includes("|"))return "|"; if(line.includes(";"))return ";"; if(line.includes(":"))return ":"; return "ws2"; }
+  function parseCSVLine(line){ const out=[]; let cur="",q=false; for(let i=0;i<line.length;i++){ const c=line[i]; if(q){ if(c==='"'){ if(line[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=c; } else { if(c==='"')q=true; else if(c===","){out.push(cur);cur="";} else cur+=c; } } out.push(cur); return out; }
+  function splitRow(line,kind){ switch(kind){ case "tab":return line.split("\t"); case "comma":return parseCSVLine(line); case "ws2":return line.replace(/\t/g,"  ").trim().split(/\s{2,}/); case "----":return line.split("----"); default:{ const ch=kind==="custom"?delimChar("custom","cm-delimCustom"):kind; return line.split(ch); } } }
+
+  function srcText(){ const parts=[]; if($("#cm-src").value.trim())parts.push($("#cm-src").value); for(const f of files)parts.push(f.text); return parts.join("\n"); }
+  function srcLines(){ return srcText().split(/\r\n|\r|\n/).filter(l=>l.trim()!==""); }
+
+  /* ---------- 解析列 ---------- */
+  $("#cm-parse").onclick=()=>{ const lines=srcLines(); if(!lines.length){toast("没有可解析的数据");return;}
+    const kind=curDelim==="auto"?detect(lines[0]):curDelim;
+    const rowsRaw=lines.map(l=>splitRow(l,kind));
+    const hasHeader=$("#cm-header").checked;
+    let names;
+    if(hasHeader){ names=rowsRaw[0].map(x=>x.trim()); dataRows=rowsRaw.slice(1); }
+    else { const w=rowsRaw.reduce((a,r)=>Math.max(a,r.length),0); names=Array.from({length:w},(_,i)=>"列"+(i+1)); dataRows=rowsRaw; }
+    cols=names.map((n,i)=>({name:n||("列"+(i+1)),idx:i}));
+    $("#cm-cols").style.display="block";
+    $("#cm-cols").innerHTML=`识别到 <b>${cols.length}</b> 列${curDelim==="auto"?`（自动判定分隔符：<b>${({tab:"Tab","ws2":"多空格",comma:"逗号","----":"----"})[kind]||kind}</b>）`:""}，数据 <b>${dataRows.length.toLocaleString()}</b> 行：`+cols.map(c=>`<span class="c">${escHTML(c.name)}</span>`).join("");
+    if(!fields.length)fields=cols.map(c=>({out:c.name,srcIdx:c.idx,srcName:c.name,tf:"none"})); else resolveFields();
+    renderFields(); $("#cm-mapCard").style.display="block"; updateParse();
+    toast(`已解析 ${cols.length} 列 · ${dataRows.length.toLocaleString()} 行`);
+    $("#cm-mapCard").scrollIntoView({behavior:"smooth",block:"start"}); };
+
+  function resolveFields(){ /* 用当前源列重新对齐：优先按列名匹配，其次按原索引 */
+    for(const f of fields){ let hit=cols.findIndex(c=>c.name===f.srcName); if(hit<0&&f.srcName)hit=cols.findIndex(c=>c.name.toLowerCase()===String(f.srcName).toLowerCase());
+      if(hit>=0){ f.srcIdx=cols[hit].idx; f.srcName=cols[hit].name; } else if(f.srcIdx>=0&&f.srcIdx<cols.length){ f.srcName=cols[f.srcIdx].name; } else { f.srcIdx=-1; } } }
+
+  /* ---------- 字段行渲染 ---------- */
+  function optionList(sel){ let h=`<option value="-1"${sel<0?" selected":""}>（留空）</option>`; for(const c of cols)h+=`<option value="${c.idx}"${c.idx===sel?" selected":""}>${escHTML(c.name)}</option>`; return h; }
+  function renderFields(){ const box=$("#cm-fields");
+    box.innerHTML=fields.map((f,i)=>{ const miss=cols.length&&f.srcIdx<0;
+      return `<div class="cm-frow${miss?" miss":""}" data-i="${i}">`
+        +`<span class="fi">${i+1}</span>`
+        +`<input class="fout" type="text" value="${escHTML(f.out)}" placeholder="输出名" spellcheck="false">`
+        +`<select class="fsrc">${optionList(f.srcIdx)}</select>`
+        +`<select class="ftf">${TF.map(([v,t])=>`<option value="${v}"${v===f.tf?" selected":""}>${t}</option>`).join("")}</select>`
+        +`<span class="fbtns"><button type="button" class="fbtn fup" title="上移">↑</button><button type="button" class="fbtn fdn" title="下移">↓</button><button type="button" class="fbtn fdel" title="删除">✕</button></span>`
+        +`</div>`; }).join("")||`<div class="hint">还没有字段。点「＋ 添加字段」或「↺ 用所有源列重建」。</div>`; }
+  $("#cm-fields").addEventListener("input",e=>{ const row=e.target.closest(".cm-frow"); if(!row)return; const i=+row.dataset.i;
+    if(e.target.classList.contains("fout"))fields[i].out=e.target.value;
+    else if(e.target.classList.contains("fsrc")){ fields[i].srcIdx=+e.target.value; fields[i].srcName=cols[+e.target.value]?cols[+e.target.value].name:""; row.classList.toggle("miss",cols.length&&fields[i].srcIdx<0); }
+    else if(e.target.classList.contains("ftf"))fields[i].tf=e.target.value; });
+  $("#cm-fields").addEventListener("click",e=>{ const b=e.target.closest(".fbtn"); if(!b)return; const row=b.closest(".cm-frow"); const i=+row.dataset.i;
+    if(b.classList.contains("fup")&&i>0){ [fields[i-1],fields[i]]=[fields[i],fields[i-1]]; renderFields(); }
+    else if(b.classList.contains("fdn")&&i<fields.length-1){ [fields[i+1],fields[i]]=[fields[i],fields[i+1]]; renderFields(); }
+    else if(b.classList.contains("fdel")){ fields.splice(i,1); renderFields(); } });
+  $("#cm-addField").onclick=()=>{ fields.push({out:cols[0]?cols[0].name:"新字段",srcIdx:cols[0]?cols[0].idx:-1,srcName:cols[0]?cols[0].name:"",tf:"none"}); renderFields(); };
+  $("#cm-allCols").onclick=()=>{ if(!cols.length){toast("请先解析列");return;} fields=cols.map(c=>({out:c.name,srcIdx:c.idx,srcName:c.name,tf:"none"})); renderFields(); toast("已用全部源列重建 "+cols.length+" 个字段"); };
+
+  /* ---------- 模板 ---------- */
+  function refreshTplSel(){ const names=Object.keys(templates).sort(); $("#cm-tplSel").innerHTML=`<option value="">— 载入已保存的模板 —</option>`+names.map(n=>`<option value="${escHTML(n)}">${escHTML(n)}</option>`).join(""); }
+  $("#cm-tplSave").onclick=()=>{ const name=$("#cm-tplName").value.trim(); if(!name){toast("请先给模板起个名");return;} if(!fields.length){toast("还没有字段可保存");return;}
+    templates[name]={hasHeader:$("#cm-header").checked,delim:curDelim,delimCustom:$("#cm-delimCustom").value,outDelim:curOut,outCustom:$("#cm-outCustom").value,outHeader:$("#cm-outHeader").checked,
+      fields:fields.map(f=>({out:f.out,srcName:f.srcName,srcIdx:f.srcIdx,tf:f.tf}))}; persist(); refreshTplSel(); $("#cm-tplSel").value=name; toast(`已保存模板「${name}」（${fields.length} 个字段）`); };
+  $("#cm-tplDel").onclick=()=>{ const name=$("#cm-tplSel").value||$("#cm-tplName").value.trim(); if(!name||!templates[name]){toast("请选择要删除的模板");return;} delete templates[name]; persist(); refreshTplSel(); toast(`已删除模板「${name}」`); };
+  $("#cm-tplSel").onchange=()=>{ const name=$("#cm-tplSel").value; if(!name||!templates[name])return; const t=templates[name]; $("#cm-tplName").value=name;
+    $("#cm-header").checked=!!t.hasHeader;
+    setChip("#cm-delimChips","d",t.delim||"auto"); curDelim=t.delim||"auto"; if(t.delimCustom!==undefined)$("#cm-delimCustom").value=t.delimCustom; $("#cm-delimCustomWrap").style.display=curDelim==="custom"?"":"none";
+    setChip("#cm-outChips","o",t.outDelim||"tab"); curOut=t.outDelim||"tab"; if(t.outCustom!==undefined)$("#cm-outCustom").value=t.outCustom; $("#cm-outCustomWrap").style.display=curOut==="custom"?"":"none";
+    $("#cm-outHeader").checked=!!t.outHeader;
+    fields=(t.fields||[]).map(f=>({out:f.out,srcName:f.srcName,srcIdx:f.srcIdx==null?-1:f.srcIdx,tf:f.tf||"none"}));
+    if(cols.length)resolveFields(); renderFields(); toast(`已载入模板「${name}」，共 ${fields.length} 个字段`+(cols.length?"（已按当前源列对齐）":"，解析源列后自动对齐")); };
+  function setChip(sel,attr,val){ $$(sel+" .chip").forEach(c=>c.classList.toggle("on",c.dataset[attr]===val)); }
+  refreshTplSel();
+
+  /* ---------- 生成导出 ---------- */
+  function tf(v,t){ v=v==null?"":String(v); switch(t){ case "trim":return v.trim(); case "lower":return v.toLowerCase(); case "upper":return v.toUpperCase();
+    case "first":{ const s=v.trim().split(/\s+/).filter(Boolean); return s[0]||""; } case "last":{ const s=v.trim().split(/\s+/).filter(Boolean); return s.length>1?s.slice(1).join(" "):""; } default:return v; } }
+  function csvCell(v){ v=v==null?"":String(v); return /[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }
+  $("#cm-run").onclick=()=>{ if(!cols.length){toast("请先在上面「解析列」");return;} if(!fields.length){toast("请至少保留一个输出字段");return;}
+    const outKind=curOut, sep=outKind==="comma"?",":outKind==="tab"?"\t":outKind==="custom"?delimChar("custom","cm-outCustom"):outKind;
+    const cellFn=outKind==="comma"?csvCell:(v=>v==null?"":String(v));
+    const lines=[]; if($("#cm-outHeader").checked)lines.push(fields.map(f=>cellFn(f.out)).join(sep));
+    for(const row of dataRows){ lines.push(fields.map(f=>cellFn(tf(f.srcIdx>=0?row[f.srcIdx]:"",f.tf))).join(sep)); }
+    lastOut=lines.join("\r\n");
+    const PREV=500, shown=lines.slice(0,PREV);
+    $("#cm-out").value=shown.join("\n");
+    const note=$("#cm-outNote"); if(lines.length>PREV){ note.style.display="block"; note.textContent=`共 ${lines.length.toLocaleString()} 行，仅预览前 ${PREV} 行；复制 / 下载为全部。`; } else note.style.display="none";
+    const missN=fields.filter(f=>f.srcIdx<0).length;
+    $("#cm-stats").innerHTML=`<div class="stat"><div class="n">${dataRows.length.toLocaleString()}</div><div class="l">源数据行</div></div><div class="stat ok"><div class="n">${fields.length}</div><div class="l">输出字段</div></div><div class="stat arc"><div class="n">${(lines.length).toLocaleString()}</div><div class="l">导出行数</div></div>`+(missN?`<div class="stat dup"><div class="n">${missN}</div><div class="l">留空字段</div></div>`:"");
+    $("#cm-outCard").style.display="block"; $("#cm-outCard").scrollIntoView({behavior:"smooth",block:"start"});
+    toast(`已生成：${fields.length} 列 × ${dataRows.length.toLocaleString()} 行`+(missN?`（${missN} 个字段当前源里没有、已留空）`:"")); };
+  $("#cm-copy").onclick=async ()=>{ if(!lastOut){toast("请先生成");return;} toast(await copyTextSafe(lastOut)?"已复制全部导出":"复制失败"); };
+  $("#cm-dlTxt").onclick=()=>{ if(!lastOut){toast("请先生成");return;} download(new Blob([lastOut],{type:"text/plain;charset=utf-8"}),"自定义导出.txt"); };
+  $("#cm-dlCsv").onclick=()=>{ if(!fields.length||!cols.length){toast("请先生成");return;}
+    const lines=[]; lines.push(fields.map(f=>csvCell(f.out)).join(",")); for(const row of dataRows)lines.push(fields.map(f=>csvCell(tf(f.srcIdx>=0?row[f.srcIdx]:"",f.tf))).join(",")); /* CSV 始终带表头 */
+    download(new Blob(["﻿"+lines.join("\r\n")],{type:"text/csv;charset=utf-8"}),"自定义导出.csv"); };
+
+  updateParse();
 })();
 
 /* ===================== 模块七：随机密码生成 ===================== */
