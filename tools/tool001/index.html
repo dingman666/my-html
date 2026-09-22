@@ -348,10 +348,22 @@
   .cm-frow .fbtn:hover{background:var(--line);color:var(--text)}
   .cm-frow .fdel:hover{color:var(--red)}
   .cm-frow.miss{outline:1px solid var(--orange);outline-offset:-1px}
+  .cm-frow.dragging{opacity:.45}
+  .cm-frow.dragover{outline:2px dashed var(--accent);outline-offset:-2px}
+  .cm-frow .fdrag{flex:none;cursor:grab;color:var(--text-3);font-size:15px;padding:0 2px;user-select:none;line-height:1}
+  .cm-frow .fdrag:active{cursor:grabbing}
+  .cm-frow select:disabled{opacity:.75;cursor:default}
   .cm-frow.miss select.fsrc{color:var(--orange)}
   .cm-tplbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--accent-soft);border-radius:10px;padding:10px 12px;margin-top:4px}
   .cm-tplbar .lb{font-size:13px;font-weight:600;color:var(--text-2);flex:none}
   .cm-tplbar select,.cm-tplbar input{flex:1 1 150px;min-width:110px;width:auto}
+  .cm-preview{margin:12px 0 0;overflow:auto;border:1px solid var(--line);border-radius:10px;max-height:260px}
+  .cm-preview table{border-collapse:collapse;font-size:12px;font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;white-space:nowrap}
+  .cm-preview th,.cm-preview td{border:1px solid var(--line);padding:5px 9px;text-align:left;max-width:220px;overflow:hidden;text-overflow:ellipsis}
+  .cm-preview th{background:var(--chip);position:sticky;top:0;font-weight:700}
+  .cm-preview th .ci{color:var(--text-3);font-weight:400;margin-right:6px}
+  .cm-preview td.empty{color:var(--text-3)}
+  .cm-frow select.fsrc option{font-family:inherit}
   @media(max-width:640px){ .cm-frow{flex-wrap:wrap} .cm-frow input.fout,.cm-frow select{flex:1 1 100%} .cm-frow .fbtns{width:auto} }
 
 
@@ -894,6 +906,8 @@
         </div>
         <div class="actions"><button class="btn btn-primary" id="cm-parse" disabled>🧩 解析列</button><button class="btn btn-ghost" id="cm-clear">清空</button></div>
         <div class="cm-cols" id="cm-cols" style="display:none"></div>
+        <div class="note" id="cm-warn" style="color:var(--orange)"></div>
+        <div class="cm-preview" id="cm-preview" style="display:none"></div>
         <div class="hint" id="cm-srcHint">尚未输入</div>
       </div>
 
@@ -914,6 +928,7 @@
           <select id="cm-tplSel"><option value="">— 载入已保存的模板 —</option></select>
           <input type="text" id="cm-tplName" placeholder="给这套字段起个名，如 信用卡导出" spellcheck="false">
           <button class="btn btn-ghost btn-sm" id="cm-tplSave">💾 保存 / 覆盖</button>
+          <button class="btn btn-ghost btn-sm" id="cm-tplDefault">⭐ 设为默认</button>
           <button class="btn btn-ghost btn-sm" id="cm-tplDel">🗑 删除</button>
         </div>
 
@@ -2051,7 +2066,19 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
   let dataRows=[];             /* [[cell,...]] 数据行（不含标题行） */
   let fields=[];               /* [{out,srcIdx,srcName,tf}] 输出字段（可排序） */
   let curDelim="auto", curOut="tab", lastOut="", templates=load();
-  const TF=[["none","原样"],["first","取空格前（姓/名）"],["last","取空格后（名/姓）"],["trim","去首尾空格"],["lower","转小写"],["upper","转大写"]];
+  let dragI=-1, dragArm=false;
+  const TF=[["none","原样"],["first","取第一个词 = first_name（名）"],["last","取空格后其余 = last_name（姓）"],["lastword","取最后一个词（姓）"],["trim","去首尾空格"],["lower","转小写"],["upper","转大写"]];
+  const DEFKEY="tt.ex.cm.default";
+  /* 内置模板：Azure（信用卡/账号数据 → 标准导出字段） */
+  const BUILTINS={ "Azure":{ hasHeader:true, delim:"auto", outDelim:"tab", outHeader:false, fields:[
+    {out:"number",srcName:"Card Num",tf:"none"},{out:"exp",srcName:"Exp Date",tf:"none"},{out:"CVV",srcName:"CVV",tf:"none"},
+    {out:"first_name",srcName:"Name",tf:"first"},{out:"last_name",srcName:"Name",tf:"last"},{out:"country",srcName:"Country",tf:"none"},
+    {out:"phone",srcName:"Phone",tf:"none"},{out:"address",srcName:"Full Address",tf:"none"},{out:"city",srcName:"City",tf:"none"},
+    {out:"state",srcName:"State",tf:"none"},{out:"zip",srcName:"Zip",tf:"none"} ] } };
+  let defaultName=null; try{ defaultName=localStorage.getItem(DEFKEY); }catch(e){} if(defaultName===null)defaultName="Azure";
+  const allTplNames=()=>[...new Set([...Object.keys(BUILTINS),...Object.keys(templates)])].sort();
+  const getTpl=name=>templates[name]||BUILTINS[name]||null;
+  function applyTpl(t){ fields=(t.fields||[]).map(f=>({out:f.out,srcName:f.srcName,srcIdx:f.srcIdx==null?-1:f.srcIdx,tf:f.tf||"none"})); if(cols.length)resolveFields(); }
 
   function load(){ try{ const o=JSON.parse(localStorage.getItem(TPLKEY)||"{}"); return o&&typeof o==="object"?o:{}; }catch(e){ return {}; } }
   function persist(){ try{ localStorage.setItem(TPLKEY,JSON.stringify(templates)); }catch(e){} }
@@ -2095,7 +2122,13 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
     cols=names.map((n,i)=>({name:n||("列"+(i+1)),idx:i}));
     $("#cm-cols").style.display="block";
     $("#cm-cols").innerHTML=`识别到 <b>${cols.length}</b> 列${curDelim==="auto"?`（自动判定分隔符：<b>${({tab:"Tab","ws2":"多空格",comma:"逗号","----":"----"})[kind]||kind}</b>）`:""}，数据 <b>${dataRows.length.toLocaleString()}</b> 行：`+cols.map(c=>`<span class="c">${escHTML(c.name)}</span>`).join("");
-    if(!fields.length)fields=cols.map(c=>({out:c.name,srcIdx:c.idx,srcName:c.name,tf:"none"})); else resolveFields();
+    /* 列数一致性检查：分隔符选错时，数据行会比表头多/少列，导致每列取到错位数据 */
+    const lens=dataRows.map(r=>r.length), mn=lens.length?Math.min(...lens):0, mx=lens.length?Math.max(...lens):0;
+    const warn=$("#cm-warn"); const bad=dataRows.length&&(mx!==cols.length||mn!==mx||cols.length<=1);
+    if(bad){ warn.style.display="block"; warn.innerHTML=(cols.length<=1?`⚠️ 只解析出 <b>1</b> 列——「列分隔符」肯定不对（这段数据里的列不是用它隔开的）。请在上面改选正确的分隔符（Tab / 多空格 / 逗号 / 竖线 / ----）再点「解析列」。`:`⚠️ 表头是 <b>${cols.length}</b> 列，但数据行是 <b>${mn===mx?mn:mn+"~"+mx}</b> 列——多半是<b>「列分隔符」选错了</b>，导致下面每列取到错位的数据。请换一个分隔符（如 Tab / 逗号 / 竖线 / ----）重新点「解析列」，对照下方预览确认对齐。`); }
+    else warn.style.display="none";
+    buildPreview();
+    if(!fields.length){ const dt=getTpl(defaultName); if(dt)applyTpl(dt); else fields=cols.map(c=>({out:c.name,srcIdx:c.idx,srcName:c.name,tf:"none"})); } else resolveFields();
     renderFields(); $("#cm-mapCard").style.display="block"; updateParse();
     toast(`已解析 ${cols.length} 列 · ${dataRows.length.toLocaleString()} 行`);
     $("#cm-mapCard").scrollIntoView({behavior:"smooth",block:"start"}); };
@@ -2105,13 +2138,20 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
       if(hit>=0){ f.srcIdx=cols[hit].idx; f.srcName=cols[hit].name; } else if(f.srcIdx>=0&&f.srcIdx<cols.length){ f.srcName=cols[f.srcIdx].name; } else { f.srcIdx=-1; } } }
 
   /* ---------- 字段行渲染 ---------- */
-  function optionList(sel){ let h=`<option value="-1"${sel<0?" selected":""}>（留空）</option>`; for(const c of cols)h+=`<option value="${c.idx}"${c.idx===sel?" selected":""}>${escHTML(c.name)}</option>`; return h; }
+  function sampleOf(idx){ if(idx<0||!dataRows.length)return ""; let v=dataRows[0][idx]; v=v==null?"":String(v).trim(); return v.length>18?v.slice(0,18)+"…":v; }
+  function optionList(f){ const sel=f.srcIdx; if(!cols.length)return `<option selected>${escHTML(f.srcName||"（解析后自动对齐）")}</option>`;
+    let h=`<option value="-1"${sel<0?" selected":""}>（留空）</option>`; for(const c of cols){ const sv=sampleOf(c.idx); h+=`<option value="${c.idx}"${c.idx===sel?" selected":""}>${escHTML(c.name)}${sv?" ｜ "+escHTML(sv):""}</option>`; } return h; }
+  function buildPreview(){ const box=$("#cm-preview"); if(!cols.length){ box.style.display="none"; return; } const rows=dataRows.slice(0,3);
+    let h='<table><thead><tr>'+cols.map((c,i)=>`<th><span class="ci">${i+1}</span>${escHTML(c.name)}</th>`).join("")+'</tr></thead><tbody>';
+    for(const r of rows){ h+='<tr>'+cols.map(c=>{ const v=r[c.idx]; return `<td class="${v==null||v===""?"empty":""}">${v==null||v===""?"—":escHTML(String(v))}</td>`; }).join("")+'</tr>'; }
+    h+='</tbody></table>'; box.innerHTML=h; box.style.display="block"; }
   function renderFields(){ const box=$("#cm-fields");
     box.innerHTML=fields.map((f,i)=>{ const miss=cols.length&&f.srcIdx<0;
-      return `<div class="cm-frow${miss?" miss":""}" data-i="${i}">`
+      return `<div class="cm-frow${miss?" miss":""}" data-i="${i}" draggable="true">`
+        +`<span class="fdrag" title="按住拖动排序">⠿</span>`
         +`<span class="fi">${i+1}</span>`
         +`<input class="fout" type="text" value="${escHTML(f.out)}" placeholder="输出名" spellcheck="false">`
-        +`<select class="fsrc">${optionList(f.srcIdx)}</select>`
+        +`<select class="fsrc"${cols.length?"":" disabled"}>${optionList(f)}</select>`
         +`<select class="ftf">${TF.map(([v,t])=>`<option value="${v}"${v===f.tf?" selected":""}>${t}</option>`).join("")}</select>`
         +`<span class="fbtns"><button type="button" class="fbtn fup" title="上移">↑</button><button type="button" class="fbtn fdn" title="下移">↓</button><button type="button" class="fbtn fdel" title="删除">✕</button></span>`
         +`</div>`; }).join("")||`<div class="hint">还没有字段。点「＋ 添加字段」或「↺ 用所有源列重建」。</div>`; }
@@ -2123,27 +2163,37 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
     if(b.classList.contains("fup")&&i>0){ [fields[i-1],fields[i]]=[fields[i],fields[i-1]]; renderFields(); }
     else if(b.classList.contains("fdn")&&i<fields.length-1){ [fields[i+1],fields[i]]=[fields[i],fields[i+1]]; renderFields(); }
     else if(b.classList.contains("fdel")){ fields.splice(i,1); renderFields(); } });
+  (function(){ const fbox=$("#cm-fields");
+    fbox.addEventListener("mousedown",e=>{ dragArm=!!e.target.closest(".fdrag"); });
+    fbox.addEventListener("mouseup",()=>{ dragArm=false; });
+    fbox.addEventListener("dragstart",e=>{ const row=e.target.closest(".cm-frow"); if(!row||!dragArm){ e.preventDefault(); return; } dragI=+row.dataset.i; row.classList.add("dragging"); e.dataTransfer.effectAllowed="move"; try{e.dataTransfer.setData("text/plain",String(dragI));}catch(_){} });
+    fbox.addEventListener("dragover",e=>{ if(dragI<0)return; e.preventDefault(); const row=e.target.closest(".cm-frow"); fbox.querySelectorAll(".dragover").forEach(x=>x.classList.remove("dragover")); if(row&&+row.dataset.i!==dragI)row.classList.add("dragover"); });
+    fbox.addEventListener("drop",e=>{ if(dragI<0)return; e.preventDefault(); const row=e.target.closest(".cm-frow"); if(row){ const to=+row.dataset.i; if(to!==dragI){ const [m]=fields.splice(dragI,1); fields.splice(to,0,m); } } dragI=-1; dragArm=false; renderFields(); });
+    fbox.addEventListener("dragend",()=>{ dragI=-1; dragArm=false; fbox.querySelectorAll(".dragging,.dragover").forEach(x=>x.classList.remove("dragging","dragover")); }); })();
   $("#cm-addField").onclick=()=>{ fields.push({out:cols[0]?cols[0].name:"新字段",srcIdx:cols[0]?cols[0].idx:-1,srcName:cols[0]?cols[0].name:"",tf:"none"}); renderFields(); };
   $("#cm-allCols").onclick=()=>{ if(!cols.length){toast("请先解析列");return;} fields=cols.map(c=>({out:c.name,srcIdx:c.idx,srcName:c.name,tf:"none"})); renderFields(); toast("已用全部源列重建 "+cols.length+" 个字段"); };
 
   /* ---------- 模板 ---------- */
-  function refreshTplSel(){ const names=Object.keys(templates).sort(); $("#cm-tplSel").innerHTML=`<option value="">— 载入已保存的模板 —</option>`+names.map(n=>`<option value="${escHTML(n)}">${escHTML(n)}</option>`).join(""); }
+  const tplLabel=n=>n+(n===defaultName?" ⭐默认":"")+(BUILTINS[n]&&!templates[n]?"（内置）":"");
+  function refreshTplSel(){ const names=allTplNames(); $("#cm-tplSel").innerHTML=`<option value="">— 载入模板 —</option>`+names.map(n=>`<option value="${escHTML(n)}">${escHTML(tplLabel(n))}</option>`).join(""); }
+  function setChip(sel,attr,val){ $$(sel+" .chip").forEach(c=>c.classList.toggle("on",c.dataset[attr]===val)); }
+  function loadTplSettings(t){ $("#cm-header").checked=!!t.hasHeader;
+    setChip("#cm-delimChips","d",t.delim||"auto"); curDelim=t.delim||"auto"; if(t.delimCustom!==undefined)$("#cm-delimCustom").value=t.delimCustom; $("#cm-delimCustomWrap").style.display=curDelim==="custom"?"":"none";
+    setChip("#cm-outChips","o",t.outDelim||"tab"); curOut=t.outDelim||"tab"; if(t.outCustom!==undefined)$("#cm-outCustom").value=t.outCustom; $("#cm-outCustomWrap").style.display=curOut==="custom"?"":"none";
+    $("#cm-outHeader").checked=!!t.outHeader; }
   $("#cm-tplSave").onclick=()=>{ const name=$("#cm-tplName").value.trim(); if(!name){toast("请先给模板起个名");return;} if(!fields.length){toast("还没有字段可保存");return;}
     templates[name]={hasHeader:$("#cm-header").checked,delim:curDelim,delimCustom:$("#cm-delimCustom").value,outDelim:curOut,outCustom:$("#cm-outCustom").value,outHeader:$("#cm-outHeader").checked,
       fields:fields.map(f=>({out:f.out,srcName:f.srcName,srcIdx:f.srcIdx,tf:f.tf}))}; persist(); refreshTplSel(); $("#cm-tplSel").value=name; toast(`已保存模板「${name}」（${fields.length} 个字段）`); };
-  $("#cm-tplDel").onclick=()=>{ const name=$("#cm-tplSel").value||$("#cm-tplName").value.trim(); if(!name||!templates[name]){toast("请选择要删除的模板");return;} delete templates[name]; persist(); refreshTplSel(); toast(`已删除模板「${name}」`); };
-  $("#cm-tplSel").onchange=()=>{ const name=$("#cm-tplSel").value; if(!name||!templates[name])return; const t=templates[name]; $("#cm-tplName").value=name;
-    $("#cm-header").checked=!!t.hasHeader;
-    setChip("#cm-delimChips","d",t.delim||"auto"); curDelim=t.delim||"auto"; if(t.delimCustom!==undefined)$("#cm-delimCustom").value=t.delimCustom; $("#cm-delimCustomWrap").style.display=curDelim==="custom"?"":"none";
-    setChip("#cm-outChips","o",t.outDelim||"tab"); curOut=t.outDelim||"tab"; if(t.outCustom!==undefined)$("#cm-outCustom").value=t.outCustom; $("#cm-outCustomWrap").style.display=curOut==="custom"?"":"none";
-    $("#cm-outHeader").checked=!!t.outHeader;
-    fields=(t.fields||[]).map(f=>({out:f.out,srcName:f.srcName,srcIdx:f.srcIdx==null?-1:f.srcIdx,tf:f.tf||"none"}));
-    if(cols.length)resolveFields(); renderFields(); toast(`已载入模板「${name}」，共 ${fields.length} 个字段`+(cols.length?"（已按当前源列对齐）":"，解析源列后自动对齐")); };
-  function setChip(sel,attr,val){ $$(sel+" .chip").forEach(c=>c.classList.toggle("on",c.dataset[attr]===val)); }
+  $("#cm-tplDefault").onclick=()=>{ const name=$("#cm-tplSel").value||$("#cm-tplName").value.trim(); if(!name||!getTpl(name)){toast("请先选择或保存一个模板，再设为默认");return;} defaultName=name; try{localStorage.setItem(DEFKEY,name);}catch(e){} refreshTplSel(); $("#cm-tplSel").value=name; toast(`已把「${name}」设为默认，下次打开自定义字段提取会自动载入`); };
+  $("#cm-tplDel").onclick=()=>{ const name=$("#cm-tplSel").value||$("#cm-tplName").value.trim(); if(!name){toast("请选择要删除的模板");return;} if(!templates[name]){toast(BUILTINS[name]?"内置模板不能删除":"没有这个模板");return;} delete templates[name]; persist(); if(defaultName===name){ defaultName="Azure"; try{localStorage.setItem(DEFKEY,"Azure");}catch(e){} } refreshTplSel(); toast(`已删除模板「${name}」`); };
+  $("#cm-tplSel").onchange=()=>{ const name=$("#cm-tplSel").value; const t=getTpl(name); if(!t)return; $("#cm-tplName").value=name; loadTplSettings(t); applyTpl(t); renderFields();
+    toast(`已载入模板「${name}」，共 ${fields.length} 个字段`+(cols.length?"（已按当前源列对齐）":"，解析源列后自动对齐")); };
   refreshTplSel();
+  /* 打开自定义字段提取时预载默认模板，字段先摆好，解析数据后按列名自动对齐 */
+  (function initDefault(){ const t=getTpl(defaultName); if(!t)return; $("#cm-tplName").value=defaultName; loadTplSettings(t); applyTpl(t); renderFields(); $("#cm-mapCard").style.display="block"; $("#cm-tplSel").value=defaultName; })();
 
   /* ---------- 生成导出 ---------- */
-  function tf(v,t){ v=v==null?"":String(v); switch(t){ case "trim":return v.trim(); case "lower":return v.toLowerCase(); case "upper":return v.toUpperCase();
+  function tf(v,t){ v=v==null?"":String(v); switch(t){ case "trim":return v.trim(); case "lower":return v.toLowerCase(); case "upper":return v.toUpperCase(); case "lastword":{ const s=v.trim().split(/\s+/).filter(Boolean); return s.length?s[s.length-1]:""; }
     case "first":{ const s=v.trim().split(/\s+/).filter(Boolean); return s[0]||""; } case "last":{ const s=v.trim().split(/\s+/).filter(Boolean); return s.length>1?s.slice(1).join(" "):""; } default:return v; } }
   function csvCell(v){ v=v==null?"":String(v); return /[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }
   $("#cm-run").onclick=()=>{ if(!cols.length){toast("请先在上面「解析列」");return;} if(!fields.length){toast("请至少保留一个输出字段");return;}
