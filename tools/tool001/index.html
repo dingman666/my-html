@@ -883,7 +883,7 @@
       <div class="card">
         <h2>① 导入 / 粘贴要处理的数据</h2>
         <div class="drop small" id="cm-drop">
-          <input type="file" id="cm-file" accept=".txt,.csv,.tsv,text/plain" multiple>
+          <input type="file" id="cm-file" multiple>
           <div class="icon">📄</div>
           <div class="big">导入数据文件（.txt / .csv / .tsv）</div>
           <div class="sub">带列的数据，一行一条；也可直接在下方粘贴</div>
@@ -903,6 +903,11 @@
             <label class="toggle" style="margin-top:2px"><input type="checkbox" id="cm-header" checked><span class="sw"></span>第一行是列名（标题行）</label>
             <div class="hint">开：用第一行的名字认列，模板可跨文件按列名复用；关：列名自动叫 列1、列2…</div>
           </div>
+          <div class="field">
+            <label>日期修复</label>
+            <label class="toggle" style="margin-top:2px"><input type="checkbox" id="cm-fixDates" checked><span class="sw"></span>自动修复被分隔符切断的日期</label>
+            <div class="hint">分隔符是 | 而 exp 值本身是 09|30 时会被切成两列；开启后自动还原成 09/30（仅当该行比表头多出列时才修，不会误伤正常行）</div>
+          </div>
         </div>
         <div class="actions"><button class="btn btn-primary" id="cm-parse" disabled>🧩 解析列</button><button class="btn btn-ghost" id="cm-clear">清空</button></div>
         <div class="cm-cols" id="cm-cols" style="display:none"></div>
@@ -914,8 +919,9 @@
       <div class="card" id="cm-mapCard" style="display:none">
         <h2>② 选择 / 重命名 / 排序 要导出的字段</h2>
         <div class="pane-head">
-          <span class="desc">勾出要的列、改成你要的输出名、上下排序；「变换」可把「姓名」拆成姓/名等。</span>
+          <span class="desc">解析后会自动智能识别对应列；也可手动改输出名、拖动排序、改「变换」。姓名支持无空格拆分（BrandonBrown → Brandon / Brown）。</span>
           <div class="tools">
+            <button class="btn btn-primary btn-sm" id="cm-smart" title="按源列名自动匹配 number/exp/cvv/first_name/last_name/地址等标准字段，免手工建模板">✨ 智能识别</button>
             <button class="btn btn-ghost btn-sm" id="cm-addField">＋ 添加字段</button>
             <button class="btn btn-ghost btn-sm" id="cm-allCols">↺ 用所有源列重建</button>
           </div>
@@ -2066,8 +2072,36 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
   let dataRows=[];             /* [[cell,...]] 数据行（不含标题行） */
   let fields=[];               /* [{out,srcIdx,srcName,tf}] 输出字段（可排序） */
   let curDelim="auto", curOut="tab", lastOut="", templates=load();
-  let dragI=-1, dragArm=false;
-  const TF=[["none","原样"],["first","取第一个词 = first_name（名）"],["last","取空格后其余 = last_name（姓）"],["lastword","取最后一个词（姓）"],["trim","去首尾空格"],["lower","转小写"],["upper","转大写"]];
+  let dragI=-1, dragArm=false, manualFields=false;
+  /* 智能识别：按列名（含常见别名/中英文）自动匹配标准输出字段，免手工建模板 */
+  /* 列名归一化：小写 + 去掉空格/下划线/连字符，让 card_number / Card Num / card-number 都能匹配 */
+  const norm=x=>String(x==null?"":x).toLowerCase().replace(/[\s_\-]+/g,"");
+  const SMART=[
+    {out:"number",tf:"none",alias:[/cardnumber/,/cardnum/,/cardno/,/^pan$/,/^cc$/,/^ccnum/,/^number$/,/卡号|信用卡/]},
+    {out:"exp",tf:"normdate",alias:[/^exp/,/expir/,/expdate/,/expiry/,/valid(thru|until)?/,/有效期/]},
+    {out:"cvv",tf:"none",alias:[/cvv/,/cvc/,/cvn/,/^cid$/,/securitycode/,/安全码|校验码/]},
+    {out:"first_name",tf:"first",name:"first",alias:[/firstname/,/^fname$/,/given/]},
+    {out:"last_name",tf:"last",name:"last",alias:[/lastname/,/^lname$/,/surname/,/family/]},
+    {out:"country",tf:"none",alias:[/^country$/,/^国家$/]},
+    {out:"phone",tf:"none",alias:[/phone/,/mobile/,/^tel/,/电话|手机/]},
+    {out:"address",tf:"none",alias:[/fulladdress/,/address/,/^addr/,/street/,/地址/]},
+    {out:"city",tf:"none",alias:[/^city$/,/town/,/城市/]},
+    {out:"state",tf:"none",alias:[/state/,/province/,/region/,/省|州/]},
+    {out:"zip",tf:"none",alias:[/^zip/,/postal/,/postcode/,/邮编/]},
+  ];
+  const smartFields=()=>SMART.map(x=>({out:x.out,srcName:"",srcIdx:-1,tf:x.tf||"none"}));
+  function smartMap(){ if(!cols.length){ fields=smartFields(); manualFields=false; return; }
+    const findCol=alias=>{ for(const rx of alias){ const c=cols.find(c=>rx.test(norm(c.name))); if(c)return c; } return null; };
+    const nameCol=cols.find(c=>/^name$|fullname|holder|持卡人|姓名/.test(norm(c.name)));
+    const firstCol=cols.find(c=>/firstname|^fname$|given/.test(norm(c.name)));
+    const lastCol=cols.find(c=>/lastname|^lname$|surname|family/.test(norm(c.name)));
+    const out=[];
+    for(const s of SMART){
+      if(s.name==="first"){ if(firstCol)out.push({out:s.out,srcName:firstCol.name,srcIdx:firstCol.idx,tf:"none"}); else if(nameCol)out.push({out:s.out,srcName:nameCol.name,srcIdx:nameCol.idx,tf:"first"}); else out.push({out:s.out,srcName:"",srcIdx:-1,tf:"first"}); continue; }
+      if(s.name==="last"){ if(lastCol)out.push({out:s.out,srcName:lastCol.name,srcIdx:lastCol.idx,tf:"none"}); else if(nameCol)out.push({out:s.out,srcName:nameCol.name,srcIdx:nameCol.idx,tf:"last"}); else out.push({out:s.out,srcName:"",srcIdx:-1,tf:"last"}); continue; }
+      const c=findCol(s.alias); if(c)out.push({out:s.out,srcName:c.name,srcIdx:c.idx,tf:s.tf||"none"}); else out.push({out:s.out,srcName:"",srcIdx:-1,tf:s.tf||"none"}); }
+    fields=out; manualFields=false; }
+  const TF=[["none","原样"],["first","取第一个词 = first_name（名）"],["last","取空格后其余 = last_name（姓）"],["lastword","取最后一个词（姓）"],["normdate","日期规范化（09|30 → 09/30）"],["trim","去首尾空格"],["lower","转小写"],["upper","转大写"]];
   const DEFKEY="tt.ex.cm.default";
   /* 内置模板：Azure（信用卡/账号数据 → 标准导出字段） */
   const BUILTINS={ "Azure":{ hasHeader:true, delim:"auto", outDelim:"tab", outHeader:false, fields:[
@@ -2075,7 +2109,7 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
     {out:"first_name",srcName:"Name",tf:"first"},{out:"last_name",srcName:"Name",tf:"last"},{out:"country",srcName:"Country",tf:"none"},
     {out:"phone",srcName:"Phone",tf:"none"},{out:"address",srcName:"Full Address",tf:"none"},{out:"city",srcName:"City",tf:"none"},
     {out:"state",srcName:"State",tf:"none"},{out:"zip",srcName:"Zip",tf:"none"} ] } };
-  let defaultName=null; try{ defaultName=localStorage.getItem(DEFKEY); }catch(e){} if(defaultName===null)defaultName="Azure";
+  let defaultName=null; try{ defaultName=localStorage.getItem(DEFKEY); }catch(e){} /* null = 默认走智能识别 */
   const allTplNames=()=>[...new Set([...Object.keys(BUILTINS),...Object.keys(templates)])].sort();
   const getTpl=name=>templates[name]||BUILTINS[name]||null;
   function applyTpl(t){ fields=(t.fields||[]).map(f=>({out:f.out,srcName:f.srcName,srcIdx:f.srcIdx==null?-1:f.srcIdx,tf:f.tf||"none"})); if(cols.length)resolveFields(); }
@@ -2089,14 +2123,16 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
     $("#ex-mode-list").hidden=m!=="list"; $("#ex-mode-custom").hidden=m!=="custom"; });
 
   /* ---------- 导入 / 粘贴 ---------- */
-  const okFile=f=>/\.(txt|csv|tsv)$/i.test(f.name)||f.type==="text/plain"||f.type==="text/csv";
-  bindDrop($("#cm-drop"),$("#cm-file"),async list=>{ const a=[...list].filter(okFile); if(!a.length){toast("请选择 .txt / .csv / .tsv");return;}
-    for(const f of a){ try{ files.push({name:f.name,size:f.size,text:await f.text()}); }catch(e){ toast("读取失败："+f.name); } } renderFiles(); updateParse(); });
+  const badExt=/\.(zip|rar|7z|gz|tar|png|jpe?g|gif|webp|bmp|ico|pdf|xlsx?|docx?|pptx?|exe|dll|bin|db|sqlite)$/i;
+  bindDrop($("#cm-drop"),$("#cm-file"),async list=>{ const arr=[...list]; if(!arr.length)return; const a=arr.filter(f=>!badExt.test(f.name));
+    if(!a.length){toast("这看起来不是文本/表格文件（如 Excel、压缩包、图片）。请另存为 .csv / .txt 再导入");return;}
+    let ok=0; for(const f of a){ try{ const text=await f.text(); if(/\x00/.test(text.slice(0,4000))){ toast("跳过疑似二进制文件："+f.name+"（若是 Excel 请先另存为 CSV）"); continue; } files.push({name:f.name,size:f.size,text}); ok++; }catch(e){ toast("读取失败："+f.name+"："+((e&&e.message)||e)); } }
+    renderFiles(); updateParse(); if(ok)toast(`✅ 已导入 ${ok} 个文件，共 ${srcLines().length.toLocaleString()} 行，点「解析列」`); });
   function renderFiles(){ renderFileList($("#cm-list"),files,()=>{ renderFiles(); updateParse(); }); }
   function updateParse(){ const has=files.length||$("#cm-src").value.trim(); $("#cm-parse").disabled=!has;
     const n=srcLines().length; $("#cm-srcHint").textContent=has?`约 ${n.toLocaleString()} 行数据`+(cols.length?`；已解析 ${cols.length} 列`:"（点「解析列」开始）"):"尚未输入"; }
   $("#cm-src").addEventListener("input",updateParse);
-  $("#cm-clear").onclick=()=>{ files.length=0; renderFiles(); $("#cm-src").value=""; cols=[]; dataRows=[]; fields=[]; lastOut="";
+  $("#cm-clear").onclick=()=>{ files.length=0; renderFiles(); $("#cm-src").value=""; cols=[]; dataRows=[]; fields=[]; lastOut=""; manualFields=false;
     $("#cm-mapCard").style.display="none"; $("#cm-outCard").style.display="none"; $("#cm-cols").style.display="none"; updateParse(); toast("已清空"); };
 
   /* ---------- 分隔符 ---------- */
@@ -2116,21 +2152,30 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
     const kind=curDelim==="auto"?detect(lines[0]):curDelim;
     const rowsRaw=lines.map(l=>splitRow(l,kind));
     const hasHeader=$("#cm-header").checked;
+    /* 日期修复：分隔符切断了 09|30 这类「月+年」，导致该行比表头多出列，把相邻的「月|年」合回 09/30 */
+    let dateFixN=0;
+    if($("#cm-fixDates").checked&&rowsRaw.length){
+      let expect; if(hasHeader)expect=rowsRaw[0].length; else { const cnt={}; for(const r of rowsRaw)cnt[r.length]=(cnt[r.length]||0)+1; expect=+Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]||b-a)[0]; }
+      const isMon=x=>/^\d{1,2}$/.test(x)&&+x>=1&&+x<=12, isYr=x=>/^\d{2}$/.test(x)||/^\d{4}$/.test(x);
+      for(let ri=hasHeader?1:0;ri<rowsRaw.length;ri++){ const r=rowsRaw[ri]; let g=0;
+        while(r.length>expect&&g++<30){ let hit=-1; for(let i=0;i<r.length-1;i++){ if(isMon((r[i]||"").trim())&&isYr((r[i+1]||"").trim())){ hit=i; break; } }
+          if(hit<0)break; r.splice(hit,2,(r[hit]||"").trim()+"/"+(r[hit+1]||"").trim()); dateFixN++; } }
+    }
     let names;
     if(hasHeader){ names=rowsRaw[0].map(x=>x.trim()); dataRows=rowsRaw.slice(1); }
     else { const w=rowsRaw.reduce((a,r)=>Math.max(a,r.length),0); names=Array.from({length:w},(_,i)=>"列"+(i+1)); dataRows=rowsRaw; }
     cols=names.map((n,i)=>({name:n||("列"+(i+1)),idx:i}));
     $("#cm-cols").style.display="block";
-    $("#cm-cols").innerHTML=`识别到 <b>${cols.length}</b> 列${curDelim==="auto"?`（自动判定分隔符：<b>${({tab:"Tab","ws2":"多空格",comma:"逗号","----":"----"})[kind]||kind}</b>）`:""}，数据 <b>${dataRows.length.toLocaleString()}</b> 行：`+cols.map(c=>`<span class="c">${escHTML(c.name)}</span>`).join("");
+    $("#cm-cols").innerHTML=`识别到 <b>${cols.length}</b> 列${curDelim==="auto"?`（自动判定分隔符：<b>${({tab:"Tab","ws2":"多空格",comma:"逗号","----":"----"})[kind]||kind}</b>）`:""}，数据 <b>${dataRows.length.toLocaleString()}</b> 行${dateFixN?`　·　🔧 已修复 <b>${dateFixN}</b> 处被分隔符切断的日期（→ 09/30）`:""}：`+cols.map(c=>`<span class="c">${escHTML(c.name)}</span>`).join("");
     /* 列数一致性检查：分隔符选错时，数据行会比表头多/少列，导致每列取到错位数据 */
     const lens=dataRows.map(r=>r.length), mn=lens.length?Math.min(...lens):0, mx=lens.length?Math.max(...lens):0;
     const warn=$("#cm-warn"); const bad=dataRows.length&&(mx!==cols.length||mn!==mx||cols.length<=1);
     if(bad){ warn.style.display="block"; warn.innerHTML=(cols.length<=1?`⚠️ 只解析出 <b>1</b> 列——「列分隔符」肯定不对（这段数据里的列不是用它隔开的）。请在上面改选正确的分隔符（Tab / 多空格 / 逗号 / 竖线 / ----）再点「解析列」。`:`⚠️ 表头是 <b>${cols.length}</b> 列，但数据行是 <b>${mn===mx?mn:mn+"~"+mx}</b> 列——多半是<b>「列分隔符」选错了</b>，导致下面每列取到错位的数据。请换一个分隔符（如 Tab / 逗号 / 竖线 / ----）重新点「解析列」，对照下方预览确认对齐。`); }
     else warn.style.display="none";
     buildPreview();
-    if(!fields.length){ const dt=getTpl(defaultName); if(dt)applyTpl(dt); else fields=cols.map(c=>({out:c.name,srcIdx:c.idx,srcName:c.name,tf:"none"})); } else resolveFields();
+    if(manualFields&&fields.length){ resolveFields(); } else { smartMap(); }
     renderFields(); $("#cm-mapCard").style.display="block"; updateParse();
-    toast(`已解析 ${cols.length} 列 · ${dataRows.length.toLocaleString()} 行`);
+    toast(`已解析 ${cols.length} 列 · ${dataRows.length.toLocaleString()} 行`+(manualFields?"":`，已智能识别 ${fields.filter(f=>f.srcIdx>=0).length}/${fields.length} 个字段`));
     $("#cm-mapCard").scrollIntoView({behavior:"smooth",block:"start"}); };
 
   function resolveFields(){ /* 用当前源列重新对齐：优先按列名匹配，其次按原索引 */
@@ -2158,43 +2203,48 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
   $("#cm-fields").addEventListener("input",e=>{ const row=e.target.closest(".cm-frow"); if(!row)return; const i=+row.dataset.i;
     if(e.target.classList.contains("fout"))fields[i].out=e.target.value;
     else if(e.target.classList.contains("fsrc")){ fields[i].srcIdx=+e.target.value; fields[i].srcName=cols[+e.target.value]?cols[+e.target.value].name:""; row.classList.toggle("miss",cols.length&&fields[i].srcIdx<0); }
-    else if(e.target.classList.contains("ftf"))fields[i].tf=e.target.value; });
+    else if(e.target.classList.contains("ftf"))fields[i].tf=e.target.value; manualFields=true; });
   $("#cm-fields").addEventListener("click",e=>{ const b=e.target.closest(".fbtn"); if(!b)return; const row=b.closest(".cm-frow"); const i=+row.dataset.i;
-    if(b.classList.contains("fup")&&i>0){ [fields[i-1],fields[i]]=[fields[i],fields[i-1]]; renderFields(); }
-    else if(b.classList.contains("fdn")&&i<fields.length-1){ [fields[i+1],fields[i]]=[fields[i],fields[i+1]]; renderFields(); }
-    else if(b.classList.contains("fdel")){ fields.splice(i,1); renderFields(); } });
+    if(b.classList.contains("fup")&&i>0){ [fields[i-1],fields[i]]=[fields[i],fields[i-1]]; manualFields=true; renderFields(); }
+    else if(b.classList.contains("fdn")&&i<fields.length-1){ [fields[i+1],fields[i]]=[fields[i],fields[i+1]]; manualFields=true; renderFields(); }
+    else if(b.classList.contains("fdel")){ fields.splice(i,1); manualFields=true; renderFields(); } });
   (function(){ const fbox=$("#cm-fields");
     fbox.addEventListener("mousedown",e=>{ dragArm=!!e.target.closest(".fdrag"); });
     fbox.addEventListener("mouseup",()=>{ dragArm=false; });
     fbox.addEventListener("dragstart",e=>{ const row=e.target.closest(".cm-frow"); if(!row||!dragArm){ e.preventDefault(); return; } dragI=+row.dataset.i; row.classList.add("dragging"); e.dataTransfer.effectAllowed="move"; try{e.dataTransfer.setData("text/plain",String(dragI));}catch(_){} });
     fbox.addEventListener("dragover",e=>{ if(dragI<0)return; e.preventDefault(); const row=e.target.closest(".cm-frow"); fbox.querySelectorAll(".dragover").forEach(x=>x.classList.remove("dragover")); if(row&&+row.dataset.i!==dragI)row.classList.add("dragover"); });
-    fbox.addEventListener("drop",e=>{ if(dragI<0)return; e.preventDefault(); const row=e.target.closest(".cm-frow"); if(row){ const to=+row.dataset.i; if(to!==dragI){ const [m]=fields.splice(dragI,1); fields.splice(to,0,m); } } dragI=-1; dragArm=false; renderFields(); });
+    fbox.addEventListener("drop",e=>{ if(dragI<0)return; e.preventDefault(); const row=e.target.closest(".cm-frow"); if(row){ const to=+row.dataset.i; if(to!==dragI){ const [m]=fields.splice(dragI,1); fields.splice(to,0,m); manualFields=true; } } dragI=-1; dragArm=false; renderFields(); });
     fbox.addEventListener("dragend",()=>{ dragI=-1; dragArm=false; fbox.querySelectorAll(".dragging,.dragover").forEach(x=>x.classList.remove("dragging","dragover")); }); })();
-  $("#cm-addField").onclick=()=>{ fields.push({out:cols[0]?cols[0].name:"新字段",srcIdx:cols[0]?cols[0].idx:-1,srcName:cols[0]?cols[0].name:"",tf:"none"}); renderFields(); };
-  $("#cm-allCols").onclick=()=>{ if(!cols.length){toast("请先解析列");return;} fields=cols.map(c=>({out:c.name,srcIdx:c.idx,srcName:c.name,tf:"none"})); renderFields(); toast("已用全部源列重建 "+cols.length+" 个字段"); };
+  $("#cm-addField").onclick=()=>{ fields.push({out:cols[0]?cols[0].name:"新字段",srcIdx:cols[0]?cols[0].idx:-1,srcName:cols[0]?cols[0].name:"",tf:"none"}); manualFields=true; renderFields(); };
+  $("#cm-allCols").onclick=()=>{ if(!cols.length){toast("请先解析列");return;} fields=cols.map(c=>({out:c.name,srcIdx:c.idx,srcName:c.name,tf:"none"})); manualFields=true; renderFields(); toast("已用全部源列重建 "+cols.length+" 个字段"); };
+  $("#cm-smart").onclick=()=>{ if(!cols.length){toast("请先在上面「解析列」");return;} smartMap(); renderFields(); const hit=fields.filter(f=>f.srcIdx>=0).length; toast(`✨ 已智能识别 ${hit}/${fields.length} 个字段`+(hit<fields.length?"，剩下的没找到对应列，可手动选或改列名":"")); };
 
   /* ---------- 模板 ---------- */
   const tplLabel=n=>n+(n===defaultName?" ⭐默认":"")+(BUILTINS[n]&&!templates[n]?"（内置）":"");
   function refreshTplSel(){ const names=allTplNames(); $("#cm-tplSel").innerHTML=`<option value="">— 载入模板 —</option>`+names.map(n=>`<option value="${escHTML(n)}">${escHTML(tplLabel(n))}</option>`).join(""); }
   function setChip(sel,attr,val){ $$(sel+" .chip").forEach(c=>c.classList.toggle("on",c.dataset[attr]===val)); }
-  function loadTplSettings(t){ $("#cm-header").checked=!!t.hasHeader;
+  function loadTplSettings(t){ $("#cm-header").checked=!!t.hasHeader; $("#cm-fixDates").checked=t.fixDates!==false;
     setChip("#cm-delimChips","d",t.delim||"auto"); curDelim=t.delim||"auto"; if(t.delimCustom!==undefined)$("#cm-delimCustom").value=t.delimCustom; $("#cm-delimCustomWrap").style.display=curDelim==="custom"?"":"none";
     setChip("#cm-outChips","o",t.outDelim||"tab"); curOut=t.outDelim||"tab"; if(t.outCustom!==undefined)$("#cm-outCustom").value=t.outCustom; $("#cm-outCustomWrap").style.display=curOut==="custom"?"":"none";
     $("#cm-outHeader").checked=!!t.outHeader; }
   $("#cm-tplSave").onclick=()=>{ const name=$("#cm-tplName").value.trim(); if(!name){toast("请先给模板起个名");return;} if(!fields.length){toast("还没有字段可保存");return;}
-    templates[name]={hasHeader:$("#cm-header").checked,delim:curDelim,delimCustom:$("#cm-delimCustom").value,outDelim:curOut,outCustom:$("#cm-outCustom").value,outHeader:$("#cm-outHeader").checked,
+    templates[name]={hasHeader:$("#cm-header").checked,fixDates:$("#cm-fixDates").checked,delim:curDelim,delimCustom:$("#cm-delimCustom").value,outDelim:curOut,outCustom:$("#cm-outCustom").value,outHeader:$("#cm-outHeader").checked,
       fields:fields.map(f=>({out:f.out,srcName:f.srcName,srcIdx:f.srcIdx,tf:f.tf}))}; persist(); refreshTplSel(); $("#cm-tplSel").value=name; toast(`已保存模板「${name}」（${fields.length} 个字段）`); };
   $("#cm-tplDefault").onclick=()=>{ const name=$("#cm-tplSel").value||$("#cm-tplName").value.trim(); if(!name||!getTpl(name)){toast("请先选择或保存一个模板，再设为默认");return;} defaultName=name; try{localStorage.setItem(DEFKEY,name);}catch(e){} refreshTplSel(); $("#cm-tplSel").value=name; toast(`已把「${name}」设为默认，下次打开自定义字段提取会自动载入`); };
   $("#cm-tplDel").onclick=()=>{ const name=$("#cm-tplSel").value||$("#cm-tplName").value.trim(); if(!name){toast("请选择要删除的模板");return;} if(!templates[name]){toast(BUILTINS[name]?"内置模板不能删除":"没有这个模板");return;} delete templates[name]; persist(); if(defaultName===name){ defaultName="Azure"; try{localStorage.setItem(DEFKEY,"Azure");}catch(e){} } refreshTplSel(); toast(`已删除模板「${name}」`); };
-  $("#cm-tplSel").onchange=()=>{ const name=$("#cm-tplSel").value; const t=getTpl(name); if(!t)return; $("#cm-tplName").value=name; loadTplSettings(t); applyTpl(t); renderFields();
+  $("#cm-tplSel").onchange=()=>{ const name=$("#cm-tplSel").value; const t=getTpl(name); if(!t)return; $("#cm-tplName").value=name; loadTplSettings(t); applyTpl(t); manualFields=true; renderFields();
     toast(`已载入模板「${name}」，共 ${fields.length} 个字段`+(cols.length?"（已按当前源列对齐）":"，解析源列后自动对齐")); };
   refreshTplSel();
   /* 打开自定义字段提取时预载默认模板，字段先摆好，解析数据后按列名自动对齐 */
-  (function initDefault(){ const t=getTpl(defaultName); if(!t)return; $("#cm-tplName").value=defaultName; loadTplSettings(t); applyTpl(t); renderFields(); $("#cm-mapCard").style.display="block"; $("#cm-tplSel").value=defaultName; })();
+  (function initDefault(){ if(defaultName&&getTpl(defaultName)){ const t=getTpl(defaultName); $("#cm-tplName").value=defaultName; loadTplSettings(t); applyTpl(t); manualFields=true; $("#cm-tplSel").value=defaultName; }
+    else { fields=smartFields(); manualFields=false; } renderFields(); $("#cm-mapCard").style.display="block"; })();
 
   /* ---------- 生成导出 ---------- */
-  function tf(v,t){ v=v==null?"":String(v); switch(t){ case "trim":return v.trim(); case "lower":return v.toLowerCase(); case "upper":return v.toUpperCase(); case "lastword":{ const s=v.trim().split(/\s+/).filter(Boolean); return s.length?s[s.length-1]:""; }
-    case "first":{ const s=v.trim().split(/\s+/).filter(Boolean); return s[0]||""; } case "last":{ const s=v.trim().split(/\s+/).filter(Boolean); return s.length>1?s.slice(1).join(" "):""; } default:return v; } }
+  /* 把姓名拆成词：有空格按空格；没空格按驼峰大小写边界（BrandonBrown → Brandon Brown、StephannyDeGorter → Stephanny De Gorter） */
+  function nameWords(v){ v=String(v==null?"":v).trim(); if(!v)return []; if(/[\s,]/.test(v))return v.split(/[\s,]+/).filter(Boolean);
+    const parts=v.replace(/([a-z\d])([A-Z])/g,"$1 $2").replace(/([A-Z]+)([A-Z][a-z])/g,"$1 $2").split(/\s+/).filter(Boolean); return parts.length?parts:[v]; }
+  function tf(v,t){ v=v==null?"":String(v); switch(t){ case "trim":return v.trim(); case "lower":return v.toLowerCase(); case "upper":return v.toUpperCase();
+    case "first":{ const s=nameWords(v); return s[0]||""; } case "last":{ const s=nameWords(v); return s.length>1?s.slice(1).join(" "):""; } case "lastword":{ const s=nameWords(v); return s.length?s[s.length-1]:""; } case "normdate":{ const m=v.trim().match(/^(\d{1,2})\s*[\/|.\-]\s*(\d{2,4})$/); return m?m[1]+"/"+m[2]:v.trim(); } default:return v; } }
   function csvCell(v){ v=v==null?"":String(v); return /[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }
   $("#cm-run").onclick=()=>{ if(!cols.length){toast("请先在上面「解析列」");return;} if(!fields.length){toast("请至少保留一个输出字段");return;}
     const outKind=curOut, sep=outKind==="comma"?",":outKind==="tab"?"\t":outKind==="custom"?delimChar("custom","cm-outCustom"):outKind;
