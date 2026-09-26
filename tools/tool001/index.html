@@ -363,6 +363,14 @@
   .cm-preview th{background:var(--chip);position:sticky;top:0;font-weight:700}
   .cm-preview th .ci{color:var(--text-3);font-weight:400;margin-right:6px}
   .cm-preview td.empty{color:var(--text-3)}
+  .cm-outTableWrap{margin-top:6px;overflow:auto;max-height:540px;border:1px solid var(--line);border-radius:10px}
+  .cm-outTable{border-collapse:collapse;font-size:13px;white-space:nowrap;min-width:100%}
+  .cm-outTable th,.cm-outTable td{border:1px solid var(--line);padding:6px 12px;text-align:left;max-width:340px;overflow:hidden;text-overflow:ellipsis}
+  .cm-outTable th{background:var(--chip);position:sticky;top:0;font-weight:700;z-index:2}
+  .cm-outTable td.empty{color:var(--text-3)}
+  .cm-outTable tbody tr:nth-child(even){background:rgba(127,127,127,.045)}
+  .cm-outTable .rn{color:var(--text-3);font-variant-numeric:tabular-nums;text-align:right;position:sticky;left:0;background:var(--card-solid);z-index:1}
+  .cm-outTable thead .rn{z-index:3}
   .cm-frow select.fsrc option{font-family:inherit}
   @media(max-width:640px){ .cm-frow{flex-wrap:wrap} .cm-frow input.fout,.cm-frow select{flex:1 1 100%} .cm-frow .fbtns{width:auto} }
 
@@ -885,8 +893,8 @@
         <div class="drop small" id="cm-drop">
           <input type="file" id="cm-file" multiple>
           <div class="icon">📄</div>
-          <div class="big">导入数据文件（.txt / .csv / .tsv）</div>
-          <div class="sub">带列的数据，一行一条；也可直接在下方粘贴</div>
+          <div class="big">导入数据文件（Excel .xlsx / .csv / .tsv / .txt / JSON）</div>
+          <div class="sub">带列的数据，一行一条；Excel 和 JSON 会自动转成表格；也可直接在下方粘贴</div>
         </div>
         <div class="files" id="cm-list"></div>
         <textarea id="cm-src" class="paste bigbox" spellcheck="false" placeholder="粘贴带列的数据，例如（第一行是列名）：&#10;Order ID	Type	Card Num	Exp Date	CVV	Name	Phone	Full Address	City	State	Zip	Country&#10;1001	visa	4111111111111111	12/28	123	John Smith	13800000000	1 Main St	LA	CA	90001	US"></textarea>
@@ -948,7 +956,7 @@
           </div>
           <div class="field">
             <label>选项</label>
-            <label class="toggle" style="margin-top:2px"><input type="checkbox" id="cm-outHeader"><span class="sw"></span>导出结果带列名标题行</label>
+            <label class="toggle" style="margin-top:2px"><input type="checkbox" id="cm-outHeader" checked><span class="sw"></span>复制 / 下载带标题行（表格显示始终带）</label>
           </div>
         </div>
         <div class="actions"><button class="btn btn-primary" id="cm-run">🔎 生成导出</button></div>
@@ -957,9 +965,12 @@
       <div class="result" id="cm-outCard" style="display:none">
         <div class="stats" id="cm-stats"></div>
         <div class="card">
-          <div class="pane-head"><span class="desc">按你设定的字段与顺序导出</span><div class="tools"><button class="btn btn-ghost btn-sm" id="cm-copy">复制</button><button class="btn btn-primary btn-sm" id="cm-dlTxt">下载 TXT</button><button class="btn btn-ghost btn-sm" id="cm-dlCsv">下载 CSV</button></div></div>
+          <div class="pane-head"><span class="desc">按你设定的字段与顺序导出</span><div class="tools">
+            <div class="tabs tabs-mini" id="cm-outView"><button class="subtab active" data-v="table" type="button">表格</button><button class="subtab" data-v="text" type="button">文本</button></div>
+            <button class="btn btn-ghost btn-sm" id="cm-copy">复制</button><button class="btn btn-primary btn-sm" id="cm-dlTxt">下载 TXT</button><button class="btn btn-ghost btn-sm" id="cm-dlCsv">下载 CSV</button><button class="btn btn-ghost btn-sm" id="cm-dlXlsx">下载 Excel</button></div></div>
           <div class="note" id="cm-outNote"></div>
-          <textarea id="cm-out" class="paste bigbox" readonly spellcheck="false"></textarea>
+          <div class="cm-outTableWrap" id="cm-outTableWrap"><table class="cm-outTable" id="cm-outTable"></table></div>
+          <textarea id="cm-out" class="paste bigbox" readonly spellcheck="false" hidden></textarea>
         </div>
       </div>
     </div>
@@ -2123,10 +2134,56 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
     $("#ex-mode-list").hidden=m!=="list"; $("#ex-mode-custom").hidden=m!=="custom"; });
 
   /* ---------- 导入 / 粘贴 ---------- */
-  const badExt=/\.(zip|rar|7z|gz|tar|png|jpe?g|gif|webp|bmp|ico|pdf|xlsx?|docx?|pptx?|exe|dll|bin|db|sqlite)$/i;
-  bindDrop($("#cm-drop"),$("#cm-file"),async list=>{ const arr=[...list]; if(!arr.length)return; const a=arr.filter(f=>!badExt.test(f.name));
-    if(!a.length){toast("这看起来不是文本/表格文件（如 Excel、压缩包、图片）。请另存为 .csv / .txt 再导入");return;}
-    let ok=0; for(const f of a){ try{ const text=await f.text(); if(/\x00/.test(text.slice(0,4000))){ toast("跳过疑似二进制文件："+f.name+"（若是 Excel 请先另存为 CSV）"); continue; } files.push({name:f.name,size:f.size,text}); ok++; }catch(e){ toast("读取失败："+f.name+"："+((e&&e.message)||e)); } }
+  /* ---- 读 Excel .xlsx（浏览器自带解压 DecompressionStream，无需外部库）---- */
+  async function inflateRaw(bytes){ if(typeof DecompressionStream==="undefined")throw new Error("浏览器太旧，不支持解压；请更新 Chrome/Edge 或另存为 CSV");
+    const ds=new DecompressionStream("deflate-raw"); const stream=new Blob([bytes]).stream().pipeThrough(ds); const ab=await new Response(stream).arrayBuffer(); return new Uint8Array(ab); }
+  function decXml(t){ return String(t).replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&#(\d+);/g,(m,n)=>String.fromCodePoint(+n)).replace(/&#x([0-9a-f]+);/gi,(m,n)=>String.fromCodePoint(parseInt(n,16))).replace(/&amp;/g,"&"); }
+  function colIdx(ref){ const m=/^([A-Z]+)/.exec(ref||""); if(!m)return -1; let n=0; for(const ch of m[1])n=n*26+(ch.charCodeAt(0)-64); return n-1; }
+  async function readXlsx(file){ const buf=new Uint8Array(await file.arrayBuffer()); const dv=new DataView(buf.buffer,buf.byteOffset,buf.byteLength);
+    /* 找 EOCD（zip 结尾），拿中央目录 */
+    let eo=-1; for(let i=buf.length-22;i>=0&&i>=buf.length-65557;i--){ if(dv.getUint32(i,true)===0x06054b50){ eo=i; break; } }
+    if(eo<0)throw new Error("不是有效的 .xlsx 文件");
+    const cnt=dv.getUint16(eo+10,true); let pOff=dv.getUint32(eo+16,true); const cd={};
+    for(let n=0;n<cnt&&pOff+46<=buf.length;n++){ if(dv.getUint32(pOff,true)!==0x02014b50)break;
+      const method=dv.getUint16(pOff+10,true), compSize=dv.getUint32(pOff+20,true), nameLen=dv.getUint16(pOff+28,true), extraLen=dv.getUint16(pOff+30,true), commentLen=dv.getUint16(pOff+32,true), lho=dv.getUint32(pOff+42,true);
+      const name=new TextDecoder().decode(buf.subarray(pOff+46,pOff+46+nameLen)); cd[name]={method,compSize,lho}; pOff+=46+nameLen+extraLen+commentLen; }
+    const extract=async e=>{ if(!e)return null; const lnl=dv.getUint16(e.lho+26,true), lel=dv.getUint16(e.lho+28,true); const ds=e.lho+30+lnl+lel; const data=buf.subarray(ds,ds+e.compSize);
+      if(e.method===0)return data; if(e.method===8)return await inflateRaw(data); throw new Error("不支持的压缩方式 "+e.method); };
+    const dec=new TextDecoder("utf-8");
+    /* 共享字符串 */
+    let ss=[]; if(cd["xl/sharedStrings.xml"]){ const xml=dec.decode(await extract(cd["xl/sharedStrings.xml"])); const re=/<si\b[^>]*>([\s\S]*?)<\/si>/g; let m; while((m=re.exec(xml))){ let t="",tm; const tre=/<t\b[^>]*>([\s\S]*?)<\/t>/g; while((tm=tre.exec(m[1])))t+=decXml(tm[1]); ss.push(t); } }
+    /* 第一个工作表 */
+    const sheetName=Object.keys(cd).filter(n=>/^xl\/worksheets\/sheet\d+\.xml$/.test(n)).sort((a,b)=>(+a.replace(/\D/g,""))-(+b.replace(/\D/g,"")))[0];
+    if(!sheetName)throw new Error("Excel 里找不到工作表");
+    const sx=dec.decode(await extract(cd[sheetName])); const rows=[]; const rowRe=/<row\b[^>]*>([\s\S]*?)<\/row>/g; let rm;
+    while((rm=rowRe.exec(sx))){ const cells=[]; const cre=/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g; let cm;
+      while((cm=cre.exec(rm[1]))){ const attrs=cm[1]||"",body=cm[2]||""; const ref=(attrs.match(/r="([A-Z]+\d+)"/)||[])[1]; let ci=ref?colIdx(ref):cells.length; if(ci<0)ci=cells.length;
+        const t=(attrs.match(/t="([^"]+)"/)||[])[1]; let val="";
+        if(t==="s"){ const v=(body.match(/<v[^>]*>([\s\S]*?)<\/v>/)||[])[1]; val=ss[+v]!=null?ss[+v]:""; }
+        else if(t==="inlineStr"||t==="str"){ const it=body.match(/<t[^>]*>([\s\S]*?)<\/t>/); val=it?decXml(it[1]):decXml((body.match(/<v[^>]*>([\s\S]*?)<\/v>/)||[])[1]||""); }
+        else { const v=body.match(/<v[^>]*>([\s\S]*?)<\/v>/); val=v?decXml(v[1]):""; }
+        while(cells.length<ci)cells.push(""); cells[ci]=val; }
+      rows.push(cells); }
+    const w=rows.reduce((a,r)=>Math.max(a,r.length),0); for(const r of rows)while(r.length<w)r.push("");
+    return rows.map(r=>r.join("\t")).join("\n"); }
+  /* ---- JSON（对象数组）转表格 ---- */
+  function jsonToTsv(text){ let data; try{ data=JSON.parse(text); }catch(e){ return null; }
+    let arr=Array.isArray(data)?data:null; if(!arr&&data&&typeof data==="object"){ for(const k of ["data","rows","items","list","result","records"])if(Array.isArray(data[k])){ arr=data[k]; break; } if(!arr)arr=[data]; }
+    if(!arr||!arr.length||typeof arr[0]!=="object"||arr[0]==null)return null;
+    const keys=[]; for(const o of arr)if(o&&typeof o==="object")for(const k of Object.keys(o))if(!keys.includes(k))keys.push(k);
+    if(!keys.length)return null;
+    const out=[keys.join("\t")]; for(const o of arr)out.push(keys.map(k=>{ let v=o?o[k]:""; if(v==null)return ""; if(typeof v==="object")return JSON.stringify(v); return String(v).replace(/[\t\r\n]+/g," "); }).join("\t")); return out.join("\n"); }
+  const hardBinExt=/\.(zip|rar|7z|gz|tar|png|jpe?g|gif|webp|bmp|ico|svg|pdf|xls|doc|docx|ppt|pptx|exe|dll|bin|db|sqlite|mp[34]|mov|avi)$/i;
+  bindDrop($("#cm-drop"),$("#cm-file"),async list=>{ const arr=[...list]; if(!arr.length)return; let ok=0,skip=0;
+    for(const f of arr){ const nm=(f.name||"").toLowerCase();
+      try{
+        if(/\.xlsx$/.test(nm)){ const tsv=await readXlsx(f); files.push({name:f.name,size:f.size,text:tsv}); ok++; continue; }
+        if(hardBinExt.test(nm)){ toast("暂不支持的格式："+f.name+(/\.xls$/.test(nm)?"（老式 .xls 请在 Excel 里另存为 .xlsx）":"（可另存为 .csv / .xlsx）")); skip++; continue; }
+        const text=await f.text();
+        if(/\x00/.test(text.slice(0,4000))){ toast("跳过疑似二进制文件："+f.name); skip++; continue; }
+        const js=/^\s*[[{]/.test(text)?jsonToTsv(text):null;
+        files.push({name:f.name,size:f.size,text:js||text}); ok++;
+      }catch(e){ toast("读取失败："+f.name+"："+((e&&e.message)||e)); skip++; } }
     renderFiles(); updateParse(); if(ok)toast(`✅ 已导入 ${ok} 个文件，共 ${srcLines().length.toLocaleString()} 行，点「解析列」`); });
   function renderFiles(){ renderFileList($("#cm-list"),files,()=>{ renderFiles(); updateParse(); }); }
   function updateParse(){ const has=files.length||$("#cm-src").value.trim(); $("#cm-parse").disabled=!has;
@@ -2246,23 +2303,34 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
   function tf(v,t){ v=v==null?"":String(v); switch(t){ case "trim":return v.trim(); case "lower":return v.toLowerCase(); case "upper":return v.toUpperCase();
     case "first":{ const s=nameWords(v); return s[0]||""; } case "last":{ const s=nameWords(v); return s.length>1?s.slice(1).join(" "):""; } case "lastword":{ const s=nameWords(v); return s.length?s[s.length-1]:""; } case "normdate":{ const m=v.trim().match(/^(\d{1,2})\s*[\/|.\-]\s*(\d{2,4})$/); return m?m[1]+"/"+m[2]:v.trim(); } default:return v; } }
   function csvCell(v){ v=v==null?"":String(v); return /[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }
-  $("#cm-run").onclick=()=>{ if(!cols.length){toast("请先在上面「解析列」");return;} if(!fields.length){toast("请至少保留一个输出字段");return;}
-    const outKind=curOut, sep=outKind==="comma"?",":outKind==="tab"?"\t":outKind==="custom"?delimChar("custom","cm-outCustom"):outKind;
-    const cellFn=outKind==="comma"?csvCell:(v=>v==null?"":String(v));
-    const lines=[]; if($("#cm-outHeader").checked)lines.push(fields.map(f=>cellFn(f.out)).join(sep));
+  function genOutput(){ const outKind=curOut, sep=outKind==="comma"?",":outKind==="tab"?"\t":outKind==="custom"?delimChar("custom","cm-outCustom"):outKind;
+    const cellFn=outKind==="comma"?csvCell:(v=>v==null?"":String(v)); const withHead=$("#cm-outHeader").checked;
+    const lines=[]; if(withHead)lines.push(fields.map(f=>cellFn(f.out)).join(sep));
     for(const row of dataRows){ lines.push(fields.map(f=>cellFn(tf(f.srcIdx>=0?row[f.srcIdx]:"",f.tf))).join(sep)); }
     lastOut=lines.join("\r\n");
     const PREV=500, shown=lines.slice(0,PREV);
-    $("#cm-out").value=shown.join("\n");
+    $("#cm-out").value=shown.join("\n"); renderOutTable();
     const note=$("#cm-outNote"); if(lines.length>PREV){ note.style.display="block"; note.textContent=`共 ${lines.length.toLocaleString()} 行，仅预览前 ${PREV} 行；复制 / 下载为全部。`; } else note.style.display="none";
     const missN=fields.filter(f=>f.srcIdx<0).length;
     $("#cm-stats").innerHTML=`<div class="stat"><div class="n">${dataRows.length.toLocaleString()}</div><div class="l">源数据行</div></div><div class="stat ok"><div class="n">${fields.length}</div><div class="l">输出字段</div></div><div class="stat arc"><div class="n">${(lines.length).toLocaleString()}</div><div class="l">导出行数</div></div>`+(missN?`<div class="stat dup"><div class="n">${missN}</div><div class="l">留空字段</div></div>`:"");
-    $("#cm-outCard").style.display="block"; $("#cm-outCard").scrollIntoView({behavior:"smooth",block:"start"});
+    $("#cm-outCard").style.display="block"; }
+  $("#cm-run").onclick=()=>{ if(!cols.length){toast("请先在上面「解析列」");return;} if(!fields.length){toast("请至少保留一个输出字段");return;}
+    const missN=fields.filter(f=>f.srcIdx<0).length; genOutput(); $("#cm-outCard").scrollIntoView({behavior:"smooth",block:"start"});
     toast(`已生成：${fields.length} 列 × ${dataRows.length.toLocaleString()} 行`+(missN?`（${missN} 个字段当前源里没有、已留空）`:"")); };
+  /* 勾选「带标题行」后即时刷新已生成的结果（文本/表格/CSV/Excel/复制统一生效） */
+  $("#cm-outHeader").addEventListener("change",()=>{ if($("#cm-outCard").style.display!=="none"&&cols.length&&fields.length)genOutput(); });
+  function renderOutTable(){ const PREV=500, box=$("#cm-outTable"); const n=Math.min(PREV,dataRows.length);
+    let h='<thead><tr><th class="rn">#</th>'+fields.map(f=>`<th>${escHTML(f.out||"")}</th>`).join("")+'</tr></thead><tbody>';
+    for(let i=0;i<n;i++){ const row=dataRows[i]; h+=`<tr><td class="rn">${i+1}</td>`+fields.map(f=>{ const v=String(tf(f.srcIdx>=0?row[f.srcIdx]:"",f.tf)); return `<td class="${v===""?"empty":""}" title="${escHTML(v)}">${v===""?"—":escHTML(v)}</td>`; }).join("")+"</tr>"; }
+    box.innerHTML=h+"</tbody>"; }
+  $$("#cm-outView .subtab").forEach(b=>b.onclick=()=>{ $$("#cm-outView .subtab").forEach(x=>x.classList.toggle("active",x===b)); const v=b.dataset.v; $("#cm-outTableWrap").hidden=v!=="table"; $("#cm-out").hidden=v!=="text"; });
   $("#cm-copy").onclick=async ()=>{ if(!lastOut){toast("请先生成");return;} toast(await copyTextSafe(lastOut)?"已复制全部导出":"复制失败"); };
+  $("#cm-dlXlsx").onclick=()=>{ if(!fields.length||!cols.length){toast("请先生成");return;}
+    const head=fields.map(f=>f.out||""); const body=dataRows.map(row=>fields.map(f=>String(tf(f.srcIdx>=0?row[f.srcIdx]:"",f.tf))));
+    const X=window.__toXLSX; if(!X){toast("Excel 导出暂不可用，请用 CSV");return;} download(X({head,body,kinds:head.map(()=>"")},{header:$("#cm-outHeader").checked},"导出"),"自定义导出.xlsx"); };
   $("#cm-dlTxt").onclick=()=>{ if(!lastOut){toast("请先生成");return;} download(new Blob([lastOut],{type:"text/plain;charset=utf-8"}),"自定义导出.txt"); };
   $("#cm-dlCsv").onclick=()=>{ if(!fields.length||!cols.length){toast("请先生成");return;}
-    const lines=[]; lines.push(fields.map(f=>csvCell(f.out)).join(",")); for(const row of dataRows)lines.push(fields.map(f=>csvCell(tf(f.srcIdx>=0?row[f.srcIdx]:"",f.tf))).join(",")); /* CSV 始终带表头 */
+    const lines=[]; if($("#cm-outHeader").checked)lines.push(fields.map(f=>csvCell(f.out)).join(",")); for(const row of dataRows)lines.push(fields.map(f=>csvCell(tf(f.srcIdx>=0?row[f.srcIdx]:"",f.tf))).join(","));
     download(new Blob(["﻿"+lines.join("\r\n")],{type:"text/csv;charset=utf-8"}),"自定义导出.csv"); };
 
   updateParse();
@@ -2665,6 +2733,7 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
   }
   const xml=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g,"");
   function colName(n){ let s=""; n++; while(n>0){ const m=(n-1)%26; s=String.fromCharCode(65+m)+s; n=(n-m-1)/26; } return s; }
+  try{window.__toXLSX=toXLSX;}catch(e){}
   function toXLSX(t,c,sheetName){
     const enc=new TextEncoder();
     const widths=t.head.map((h,i)=>{ let w=Math.max(h.length*2.2,6); for(const row of t.body){ for(const part of row[i].split("\n"))w=Math.max(w,part.length*1.15+2); } return Math.min(60,Math.ceil(w)); });
