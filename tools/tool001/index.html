@@ -2162,7 +2162,7 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
         if(t==="s"){ const v=(body.match(/<v[^>]*>([\s\S]*?)<\/v>/)||[])[1]; val=ss[+v]!=null?ss[+v]:""; }
         else if(t==="inlineStr"||t==="str"){ const it=body.match(/<t[^>]*>([\s\S]*?)<\/t>/); val=it?decXml(it[1]):decXml((body.match(/<v[^>]*>([\s\S]*?)<\/v>/)||[])[1]||""); }
         else { const v=body.match(/<v[^>]*>([\s\S]*?)<\/v>/); val=v?decXml(v[1]):""; }
-        while(cells.length<ci)cells.push(""); cells[ci]=val; }
+        while(cells.length<ci)cells.push(""); cells[ci]=String(val).replace(/[\t\r\n\u00a0]+/g," "); }
       rows.push(cells); }
     const w=rows.reduce((a,r)=>Math.max(a,r.length),0); for(const r of rows)while(r.length<w)r.push("");
     return rows.map(r=>r.join("\t")).join("\n"); }
