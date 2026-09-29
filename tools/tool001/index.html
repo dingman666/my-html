@@ -2315,7 +2315,7 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
 
   /* ---------- 生成导出 ---------- */
   /* 把姓名拆成词：有空格按空格；没空格按驼峰大小写边界（BrandonBrown → Brandon Brown、StephannyDeGorter → Stephanny De Gorter） */
-  function nameWords(v){ v=String(v==null?"":v).trim(); if(!v)return []; if(/[\s,]/.test(v))return v.split(/[\s,]+/).filter(Boolean);
+  function nameWords(v){ v=String(v==null?"":v).trim(); if(!v)return []; if(/[\s,._]/.test(v))return v.split(/[\s,._]+/).filter(Boolean);
     const parts=v.replace(/([a-z\d])([A-Z])/g,"$1 $2").replace(/([A-Z]+)([A-Z][a-z])/g,"$1 $2").split(/\s+/).filter(Boolean); return parts.length?parts:[v]; }
   function tf(v,t){ v=v==null?"":String(v); switch(t){ case "trim":return v.trim(); case "lower":return v.toLowerCase(); case "upper":return v.toUpperCase();
     case "first":{ const s=nameWords(v); return s[0]||""; } case "last":{ const s=nameWords(v); return s.length>1?s.slice(1).join(" "):""; } case "lastword":{ const s=nameWords(v); return s.length?s[s.length-1]:""; } case "normdate":{ const m=v.trim().match(/^(\d{1,2})\s*[\/|.\-]\s*(\d{2,4})$/); return m?m[1]+"/"+m[2]:v.trim(); } default:return v; } }
