@@ -2222,8 +2222,11 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
         while(r.length>expect&&g++<30){ let hit=-1; for(let i=0;i<r.length-1;i++){ if(isMon((r[i]||"").trim())&&isYr((r[i+1]||"").trim())){ hit=i; break; } }
           if(hit<0)break; r.splice(hit,2,(r[hit]||"").trim()+"/"+(r[hit+1]||"").trim()); dateFixN++; } }
     }
-    let names;
-    if(hasHeader){ names=rowsRaw[0].map(x=>x.trim()); dataRows=rowsRaw.slice(1); }
+    let names, dupHeadN=0;
+    if(hasHeader){ names=rowsRaw[0].map(x=>x.trim()); dataRows=rowsRaw.slice(1);
+      /* 多个文件合并导入时，除第一份外每份的标题行会混进数据；删掉与标题完全相同的重复行 */
+      const rowKey=r=>r.map(x=>String(x==null?"":x).trim()).join("\u0001"); const headKey=rowKey(rowsRaw[0]);
+      dataRows=dataRows.filter(r=>{ if(rowKey(r)===headKey){ dupHeadN++; return false; } return true; }); }
     else { const w=rowsRaw.reduce((a,r)=>Math.max(a,r.length),0); names=Array.from({length:w},(_,i)=>"列"+(i+1)); dataRows=rowsRaw; }
     cols=names.map((n,i)=>({name:n||("列"+(i+1)),idx:i}));
     /* 月+年合并：exp_month / exp_year 分开两列时，合成一个 exp 列（09/27） */
@@ -2240,7 +2243,7 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
       }
     }
     $("#cm-cols").style.display="block";
-    $("#cm-cols").innerHTML=`识别到 <b>${cols.length}</b> 列${curDelim==="auto"?`（自动判定分隔符：<b>${({tab:"Tab","ws2":"多空格",comma:"逗号","----":"----"})[kind]||kind}</b>）`:""}，数据 <b>${dataRows.length.toLocaleString()}</b> 行${dateFixN?`　·　🔧 已修复 <b>${dateFixN}</b> 处被分隔符切断的日期（→ 09/30）`:""}${combExpN?`　·　🧷 已合并月+年生成 <b>exp</b> 列 <b>${combExpN}</b> 行（→ 09/27）`:""}：`+cols.map(c=>`<span class="c">${escHTML(c.name)}</span>`).join("");
+    $("#cm-cols").innerHTML=`识别到 <b>${cols.length}</b> 列${curDelim==="auto"?`（自动判定分隔符：<b>${({tab:"Tab","ws2":"多空格",comma:"逗号","----":"----"})[kind]||kind}</b>）`:""}，数据 <b>${dataRows.length.toLocaleString()}</b> 行${dateFixN?`　·　🔧 已修复 <b>${dateFixN}</b> 处被分隔符切断的日期（→ 09/30）`:""}${combExpN?`　·　🧷 已合并月+年生成 <b>exp</b> 列 <b>${combExpN}</b> 行（→ 09/27）`:""}${dupHeadN?`　·　🧹 已删除重复标题行 <b>${dupHeadN}</b> 行`:""}：`+cols.map(c=>`<span class="c">${escHTML(c.name)}</span>`).join("");
     /* 列数一致性检查：分隔符选错时，数据行会比表头多/少列，导致每列取到错位数据 */
     const lens=dataRows.map(r=>r.length), mn=lens.length?Math.min(...lens):0, mx=lens.length?Math.max(...lens):0;
     const warn=$("#cm-warn"); const bad=dataRows.length&&(mx!==cols.length||mn!==mx||cols.length<=1);
