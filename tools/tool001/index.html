@@ -917,6 +917,8 @@
             <label>日期修复</label>
             <label class="toggle" style="margin-top:2px"><input type="checkbox" id="cm-fixDates" checked><span class="sw"></span>自动修复被分隔符切断的日期</label>
             <div class="hint">分隔符是 | 而 exp 值本身是 09|30 时会被切成两列；开启后自动还原成 09/30（仅当该行比表头多出列时才修，不会误伤正常行）</div>
+            <label class="toggle" style="margin-top:10px"><input type="checkbox" id="cm-combExp" checked><span class="sw"></span>自动合并 月+年 → 有效期</label>
+            <div class="hint">数据里 exp_month、exp_year 是分开两列时，自动多生成一个 <b>exp</b> 列（月补 0、年取后两位，如 09/27），智能识别会自动对到有效期字段。</div>
           </div>
         </div>
         <div class="actions"><button class="btn btn-primary" id="cm-parse" disabled>🧩 解析列</button><button class="btn btn-ghost" id="cm-clear">清空</button></div>
@@ -2091,7 +2093,7 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
   const norm=x=>String(x==null?"":x).toLowerCase().replace(/[\s_\-]+/g,"");
   const SMART=[
     {out:"number",tf:"none",alias:[/cardnumber/,/cardnum/,/cardno/,/^pan$/,/^cc$/,/^ccnum/,/^number$/,/卡号|信用卡/]},
-    {out:"exp",tf:"normdate",alias:[/^exp/,/expir/,/expdate/,/expiry/,/valid(thru|until)?/,/有效期/]},
+    {out:"exp",tf:"normdate",alias:[/^exp$/,/^expdate$/,/^expiry$/,/^expiration(date)?$/,/^expire[sd]?$/,/^validthru$/,/^validuntil$/,/有效期/]},
     {out:"cvv",tf:"none",alias:[/cvv/,/cvc/,/cvn/,/^cid$/,/securitycode/,/安全码|校验码/]},
     {out:"first_name",tf:"first",name:"first",alias:[/firstname/,/^fname$/,/given/]},
     {out:"last_name",tf:"last",name:"last",alias:[/lastname/,/^lname$/,/surname/,/family/]},
@@ -2224,8 +2226,21 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
     if(hasHeader){ names=rowsRaw[0].map(x=>x.trim()); dataRows=rowsRaw.slice(1); }
     else { const w=rowsRaw.reduce((a,r)=>Math.max(a,r.length),0); names=Array.from({length:w},(_,i)=>"列"+(i+1)); dataRows=rowsRaw; }
     cols=names.map((n,i)=>({name:n||("列"+(i+1)),idx:i}));
+    /* 月+年合并：exp_month / exp_year 分开两列时，合成一个 exp 列（09/27） */
+    let combExpN=0;
+    if($("#cm-combExp").checked&&cols.length&&!cols.some(c=>norm(c.name)==="exp")){
+      const mCol=cols.find(c=>{const n=norm(c.name);return n==="mm"||n.includes("月")||(n.includes("month")&&!n.includes("year"));});
+      const yCol=cols.find(c=>{const n=norm(c.name);return n==="yy"||n==="yyyy"||n.includes("年")||n.includes("year");});
+      if(mCol&&yCol&&mCol.idx!==yCol.idx){
+        const eidx=dataRows.reduce((a,r)=>Math.max(a,r.length),cols.length);
+        const pad2=s=>{s=String(s==null?"":s).trim();return /^\d$/.test(s)?"0"+s:s;};
+        const yy2=s=>{s=String(s==null?"":s).trim();return /^\d{4}$/.test(s)?s.slice(-2):s;};
+        for(const r of dataRows){ const mv=pad2(r[mCol.idx]),yv=yy2(r[yCol.idx]); r[eidx]=(mv&&yv)?mv+"/"+yv:(mv||yv); if(mv||yv)combExpN++; }
+        cols.push({name:"exp",idx:eidx});
+      }
+    }
     $("#cm-cols").style.display="block";
-    $("#cm-cols").innerHTML=`识别到 <b>${cols.length}</b> 列${curDelim==="auto"?`（自动判定分隔符：<b>${({tab:"Tab","ws2":"多空格",comma:"逗号","----":"----"})[kind]||kind}</b>）`:""}，数据 <b>${dataRows.length.toLocaleString()}</b> 行${dateFixN?`　·　🔧 已修复 <b>${dateFixN}</b> 处被分隔符切断的日期（→ 09/30）`:""}：`+cols.map(c=>`<span class="c">${escHTML(c.name)}</span>`).join("");
+    $("#cm-cols").innerHTML=`识别到 <b>${cols.length}</b> 列${curDelim==="auto"?`（自动判定分隔符：<b>${({tab:"Tab","ws2":"多空格",comma:"逗号","----":"----"})[kind]||kind}</b>）`:""}，数据 <b>${dataRows.length.toLocaleString()}</b> 行${dateFixN?`　·　🔧 已修复 <b>${dateFixN}</b> 处被分隔符切断的日期（→ 09/30）`:""}${combExpN?`　·　🧷 已合并月+年生成 <b>exp</b> 列 <b>${combExpN}</b> 行（→ 09/27）`:""}：`+cols.map(c=>`<span class="c">${escHTML(c.name)}</span>`).join("");
     /* 列数一致性检查：分隔符选错时，数据行会比表头多/少列，导致每列取到错位数据 */
     const lens=dataRows.map(r=>r.length), mn=lens.length?Math.min(...lens):0, mx=lens.length?Math.max(...lens):0;
     const warn=$("#cm-warn"); const bad=dataRows.length&&(mx!==cols.length||mn!==mx||cols.length<=1);
