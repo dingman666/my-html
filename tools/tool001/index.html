@@ -2178,21 +2178,32 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
     if(!keys.length)return null;
     const out=[keys.join("\t")]; for(const o of arr)out.push(keys.map(k=>{ let v=o?o[k]:""; if(v==null)return ""; if(typeof v==="object")return JSON.stringify(v); return String(v).replace(/[\t\r\n]+/g," "); }).join("\t")); return out.join("\n"); }
   const hardBinExt=/\.(zip|rar|7z|gz|tar|png|jpe?g|gif|webp|bmp|ico|svg|pdf|xls|doc|docx|ppt|pptx|exe|dll|bin|db|sqlite|mp[34]|mov|avi)$/i;
-  bindDrop($("#cm-drop"),$("#cm-file"),async list=>{ const arr=[...list]; if(!arr.length)return; let ok=0,skip=0;
-    for(const f of arr){ const nm=(f.name||"").toLowerCase();
-      try{
-        if(/\.xlsx$/.test(nm)){ const tsv=await readXlsx(f); files.push({name:f.name,size:f.size,text:tsv}); ok++; continue; }
-        if(hardBinExt.test(nm)){ toast("暂不支持的格式："+f.name+(/\.xls$/.test(nm)?"（老式 .xls 请在 Excel 里另存为 .xlsx）":"（可另存为 .csv / .xlsx）")); skip++; continue; }
-        const text=await f.text();
-        if(/\x00/.test(text.slice(0,4000))){ toast("跳过疑似二进制文件："+f.name); skip++; continue; }
-        const js=/^\s*[[{]/.test(text)?jsonToTsv(text):null;
-        files.push({name:f.name,size:f.size,text:js||text}); ok++;
-      }catch(e){ toast("读取失败："+f.name+"："+((e&&e.message)||e)); skip++; } }
-    renderFiles(); updateParse(); if(ok)toast(`✅ 已导入 ${ok} 个文件，共 ${srcLines().length.toLocaleString()} 行，点「解析列」`); });
+  /* 文本解码：先 UTF-8，若出现大量乱码字符则回退 GBK（Excel 导出的中文 CSV 常是 GBK/ANSI）；去掉开头 BOM */
+  function decodeBytes(buf){ let s=""; try{ s=new TextDecoder("utf-8").decode(buf); }catch(e){ s=""; }
+    const bad=(s.match(/�/g)||[]).length;
+    if(bad>2&&bad>s.length*0.002){ for(const enc of ["gbk","gb18030","big5"]){ try{ const g=new TextDecoder(enc).decode(buf); if((g.match(/�/g)||[]).length<bad){ s=g; break; } }catch(e){} } }
+    if(s.charCodeAt(0)===0xFEFF)s=s.slice(1); return s; }
+  async function readOneFile(f){ const nm=(f.name||"").toLowerCase();
+    if(/\.xlsx$/.test(nm)){ const tsv=await readXlsx(f); return {name:f.name,size:f.size,text:tsv,lines:countPasteLines(tsv)}; }
+    if(hardBinExt.test(nm)){ const e=new Error(/\.xls$/.test(nm)?"老式 .xls 请在 Excel 里另存为 .xlsx":"不支持的格式，可另存为 .csv / .xlsx"); e.skip=1; throw e; }
+    const bytes=new Uint8Array(await f.arrayBuffer());
+    let nul=0; const lim=Math.min(bytes.length,4000); for(let i=0;i<lim;i++)if(bytes[i]===0)nul++; if(nul>2){ const e=new Error("疑似二进制文件"); e.skip=1; throw e; }
+    let text=decodeBytes(bytes); const js=/^\s*[[{]/.test(text)?jsonToTsv(text):null; text=js||text;
+    return {name:f.name,size:f.size,text,lines:countPasteLines(text)}; }
+  bindDrop($("#cm-drop"),$("#cm-file"),async list=>{ const arr=[...list]; if(!arr.length)return; const t0=performance.now();
+    if(arr.length>3)toast(`正在读取 ${arr.length} 个文件…`);
+    const results=new Array(arr.length); const errs=[]; let idx=0;
+    const worker=async()=>{ while(idx<arr.length){ const i=idx++; try{ results[i]=await readOneFile(arr[i]); }catch(e){ results[i]=null; errs.push((arr[i].name||"?")+"："+((e&&e.message)||e)); } } };
+    await Promise.all(Array.from({length:Math.min(8,arr.length)},worker));
+    let ok=0; for(const r of results)if(r){ files.push(r); ok++; }
+    renderFiles(); updateParse(); const secs=((performance.now()-t0)/1000).toFixed(1);
+    if(ok)toast(`✅ 已导入 ${ok} 个文件 · 约 ${totalLines().toLocaleString()} 行 · ${secs}s，点「解析列」`+(errs.length?`（跳过 ${errs.length} 个）`:""));
+    else if(errs.length)toast("未导入："+errs.slice(0,2).join("；")); });
   function renderFiles(){ renderFileList($("#cm-list"),files,()=>{ renderFiles(); updateParse(); }); }
+  function totalLines(){ return files.reduce((a,f)=>a+(f.lines||0),0)+countPasteLines($("#cm-src").value); }
   function updateParse(){ const has=files.length||$("#cm-src").value.trim(); $("#cm-parse").disabled=!has;
-    const n=srcLines().length; $("#cm-srcHint").textContent=has?`约 ${n.toLocaleString()} 行数据`+(cols.length?`；已解析 ${cols.length} 列`:"（点「解析列」开始）"):"尚未输入"; }
-  $("#cm-src").addEventListener("input",updateParse);
+    const n=totalLines(); $("#cm-srcHint").textContent=has?`约 ${n.toLocaleString()} 行数据`+(cols.length?`；已解析 ${cols.length} 列`:"（点「解析列」开始）"):"尚未输入"; }
+  let _cmPasteDeb; $("#cm-src").addEventListener("input",()=>{ clearTimeout(_cmPasteDeb); _cmPasteDeb=setTimeout(updateParse,200); });
   $("#cm-clear").onclick=()=>{ files.length=0; renderFiles(); $("#cm-src").value=""; cols=[]; dataRows=[]; fields=[]; lastOut=""; manualFields=false;
     $("#cm-mapCard").style.display="none"; $("#cm-outCard").style.display="none"; $("#cm-cols").style.display="none"; updateParse(); toast("已清空"); };
 
@@ -2328,9 +2339,9 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
     const lines=[]; if(withHead)lines.push(fields.map(f=>cellFn(f.out)).join(sep));
     for(const row of dataRows){ lines.push(fields.map(f=>cellFn(tf(f.srcIdx>=0?row[f.srcIdx]:"",f.tf))).join(sep)); }
     lastOut=lines.join("\r\n");
-    const PREV=500, shown=lines.slice(0,PREV);
-    $("#cm-out").value=shown.join("\n"); renderOutTable();
-    const note=$("#cm-outNote"); if(lines.length>PREV){ note.style.display="block"; note.textContent=`共 ${lines.length.toLocaleString()} 行，仅预览前 ${PREV} 行；复制 / 下载为全部。`; } else note.style.display="none";
+    const TBL=2000;
+    $("#cm-out").value=lastOut; renderOutTable();
+    const note=$("#cm-outNote"); if(lines.length>TBL){ note.style.display="block"; note.textContent=`共 ${lines.length.toLocaleString()} 行 · 文本视图与复制 / 下载均为全部；表格视图仅预览前 ${TBL.toLocaleString()} 行（表格渲染过多会卡，文本与导出不受影响）。`; } else note.style.display="none";
     const missN=fields.filter(f=>f.srcIdx<0).length;
     $("#cm-stats").innerHTML=`<div class="stat"><div class="n">${dataRows.length.toLocaleString()}</div><div class="l">源数据行</div></div><div class="stat ok"><div class="n">${fields.length}</div><div class="l">输出字段</div></div><div class="stat arc"><div class="n">${(lines.length).toLocaleString()}</div><div class="l">导出行数</div></div>`+(missN?`<div class="stat dup"><div class="n">${missN}</div><div class="l">留空字段</div></div>`:"");
     $("#cm-outCard").style.display="block"; }
@@ -2339,7 +2350,7 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
     toast(`已生成：${fields.length} 列 × ${dataRows.length.toLocaleString()} 行`+(missN?`（${missN} 个字段当前源里没有、已留空）`:"")); };
   /* 勾选「带标题行」后即时刷新已生成的结果（文本/表格/CSV/Excel/复制统一生效） */
   $("#cm-outHeader").addEventListener("change",()=>{ if($("#cm-outCard").style.display!=="none"&&cols.length&&fields.length)genOutput(); });
-  function renderOutTable(){ const PREV=500, box=$("#cm-outTable"); const n=Math.min(PREV,dataRows.length);
+  function renderOutTable(){ const PREV=2000, box=$("#cm-outTable"); const n=Math.min(PREV,dataRows.length);
     let h='<thead><tr><th class="rn">#</th>'+fields.map(f=>`<th>${escHTML(f.out||"")}</th>`).join("")+'</tr></thead><tbody>';
     for(let i=0;i<n;i++){ const row=dataRows[i]; h+=`<tr><td class="rn">${i+1}</td>`+fields.map(f=>{ const v=String(tf(f.srcIdx>=0?row[f.srcIdx]:"",f.tf)); return `<td class="${v===""?"empty":""}" title="${escHTML(v)}">${v===""?"—":escHTML(v)}</td>`; }).join("")+"</tr>"; }
     box.innerHTML=h+"</tbody>"; }
