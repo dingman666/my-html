@@ -1008,6 +1008,8 @@
         <button class="subtab" data-m="phrase">密码短语</button>
         <button class="subtab" data-m="pin">PIN 码</button>
         <button class="subtab" data-m="pattern">模板组合</button>
+        <button class="subtab" data-m="email">邮箱前缀</button>
+        <button class="subtab" data-m="name">角色姓名</button>
       </div>
 
       <!-- 随机字符 -->
@@ -1121,6 +1123,35 @@
           <div><span class="k">U</span>单词全大写</div><div><span class="k">[…]</span>从括号内字符任选一个，支持 a-z 范围</div><div><span class="k">{n}</span>把前一项重复 n 次</div>
           <div><span class="k">\</span>转义：<span class="k">\A</span> 输出字母 A 本身</div><div>其它字符</div>
         </div>
+      </div>
+
+      <!-- 邮箱前缀 -->
+      <div class="pane" id="pw-pane-email">
+        <div class="grid">
+          <div class="field"><label>组成方式</label>
+            <select id="pw-emStyle"><option value="words" selected>英文单词组合（bravecoral）</option><option value="name">姓名组合（patricia.barnes）</option><option value="letters">随机字母</option></select>
+          </div>
+          <div class="field"><label>段数 / 字母长度</label><input type="number" id="pw-emParts" min="1" max="12" value="2"><div class="hint">单词组合=几个词；随机字母=字母个数</div></div>
+          <div class="field"><label>分隔符</label><select id="pw-emSep"><option value="" selected>无</option><option value=".">点 .</option><option value="_">下划线 _</option><option value="-">连字符 -</option></select></div>
+          <div class="field"><label>追加数字位数</label><input type="number" id="pw-emDigits" min="0" max="8" value="2"><div class="hint">0 = 不加数字</div></div>
+          <div class="field"><label>大小写</label><select id="pw-emCase"><option value="lower" selected>全部小写</option><option value="cap">每段首字母大写</option><option value="upper">全部大写</option></select></div>
+          <div class="field"><label>域名（可选）</label><input type="text" id="pw-emDomain" placeholder="如 gmail.com，留空只出前缀" spellcheck="false">
+            <div class="chips" id="pw-emDomChips" style="margin-top:8px"><button class="chip on" data-dom="">无</button><button class="chip" data-dom="gmail.com">gmail.com</button><button class="chip" data-dom="outlook.com">outlook.com</button><button class="chip" data-dom="hotmail.com">hotmail.com</button><button class="chip" data-dom="yahoo.com">yahoo.com</button><button class="chip" data-dom="icloud.com">icloud.com</button><button class="chip" data-dom="proton.me">proton.me</button><button class="chip" data-dom="live.com">live.com</button><button class="chip" data-dom="aol.com">aol.com</button><button class="chip" data-dom="qq.com">qq.com</button><button class="chip" data-dom="163.com">163.com</button><button class="chip" data-dom="foxmail.com">foxmail.com</button></div>
+            <div class="hint">点上面快速选，或自己输入；留空只出前缀</div></div>
+        </div>
+        <div class="hint" style="margin-top:12px;line-height:1.7">只用英文字母和数字，适合批量生成注册用邮箱前缀。配合下方「一次生成数量」批量产出，可整列复制 / 下载。</div>
+      </div>
+
+      <!-- 角色姓名 -->
+      <div class="pane" id="pw-pane-name">
+        <div class="grid">
+          <div class="field"><label>性别</label><select id="pw-nmGender"><option value="any" selected>随机（男/女）</option><option value="male">男名</option><option value="female">女名</option></select></div>
+          <div class="field"><label>输出格式</label><select id="pw-nmOrder"><option value="fl" selected>名 + 姓（John Smith）</option><option value="lf">姓, 名（Smith, John）</option><option value="first">只要名</option><option value="last">只要姓</option></select></div>
+          <div class="field"><label>分隔符</label><select id="pw-nmSep"><option value=" " selected>空格</option><option value=".">点 .</option><option value="_">下划线 _</option><option value="">无</option></select></div>
+          <div class="field"><label>大小写</label><select id="pw-nmCase"><option value="title" selected>首字母大写（John Smith）</option><option value="lower">全部小写</option><option value="upper">全部大写</option></select></div>
+        </div>
+        <div class="toggles"><label class="toggle"><input type="checkbox" id="pw-nmMid"><span class="sw"></span>加中间名首字母（John A. Smith）</label></div>
+        <div class="hint" style="margin-top:12px;line-height:1.7">名字取自美国常用名 + 人口普查姓氏（含拉美裔 / 非裔），组合真实。配合「一次生成数量」批量生成角色名单。</div>
       </div>
 
       <div class="or-divider"><span>批量生成</span></div>
@@ -2371,6 +2402,12 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
 (function(){
   const WORDS = "acid acorn acre acts afar affix aged agent agile aging agony ahead aide aids aim ajar alarm alias alibi alien alike alive aloe aloft aloha alone amend amino ample amuse angel anger angle ankle apple april apron aqua area arena argue arise armed armor army aroma array arson art ashen ashes atlas atom attic audio avert avoid awake award awoke axis bacon badge bagel baggy baked baker balmy banjo barge barn bash basil bask batch bath baton bats blade blank blast blaze bleak blend bless blimp blink bloat blob blog blot blunt blurt blush boast boat body boil bok bolt boned boney bonus bony book booth boots boss botch both boxer breed bribe brick bride brim bring brink brisk broad broil broke brook broom brush buck bud buggy bulge bulk bully bunch bunny bunt bush bust busy buzz cable cache cadet cage cake calm cameo canal candy cane canon cape card cargo carol carry carve case cash cause cedar chain chair chant chaos charm chase cheek cheer chef chess chest chew chief chili chill chip chomp chop chow chuck chump chunk churn chute cider cinch city civic civil clad claim clamp clap clash clasp class claw clay clean clear cleat cleft clerk click cling clink clip cloak clock clone cloth cloud clump coach coast coat cod coil coke cola cold colt coma come comic comma cone cope copy coral cork cost cot couch cough cover cozy craft cramp crane crank crate crave crawl crazy creme crepe crept crib cried crisp crook crop cross crowd crown crumb crush crust cub cult cupid cure curl curry curse curve curvy cushy cut cycle dab dad daily dairy daisy dance dandy darn dart dash data date dawn deaf deal dean debit debt debug decaf decal decay deck decor decoy deed delay denim dense dent depth derby desk dial diary dice dig dill dime dimly diner dingy disco dish disk ditch ditzy dizzy dock dodge doing doll dome donor donut dose dot dove down dowry doze drab drama drank draw dress dried drift drill drive drone droop drove drown drum dry duck duct dude dug duke duo dusk dust duty dwarf dwell eagle early earth easel east eaten eats ebay ebony ebook echo edge eel eject elbow elder elf elk elm elope elude elves email emit empty emu enter entry envoy equal erase error erupt essay etch evade even evict evil evoke exact exit fable faced fact fade fall false fancy fang fax feast feed femur fence fend ferry fetal fetch fever fiber fifth fifty film filth final finch fit five flag flaky flame flap flask fled flick fling flint flip flirt float flock flop floss flyer foam foe fog foil folic folk food fool found fox foyer frail frame fray fresh fried frill frisk from front frost froth frown froze fruit gag gains gala game gap gas gave gear gecko geek gem genre gift gig gills given giver glad glass glide gloss glove glow glue goal going golf gong good gooey goofy gore gown grab grain grant grape graph grasp grass grave gravy gray green greet grew grid grief grill grip grit groom grope growl grub grunt guide gulf gulp gummy guru gush gut guy habit half halo halt happy harm hash hasty hatch hate haven hazel hazy heap heat heave hedge hefty help herbs hers hub hug hula hull human humid hump hung hunk hunt hurry hurt hush hut ice icing icon icy igloo image ion iron islam issue item ivory ivy jab jam jaws jazz jeep jelly jet jiffy job jog jolly jolt jot joy judge juice juicy july jumbo jump junky juror jury keep keg kept kick kilt king kite kitty kiwi knee knelt koala kung ladle lady lair lake lance land lapel large lash lasso last latch late lazy left legal lemon lend lens lent level lever lid life lift lilac lily limb limes line lint lion lip list lived liver lunar lunch lung lurch lure lurk lying lyric mace maker malt mama mango manor many map march mardi marry mash match mate math moan mocha moist mold mom moody mop morse most motor motto mount mouse mousy mouth move movie mower mud mug mulch mule mull mumbo mummy mural muse music musky mute nacho nag nail name nanny nap navy near neat neon nerd nest net next niece ninth nutty oak oasis oat ocean oil old olive omen onion only ooze opal open opera opt otter ouch ounce outer oval oven owl ozone pace pagan pager palm panda panic pants panty paper park party pasta patch path patio payer pecan penny pep perch perky perm pest petal petri petty photo plank plant plaza plead plot plow pluck plug plus poach pod poem poet pogo point poise poker polar polio polka polo pond pony poppy pork poser pouch pound pout power prank press print prior prism prize probe prong proof props prude prune pry pug pull pulp pulse puma punch punk pupil puppy purr purse push putt quack quake query quiet quill quilt quit quota quote rabid race rack radar radio raft rage raid rail rake rally ramp ranch range rank rant rash raven reach react ream rebel recap relax relay relic remix repay repel reply rerun reset rhyme rice rich ride rigid rigor rinse riot ripen rise risk ritzy rival river roast robe robin rock rogue roman romp rope rover royal ruby rug ruin rule runny rush rust rut sadly sage said saint salad salon salsa salt same sandy santa satin sauna saved savor sax say scale scam scan scare scarf scary scoff scold scoop scoot scope score scorn scout scowl scrap scrub scuba scuff sect sedan self send sepia serve set seven shack shade shady shaft shaky sham shape share sharp shed sheep sheet shelf shell shine shiny ship shirt shock shop shore shout shove shown showy shred shrug shun shush shut shy sift silk silly silo sip siren sixth size skate skew skid skier skies skip skirt skit sky slab slack slain slam slang slash slate slaw sled sleek sleep sleet slept slice slick slimy sling slip slit slob slot slug slum slurp slush small smash smell smile smirk smog snack snap snare snarl sneak sneer sniff snore snort snout snowy snub snuff speak speed spend spent spew spied spill spiny spoil spoke spoof spool spoon sport spot spout spray spree spur squad squat squid stack staff stage stain stall stamp stand stank stark start stash state stays steam steep stem step stew stick sting stir stock stole stomp stony stood stool stoop stop storm stout stove straw stray strut stuck stud stuff stump stung stunt suds sugar sulk surf sushi swab swan swarm sway swear sweat sweep swell swept swim swing swipe swirl swoop swore syrup tacky taco tag take tall talon tamer tank taper taps tarot tart task taste tasty taunt thank thaw theft theme thigh thing think thong thorn those throb thud thumb thump thus tiara tidal tidy tiger tile tilt tint tiny trace track trade train trait trap trash tray treat tree trek trend trial tribe trick trio trout truce truck trump trunk try tug tulip tummy turf tusk tutor tutu tux tweak tweet twice twine twins twirl twist uncle uncut undo unify union unit untie upon upper urban used user usher utter value vapor vegan venue verse vest veto vice video view viral virus visa visor vixen vocal voice void volt voter vowel wad wafer wager wages wagon wake walk wand wasp watch water wavy wheat whiff whole whoop wick widen widow width wife wifi wilt wimp wind wing wink wipe wired wiry wise wish wispy wok wolf womb wool woozy word work worry wound woven wrath wreck wrist xerox yahoo yam yard year yeast yelp yield yoyo yodel yoga yoyo yummy zebra zero zesty zippy zone zoom".split(" ");
   const WORDS_SHORT = WORDS.filter(w=>w.length<=4), WORDS_LONG = WORDS.filter(w=>w.length===5);
+  /* ---- 角色姓名 / 邮箱前缀 数据（美国常用名 + 人口普查姓氏，含拉美裔/非裔）---- */
+  const LETTERS="abcdefghijklmnopqrstuvwxyz";
+  const MALE="James John Robert Michael William David Richard Joseph Thomas Charles Christopher Daniel Matthew Anthony Mark Donald Steven Paul Andrew Joshua Kenneth Kevin Brian George Timothy Ronald Edward Jason Jeffrey Ryan Jacob Gary Nicholas Eric Jonathan Stephen Larry Justin Scott Brandon Benjamin Samuel Gregory Alexander Patrick Frank Raymond Jack Dennis Jerry Tyler Aaron Jose Adam Henry Nathan Douglas Zachary Peter Kyle Walter Ethan Jeremy Harold Carl Keith Roger Gerald Christian Terry Sean Arthur Austin Noah Lawrence Jesse Joe Bryan Billy Jordan Albert Dylan Bruce Willie Gabriel Logan Alan Juan Wayne Roy Ralph Randy Eugene Vincent Russell Elijah Louis Bobby Philip Johnny Mason Carlos Mateo Liam Hunter Cameron Caleb Isaac Luke Connor Owen Wyatt Levi Julian Lincoln Nolan Easton Colton Cooper Jackson Angel Diego Adrian".split(" ");
+  const FEMALE="Mary Patricia Jennifer Linda Elizabeth Barbara Susan Jessica Sarah Karen Nancy Lisa Betty Margaret Sandra Ashley Kimberly Emily Donna Michelle Carol Amanda Dorothy Melissa Deborah Stephanie Rebecca Sharon Laura Cynthia Kathleen Amy Angela Shirley Anna Brenda Pamela Emma Nicole Helen Samantha Katherine Christine Debra Rachel Carolyn Janet Catherine Maria Heather Diane Olivia Julie Joyce Victoria Ruth Virginia Lauren Kelly Christina Joan Evelyn Judith Megan Andrea Cheryl Hannah Jacqueline Martha Gloria Teresa Ann Sara Madison Frances Kathryn Janice Jean Abigail Alice Julia Judy Sophia Grace Denise Amber Marilyn Danielle Beverly Isabella Diana Natalie Brittany Charlotte Marie Kayla Alexis Lori Mia Ava Ella Chloe Zoe Lily Scarlett Layla Nora Hazel Ellie Aria Riley Aurora Stella Lucy Audrey Bella Claire Savannah Brooklyn Naomi".split(" ");
+  const FIRST_ALL=MALE.concat(FEMALE);
+  const SURNAME="Smith Johnson Williams Brown Jones Garcia Miller Davis Rodriguez Martinez Hernandez Lopez Gonzalez Wilson Anderson Thomas Taylor Moore Jackson Martin Lee Perez Thompson White Harris Sanchez Clark Ramirez Lewis Robinson Walker Young Allen King Wright Scott Torres Nguyen Hill Flores Green Adams Nelson Baker Hall Rivera Campbell Mitchell Carter Roberts Gomez Phillips Evans Turner Diaz Parker Cruz Edwards Collins Reyes Stewart Morris Morales Murphy Cook Rogers Gutierrez Ortiz Morgan Cooper Peterson Bailey Reed Kelly Howard Ramos Kim Cox Ward Richardson Watson Brooks Chavez Wood James Bennett Gray Mendoza Ruiz Hughes Price Alvarez Castillo Sanders Patel Myers Long Ross Foster Jimenez Powell Jenkins Perry Russell Sullivan Bell Coleman Butler Henderson Barnes Gonzales Fisher Vasquez Simmons Romero Jordan Patterson Alexander Hamilton Graham Reynolds Griffin Wallace Moreno West Cole Hayes Bryant Herrera Gibson Ellis Tran Medina Aguilar Stevens Murray Ford Castro Marshall Owens Harrison Fernandez Woods Washington Kennedy Wells Vargas Henry Freeman Webb Tucker Guzman Burns Crawford Olson Simpson Porter Hunter Gordon Silva Shaw Snyder Mason Dixon Hunt".split(" ");
   const UPPER="ABCDEFGHIJKLMNOPQRSTUVWXYZ", LOWER="abcdefghijklmnopqrstuvwxyz", DIGITS="0123456789";
   const DEFAULT_SYMBOLS="!@#$%^&*()-_=+[]{};:,.<>?/~", AMBIG="0O1lI|`'\"";
   const VOW="aeiou", CONS="bcdfghjklmnpqrstvwxyz", HEX="0123456789abcdef", B64=UPPER+LOWER+DIGITS+"+/";
@@ -2550,6 +2587,39 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
     return { pw, bits, seps, extra:`${toks.length} 个位置 · ${pw.length} 字符`, small:pw.length>40 };
   }
 
+  /* ---- 邮箱前缀模式 ---- */
+  const capWord=w=>w?w[0].toUpperCase()+w.slice(1).toLowerCase():w;
+  function cfgEmail(){ return { style:$("#pw-emStyle").value, parts:clampNum($("#pw-emParts"),1,12,2), sep:$("#pw-emSep").value, digits:clampNum($("#pw-emDigits"),0,8,2), kase:$("#pw-emCase").value, domain:$("#pw-emDomain").value.trim().replace(/^@+/,"").replace(/\s+/g,"") }; }
+  function genEmail(c){
+    let segs=[], bits=0;
+    if(c.style==="name"){ segs=[pick(FIRST_ALL),pick(SURNAME)]; bits+=LOG2(FIRST_ALL.length)+LOG2(SURNAME.length); }
+    else if(c.style==="letters"){ let s=""; for(let i=0;i<c.parts;i++)s+=LETTERS[rint(26)]; segs=[s]; bits+=c.parts*LOG2(26); }
+    else { for(let i=0;i<c.parts;i++)segs.push(pick(WORDS)); bits+=c.parts*LOG2(WORDS.length); }
+    segs=segs.map(w=>c.kase==="upper"?w.toUpperCase():c.kase==="cap"?capWord(w):w.toLowerCase());
+    let pre=segs.join(c.sep);
+    if(c.digits>0){ let d=""; for(let i=0;i<c.digits;i++)d+=String(rint(10)); pre+=d; bits+=c.digits*LOG2(10); }
+    const seps=new Set(); if(c.sep)seps.add(c.sep);
+    let pw=pre; if(c.domain){ pw=pre+"@"+c.domain; seps.add("@"); seps.add("."); }
+    return { pw, bits, seps, extra:(c.domain?"邮箱":"前缀")+" · "+pw.length+" 字符", small:pw.length>40 };
+  }
+
+  /* ---- 角色姓名模式 ---- */
+  function cfgName(){ return { gender:$("#pw-nmGender").value, order:$("#pw-nmOrder").value, sep:$("#pw-nmSep").value, kase:$("#pw-nmCase").value, mid:$("#pw-nmMid").checked }; }
+  function genName(c){
+    const pool=c.gender==="male"?MALE:c.gender==="female"?FEMALE:(rint(2)?MALE:FEMALE);
+    const kase=w=>c.kase==="upper"?w.toUpperCase():c.kase==="lower"?w.toLowerCase():w;
+    const first=kase(pick(pool)), last=kase(pick(SURNAME)), sep=c.sep;
+    let mid=""; if(c.mid){ const ini=LETTERS[rint(26)].toUpperCase(); mid=(c.kase==="lower"?ini.toLowerCase():ini)+"."; }
+    let pw, bits;
+    if(c.order==="first"){ pw=first; bits=LOG2(pool.length); }
+    else if(c.order==="last"){ pw=last; bits=LOG2(SURNAME.length); }
+    else if(c.order==="lf"){ pw=last+(sep===" "?", ":sep)+first+(mid?sep+mid:""); bits=LOG2(pool.length)+LOG2(SURNAME.length); }
+    else { pw=first+(mid?sep+mid:"")+sep+last; bits=LOG2(pool.length)+LOG2(SURNAME.length); }
+    if(c.mid&&c.order!=="first"&&c.order!=="last")bits+=LOG2(26);
+    const seps=new Set(); if(sep&&sep!==" ")seps.add(sep); if(c.order==="lf")seps.add(",");
+    return { pw, bits, seps, extra:"角色姓名", small:false };
+  }
+
   /* ---- 任意密码强度估算 ---- */
   const COMMON=["password","123456","12345678","123456789","1234567890","qwerty","qwertyuiop","abc123","111111","123123","000000","iloveyou","admin","letmein","welcome","monkey","dragon","sunshine","princess","football","password1","passw0rd","1q2w3e4r","qazwsx","asdfgh","zxcvbn","666666","888888","112233","520520","woaini","a123456","123qwe"];
   const KEYS=["qwertyuiop","asdfghjkl","zxcvbnm","1234567890","0987654321","poiuytrewq","lkjhgfdsa","mnbvcxz"];
@@ -2578,8 +2648,8 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
   /* ---- UI 绑定 ---- */
   function clampNum(el,min,max,def){ let v=parseInt(el.value); if(isNaN(v))v=def; v=Math.min(max,Math.max(min,v)); return v; }
   let mode="random", current=null, batch=[], timer=null;
-  const MODE_TXT={random:"随机字符",phrase:"密码短语",pin:"PIN 码",pattern:"模板组合"};
-  const MODE_FN={random:()=>genRandom(cfgRandom()),phrase:()=>genPhrase(cfgPhrase()),pin:()=>genPin(cfgPin()),pattern:genPattern};
+  const MODE_TXT={random:"随机字符",phrase:"密码短语",pin:"PIN 码",pattern:"模板组合",email:"邮箱前缀",name:"角色姓名"};
+  const MODE_FN={random:()=>genRandom(cfgRandom()),phrase:()=>genPhrase(cfgPhrase()),pin:()=>genPin(cfgPin()),pattern:genPattern,email:()=>genEmail(cfgEmail()),name:()=>genName(cfgName())};
 
   if(!cryptoOK){ const b=$("#pw-cryptoBadge"); b.textContent="缺少安全随机源"; b.classList.remove("on"); b.style.background="var(--red)"; b.style.color="#fff"; }
 
@@ -2601,12 +2671,15 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
   $("#pw-phSep").addEventListener("change",()=>{ $("#pw-phSepCustom").style.display=$("#pw-phSep").value==="__custom__"?"block":"none"; });
   document.querySelectorAll("#pw-patChips .chip").forEach(c=>c.addEventListener("click",()=>{ $("#pw-pattern").value=c.dataset.pat; if(mode!=="pattern")setMode("pattern"); else generate(); }));
   document.querySelectorAll("[data-cnt]").forEach(c=>c.addEventListener("click",()=>{ $("#pw-count").value=c.dataset.cnt; generate(); }));
+  function syncDomChips(){ const v=$("#pw-emDomain").value.trim().replace(/^@+/,""); document.querySelectorAll("#pw-emDomChips .chip").forEach(c=>c.classList.toggle("on",c.dataset.dom===v)); }
+  document.querySelectorAll("#pw-emDomChips .chip").forEach(c=>c.addEventListener("click",()=>{ $("#pw-emDomain").value=c.dataset.dom; syncDomChips(); if(mode!=="email")setMode("email"); else generate(); }));
+  $("#pw-emDomain").addEventListener("input",syncDomChips);
 
   // 任何设置变化 → 自动重新生成（防抖）
   function schedule(){ clearTimeout(timer); timer=setTimeout(generate,140); }
   $("#pw-settings").addEventListener("input",e=>{ if(e.target.id==="pw-count")return; if(e.target.type==="range"||e.target.type==="number")return; schedule(); });
   $("#pw-settings").addEventListener("change",e=>{ if(e.target.type==="checkbox"||e.target.tagName==="SELECT"||e.target.id==="pw-count")schedule(); });
-  ["pw-minDigit","pw-minSym","pw-group","pw-phNumLen"].forEach(id=>$("#"+id).addEventListener("input",schedule));
+  ["pw-minDigit","pw-minSym","pw-group","pw-phNumLen","pw-emParts","pw-emDigits"].forEach(id=>$("#"+id).addEventListener("input",schedule));
 
   function generate(){
     clearTimeout(timer);
@@ -2668,7 +2741,9 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
     set("pw-words",5);set("pw-wordsNum",5);set("pw-phSep","-");set("pw-phSepCustom","");set("pw-phCase","cap");set("pw-phList","eff");set("pw-phNum",true);set("pw-phSym",false);set("pw-phNoDup",true);set("pw-phNumLen",2);set("pw-phExtraPos","end");
     set("pw-pin",6);set("pw-pinNum",6);set("pw-pinNoAdj",true);set("pw-pinNoSeq",true);set("pw-pinNoZero",false);set("pw-pinNoRep",false);set("pw-pinNoDate",false);
     set("pw-pattern","Aaaa-dddd-Aaaa-dddd");set("pw-count",1);
-    $("#pw-phSepCustom").style.display="none";
+    set("pw-emStyle","words");set("pw-emParts",2);set("pw-emSep","");set("pw-emDigits",2);set("pw-emCase","lower");set("pw-emDomain","");
+    set("pw-nmGender","any");set("pw-nmOrder","fl");set("pw-nmSep"," ");set("pw-nmCase","title");set("pw-nmMid",false);
+    $("#pw-phSepCustom").style.display="none"; syncDomChips();
     ["pw-len","pw-words","pw-pin"].forEach(r=>$("#"+r).dispatchEvent(new Event("input")));
     toast("已恢复默认设置"); generate();
   };
