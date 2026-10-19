@@ -191,6 +191,19 @@
   .pw-range{display:flex;align-items:center;gap:10px}
   .pw-range input{flex:1;min-width:0}
   .pw-range span{color:var(--text-3);font-weight:600}
+  .ad-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .ad-f{background:var(--chip);border-radius:12px;padding:11px 14px;display:flex;justify-content:space-between;align-items:center;gap:12px;min-width:0}
+  .ad-f .l{font-size:12px;color:var(--text-2);flex:none}
+  .ad-f .r{display:flex;align-items:center;gap:8px;min-width:0}
+  .ad-f .v{font-weight:600;text-align:right;word-break:break-word}
+  .ad-f.full{grid-column:1/-1}
+  .ad-f .cp{cursor:pointer;color:var(--text-3);flex:none;border:none;background:none;padding:2px;font-size:15px;line-height:1}
+  .ad-f .cp:hover{color:var(--accent)}
+  .ad-saved{display:flex;flex-direction:column;gap:8px;max-height:420px;overflow:auto}
+  .ad-saved .row{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--chip);border-radius:10px;padding:9px 12px;font-size:13px}
+  .ad-saved .row .t{word-break:break-word}
+  .ad-saved .row .x{cursor:pointer;color:var(--text-3);border:none;background:none;flex:none;font-size:15px}
+  @media(max-width:640px){.ad-fields{grid-template-columns:1fr}}
   .pw-lenrow input[type=number]{width:92px;flex:none;text-align:center}
   input[type=range].slider{-webkit-appearance:none;appearance:none;flex:1;height:4px;border-radius:999px;background:linear-gradient(90deg,var(--accent) var(--pct,50%),var(--line-strong) var(--pct,50%));outline:none;margin:0;border:0;padding:0}
   input[type=range].slider::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:#fff;border:0;box-shadow:0 1px 4px rgba(0,0,0,.35),0 0 0 .5px rgba(0,0,0,.08);cursor:pointer;transition:transform .1s}
@@ -475,7 +488,7 @@
       <button class="maintab" data-page="gm" data-sub="把账号信息整理成表格，一键粘进 Excel / WPS" style="--ic:#ffb340"><span class="ic">📬</span>谷歌邮箱专用</button>
       <button class="maintab" data-page="ms" data-sub="微软账号信息整理成表格，支持自定义格式提取；可按行调接口收取最新邮件 / 验证码" style="--ic:#0078d4"><span class="ic">Ⓜ️</span>微软专用</button>
       <button class="maintab" data-page="tf" data-sub="粘贴密钥即出验证码，批量、倒计时、纯本地" style="--ic:#32ade6"><span class="ic">🛡️</span>2FA 验证码</button>
-      <button class="maintab" data-page="addr" data-sub="离线生成真实格式的美国地址：城市/州/邮编真实对应，区号匹配州，可批量" style="--ic:#34c759"><span class="ic">📍</span>美国地址</button>
+      <button class="maintab" data-page="addr" data-sub="离线生成真实格式地址：美国/免税州/香港/英国/日本/加拿大/澳洲/德国/法国，城市·邮编·电话区号匹配，单条卡片或批量" style="--ic:#34c759"><span class="ic">📍</span>地址生成</button>
     </nav>
     <div class="side-foot">界面仅预览前 5000 行<br>大文件请开「写入文件夹」</div>
   </aside>
@@ -1510,33 +1523,50 @@
     </div>
   </section>
 
-  <!-- ================= 美国地址 ================= -->
+  <!-- ================= 地址生成（多国家）================= -->
   <section class="page" id="page-addr">
     <div class="card">
-      <h2>① 生成设置 <span class="badge on">加密级随机源</span><span class="badge">离线</span></h2>
+      <h2>① 国家 / 地区 & 设置 <span class="badge on">加密级随机源</span><span class="badge">离线</span></h2>
+      <div class="chips" id="ad-countryChips" style="margin-bottom:14px"></div>
       <div class="grid">
-        <div class="field"><label>州 / 地区</label><select id="ad-state"><option value="" selected>随机（全美）</option></select><div class="hint">选某个州则城市/邮编/区号都落在该州</div></div>
-        <div class="field"><label>输出格式</label><select id="ad-fmt">
-          <option value="line" selected>美式单行（123 Main St, City, ST 12345）</option>
-          <option value="tab">Tab 分列（可直接贴 Excel / WPS）</option>
+        <div class="field"><label>州 / 省 / 地区</label><select id="ad-region"><option value="" selected>随机（全部）</option></select><div class="hint" id="ad-regionHint">选某个地区则城市/邮编/电话区号都落在该地区</div></div>
+        <div class="field"><label>一次生成数量</label><input type="number" id="ad-count" min="1" max="100000" value="1"><div class="hint">1 = 单条卡片展示；&gt;1 批量生成可下载</div></div>
+        <div class="field"><label>批量输出格式</label><select id="ad-fmt">
+          <option value="line" selected>单行完整地址</option>
+          <option value="tab">Tab 分列（贴 Excel / WPS）</option>
           <option value="pipe">竖线 | 分隔</option>
         </select></div>
-        <div class="field"><label>一次生成数量</label><input type="number" id="ad-count" min="1" max="100000" value="10"><div class="hint">最多 10 万条；大量请用「下载 TXT」</div></div>
       </div>
       <div class="pw-sub">包含字段</div>
       <div class="toggles" style="margin-top:0">
-        <label class="toggle"><input type="checkbox" id="ad-name" checked><span class="sw"></span>姓名</label>
-        <label class="toggle"><input type="checkbox" id="ad-gender"><span class="sw"></span>性别</label>
-        <label class="toggle"><input type="checkbox" id="ad-phone" checked><span class="sw"></span>电话（区号匹配州）</label>
-        <label class="toggle"><input type="checkbox" id="ad-unit"><span class="sw"></span>门牌 / 单元号（Apt 12）</label>
+        <label class="toggle"><input type="checkbox" id="ad-fName" checked><span class="sw"></span>姓名</label>
+        <label class="toggle"><input type="checkbox" id="ad-fGender"><span class="sw"></span>性别</label>
+        <label class="toggle"><input type="checkbox" id="ad-fBirth"><span class="sw"></span>生日/年龄</label>
+        <label class="toggle"><input type="checkbox" id="ad-fPhone" checked><span class="sw"></span>电话</label>
+        <label class="toggle"><input type="checkbox" id="ad-fEmail"><span class="sw"></span>邮箱</label>
       </div>
-      <div class="actions" style="margin-top:16px"><button class="btn btn-primary" id="ad-gen">🎲 生成</button><button class="btn btn-ghost" id="ad-copy">复制全部</button><button class="btn btn-ghost" id="ad-dl">下载 TXT</button></div>
-      <div class="hint" style="margin-top:14px;line-height:1.7">离线生成：<b>城市 / 州 / 邮编为真实对应关系</b>（内置美国主要城市数据），街道、门牌、电话随机但<b>区号匹配所在州</b>，格式真实、可批量、秒出，适合注册填表。<br>说明：这是「格式真实」的地址，<b>不保证门牌号在现实中确实存在</b>。要「真实存在的地址」需联网逐条查 OpenStreetMap（批量会被限流，不现实）。</div>
+      <div class="hint" style="margin-top:6px">以上勾选项仅影响「批量输出」里拼接的字段；单条卡片始终显示全部字段。</div>
+      <div class="actions" style="margin-top:16px"><button class="btn btn-primary" id="ad-gen">🎲 生成</button></div>
+      <div class="hint" style="margin-top:14px;line-height:1.7">离线生成：<b>城市 / 地区 / 邮编为真实对应</b>，<b>电话国际区号匹配国家/地区</b>，格式真实、可批量、秒出，适合注册填表。覆盖美国 50 州+特区、美国免税州、香港、英国、日本、加拿大、澳大利亚、德国、法国。<br>说明：地址为「格式真实」，<b>不保证门牌号现实存在</b>；邮箱为格式生成，<b>非真实收件箱</b>（收件请用本工具「微软/谷歌」等标签）。</div>
     </div>
-    <div class="card" id="ad-resultCard" style="display:none">
-      <div class="pane-head"><span class="desc">结果 <b id="ad-rc">0</b> 条</span><div class="tools"><button class="btn btn-ghost btn-sm" id="ad-copy2">复制全部</button><button class="btn btn-primary btn-sm" id="ad-dl2">下载 TXT</button></div></div>
+
+    <!-- 单条结果卡片 -->
+    <div class="card" id="ad-card" style="display:none">
+      <div class="pane-head"><span class="desc">生成结果 · <b id="ad-cardCountry"></b></span><div class="tools"><button class="btn btn-ghost btn-sm" id="ad-map">📍 查看地图</button><button class="btn btn-ghost btn-sm" id="ad-save">⭐ 保存</button><button class="btn btn-primary btn-sm" id="ad-copyAll">复制全部</button></div></div>
+      <div class="ad-fields" id="ad-fields"></div>
+    </div>
+
+    <!-- 批量结果 -->
+    <div class="card" id="ad-batchCard" style="display:none">
+      <div class="pane-head"><span class="desc">批量结果 <b id="ad-rc">0</b> 条</span><div class="tools"><button class="btn btn-ghost btn-sm" id="ad-copy2">复制全部</button><button class="btn btn-primary btn-sm" id="ad-dl2">下载 TXT</button><button class="btn btn-ghost btn-sm" id="ad-dlCsv">CSV</button><button class="btn btn-ghost btn-sm" id="ad-dlJson">JSON</button></div></div>
       <div class="note" id="ad-note" style="display:none"></div>
       <textarea id="ad-out" readonly spellcheck="false"></textarea>
+    </div>
+
+    <!-- 已保存 -->
+    <div class="card" id="ad-savedCard" style="display:none">
+      <div class="pane-head"><span class="desc">已保存 <b id="ad-sc">0</b> 条</span><div class="tools"><button class="btn btn-ghost btn-sm" id="ad-copySaved">复制全部</button><button class="btn btn-ghost btn-sm" id="ad-dlSaved">下载</button><button class="btn btn-ghost btn-sm" id="ad-clearSaved">清空</button></div></div>
+      <div id="ad-savedList" class="ad-saved"></div>
     </div>
   </section>
 
@@ -3541,37 +3571,210 @@ const makeQR=(function(){
   function r32(){ if(_pp>=_pool.length){ crypto.getRandomValues(_pool); _pp=0; } return _pool[_pp++]; }
   function rint(n){ if(!cryptoOK)return Math.floor(Math.random()*n); if(n<=1)return 0; const lim=4294967296-(4294967296%n); let v; do{v=r32();}while(v>=lim); return v%n; }
   const pick=a=>a[rint(a.length)];
-  const CITIES=("New York|NY|10001|212;Brooklyn|NY|11201|718;Buffalo|NY|14201|716;Rochester|NY|14604|585;Yonkers|NY|10701|914;Los Angeles|CA|90001|213;San Diego|CA|92101|619;San Jose|CA|95101|408;San Francisco|CA|94102|415;Fresno|CA|93721|559;Sacramento|CA|95814|916;Long Beach|CA|90802|562;Oakland|CA|94607|510;Bakersfield|CA|93301|661;Anaheim|CA|92805|714;Santa Ana|CA|92701|714;Riverside|CA|92501|951;Stockton|CA|95202|209;Irvine|CA|92602|949;Chula Vista|CA|91910|619;Fremont|CA|94536|510;San Bernardino|CA|92401|909;Modesto|CA|95354|209;Fontana|CA|92335|909;Oxnard|CA|93030|805;Glendale|CA|91205|818;Chicago|IL|60601|312;Aurora|IL|60505|630;Naperville|IL|60540|630;Springfield|IL|62701|217;Houston|TX|77002|713;San Antonio|TX|78205|210;Dallas|TX|75201|214;Austin|TX|78701|512;Fort Worth|TX|76102|817;El Paso|TX|79901|915;Arlington|TX|76010|817;Corpus Christi|TX|78401|361;Plano|TX|75074|972;Laredo|TX|78040|956;Lubbock|TX|79401|806;Garland|TX|75040|972;Irving|TX|75060|972;Amarillo|TX|79101|806;Phoenix|AZ|85003|602;Tucson|AZ|85701|520;Mesa|AZ|85201|480;Chandler|AZ|85225|480;Scottsdale|AZ|85251|480;Glendale|AZ|85301|623;Gilbert|AZ|85233|480;Philadelphia|PA|19103|215;Pittsburgh|PA|15222|412;Allentown|PA|18101|610;Jacksonville|FL|32202|904;Miami|FL|33130|305;Tampa|FL|33602|813;Orlando|FL|32801|407;St. Petersburg|FL|33701|727;Hialeah|FL|33010|305;Tallahassee|FL|32301|850;Fort Lauderdale|FL|33301|954;Columbus|OH|43215|614;Cleveland|OH|44113|216;Cincinnati|OH|45202|513;Toledo|OH|43604|419;Akron|OH|44308|330;Charlotte|NC|28202|704;Raleigh|NC|27601|919;Greensboro|NC|27401|336;Durham|NC|27701|919;Winston-Salem|NC|27101|336;Fayetteville|NC|28301|910;Indianapolis|IN|46204|317;Fort Wayne|IN|46802|260;Seattle|WA|98101|206;Spokane|WA|99201|509;Tacoma|WA|98402|253;Denver|CO|80202|303;Colorado Springs|CO|80903|719;Aurora|CO|80012|303;Washington|DC|20001|202;Boston|MA|02108|617;Worcester|MA|01608|508;Springfield|MA|01103|413;Nashville|TN|37203|615;Memphis|TN|38103|901;Knoxville|TN|37902|865;Detroit|MI|48226|313;Grand Rapids|MI|49503|616;Oklahoma City|OK|73102|405;Tulsa|OK|74103|918;Portland|OR|97204|503;Las Vegas|NV|89101|702;Henderson|NV|89002|702;Reno|NV|89501|775;Louisville|KY|40202|502;Lexington|KY|40507|859;Baltimore|MD|21202|410;Milwaukee|WI|53202|414;Madison|WI|53703|608;Albuquerque|NM|87102|505;Kansas City|MO|64106|816;St. Louis|MO|63101|314;Atlanta|GA|30303|404;Augusta|GA|30901|706;Columbus|GA|31901|706;Omaha|NE|68102|402;Lincoln|NE|68508|402;Virginia Beach|VA|23451|757;Norfolk|VA|23510|757;Richmond|VA|23219|804;Chesapeake|VA|23320|757;Minneapolis|MN|55401|612;St. Paul|MN|55102|651;New Orleans|LA|70112|504;Baton Rouge|LA|70802|225;Shreveport|LA|71101|318;Wichita|KS|67202|316;Honolulu|HI|96813|808;Salt Lake City|UT|84101|801;Boise|ID|83702|208;Des Moines|IA|50309|515;Birmingham|AL|35203|205;Montgomery|AL|36104|334;Little Rock|AR|72201|501;Providence|RI|02903|401;Newark|NJ|07102|973;Jersey City|NJ|07302|201").split(";").map(s=>{const p=s.split("|");return {city:p[0],st:p[1],zip:p[2],ac:p[3]};});
+  const CITIES=("New York|NY|10001|212;Brooklyn|NY|11201|718;Buffalo|NY|14201|716;Rochester|NY|14604|585;Yonkers|NY|10701|914;Los Angeles|CA|90001|213;San Diego|CA|92101|619;San Jose|CA|95101|408;San Francisco|CA|94102|415;Fresno|CA|93721|559;Sacramento|CA|95814|916;Long Beach|CA|90802|562;Oakland|CA|94607|510;Bakersfield|CA|93301|661;Anaheim|CA|92805|714;Santa Ana|CA|92701|714;Riverside|CA|92501|951;Stockton|CA|95202|209;Irvine|CA|92602|949;Chula Vista|CA|91910|619;Fremont|CA|94536|510;San Bernardino|CA|92401|909;Modesto|CA|95354|209;Fontana|CA|92335|909;Oxnard|CA|93030|805;Glendale|CA|91205|818;Chicago|IL|60601|312;Aurora|IL|60505|630;Naperville|IL|60540|630;Springfield|IL|62701|217;Houston|TX|77002|713;San Antonio|TX|78205|210;Dallas|TX|75201|214;Austin|TX|78701|512;Fort Worth|TX|76102|817;El Paso|TX|79901|915;Arlington|TX|76010|817;Corpus Christi|TX|78401|361;Plano|TX|75074|972;Laredo|TX|78040|956;Lubbock|TX|79401|806;Garland|TX|75040|972;Irving|TX|75060|972;Amarillo|TX|79101|806;Phoenix|AZ|85003|602;Tucson|AZ|85701|520;Mesa|AZ|85201|480;Chandler|AZ|85225|480;Scottsdale|AZ|85251|480;Glendale|AZ|85301|623;Gilbert|AZ|85233|480;Philadelphia|PA|19103|215;Pittsburgh|PA|15222|412;Allentown|PA|18101|610;Jacksonville|FL|32202|904;Miami|FL|33130|305;Tampa|FL|33602|813;Orlando|FL|32801|407;St. Petersburg|FL|33701|727;Hialeah|FL|33010|305;Tallahassee|FL|32301|850;Fort Lauderdale|FL|33301|954;Columbus|OH|43215|614;Cleveland|OH|44113|216;Cincinnati|OH|45202|513;Toledo|OH|43604|419;Akron|OH|44308|330;Charlotte|NC|28202|704;Raleigh|NC|27601|919;Greensboro|NC|27401|336;Durham|NC|27701|919;Winston-Salem|NC|27101|336;Fayetteville|NC|28301|910;Indianapolis|IN|46204|317;Fort Wayne|IN|46802|260;Seattle|WA|98101|206;Spokane|WA|99201|509;Tacoma|WA|98402|253;Denver|CO|80202|303;Colorado Springs|CO|80903|719;Aurora|CO|80012|303;Washington|DC|20001|202;Boston|MA|02108|617;Worcester|MA|01608|508;Springfield|MA|01103|413;Nashville|TN|37203|615;Memphis|TN|38103|901;Knoxville|TN|37902|865;Detroit|MI|48226|313;Grand Rapids|MI|49503|616;Oklahoma City|OK|73102|405;Tulsa|OK|74103|918;Portland|OR|97204|503;Las Vegas|NV|89101|702;Henderson|NV|89002|702;Reno|NV|89501|775;Louisville|KY|40202|502;Lexington|KY|40507|859;Baltimore|MD|21202|410;Milwaukee|WI|53202|414;Madison|WI|53703|608;Albuquerque|NM|87102|505;Kansas City|MO|64106|816;St. Louis|MO|63101|314;Atlanta|GA|30303|404;Augusta|GA|30901|706;Columbus|GA|31901|706;Omaha|NE|68102|402;Lincoln|NE|68508|402;Virginia Beach|VA|23451|757;Norfolk|VA|23510|757;Richmond|VA|23219|804;Chesapeake|VA|23320|757;Minneapolis|MN|55401|612;St. Paul|MN|55102|651;New Orleans|LA|70112|504;Baton Rouge|LA|70802|225;Shreveport|LA|71101|318;Wichita|KS|67202|316;Honolulu|HI|96813|808;Salt Lake City|UT|84101|801;Boise|ID|83702|208;Des Moines|IA|50309|515;Birmingham|AL|35203|205;Montgomery|AL|36104|334;Little Rock|AR|72201|501;Providence|RI|02903|401;Newark|NJ|07102|973;Jersey City|NJ|07302|201;Anchorage|AK|99501|907;Fairbanks|AK|99701|907;Bridgeport|CT|06604|203;Hartford|CT|06103|860;New Haven|CT|06510|203;Wilmington|DE|19801|302;Dover|DE|19901|302;Portland|ME|04101|207;Bangor|ME|04401|207;Jackson|MS|39201|601;Gulfport|MS|39501|228;Billings|MT|59101|406;Missoula|MT|59801|406;Manchester|NH|03101|603;Concord|NH|03301|603;Fargo|ND|58102|701;Bismarck|ND|58501|701;Columbia|SC|29201|803;Charleston|SC|29401|843;Sioux Falls|SD|57104|605;Rapid City|SD|57701|605;Burlington|VT|05401|802;Montpelier|VT|05601|802;Charleston|WV|25301|304;Huntington|WV|25701|304;Cheyenne|WY|82001|307;Casper|WY|82601|307").split(";").map(s=>{const p=s.split("|");return {city:p[0],st:p[1],zip:p[2],ac:p[3]};});
   const STREETS="Main Oak Pine Maple Cedar Elm Washington Lake Hill Park View Spring Second Third Fourth Fifth Church Highland Mill Walnut Chestnut Ridge Franklin Lincoln Jackson Jefferson Madison Adams Sunset River Meadow Forest Willow Birch Dogwood Sycamore Magnolia Cypress Woodland Valley Summit Prospect Union Center Market Court School Bridge Garden Grove Orchard Cherry Holly Juniper Laurel Spruce Aspen Poplar Hickory Clay Grant Monroe Cleveland Wilson Kennedy Broad Central Grand Liberty".split(" ");
   const ST_SUFFIX="St Ave Blvd Dr Ln Rd Ct Way Pl Ter Cir Trl".split(" ");
   const UNIT=["Apt","Unit","Ste","#"];
-  const sel=$("#ad-state"); if(sel){ const sts=[...new Set(CITIES.map(c=>c.st))].sort(); sel.insertAdjacentHTML("beforeend",sts.map(s=>`<option value="${s}">${s}</option>`).join("")); }
-  function oneName(){ const male=rint(2)===0; const pool=male?window.MALE:window.FEMALE; return { name:pick(pool)+" "+pick(window.SURNAME), gender:male?"Male":"Female" }; }
-  function genLine(c){
-    let pool=CITIES; if(c.state){ const f=CITIES.filter(x=>x.st===c.state); if(f.length)pool=f; }
-    const loc=pick(pool);
-    let line1=(1+rint(9899))+" "+pick(STREETS)+" "+pick(ST_SUFFIX);
-    if(c.unit)line1+=" "+pick(UNIT)+" "+(1+rint(200));
-    const cols=[];
-    if(c.name||c.gender){ const nm=oneName(); if(c.name)cols.push(nm.name); if(c.gender)cols.push(nm.gender); }
-    if(c.phone){ const exch=(2+rint(8))+""+rint(10)+rint(10); const sub=""+rint(10)+rint(10)+rint(10)+rint(10); cols.push("("+loc.ac+") "+exch+"-"+sub); }
-    if(c.fmt==="tab")return [...cols,line1,loc.city,loc.st,loc.zip].join("\t");
-    if(c.fmt==="pipe")return [...cols,line1,loc.city+", "+loc.st+" "+loc.zip].join(" | ");
-    const addr=line1+", "+loc.city+", "+loc.st+" "+loc.zip;
-    return cols.length?cols.join(" · ")+" · "+addr:addr;
-  }
-  let lastLines=[];
-  function generate(){
-    let count=parseInt($("#ad-count").value)||1; count=Math.min(100000,Math.max(1,count)); $("#ad-count").value=count;
-    const c={ state:$("#ad-state").value, fmt:$("#ad-fmt").value, name:$("#ad-name").checked, gender:$("#ad-gender").checked, phone:$("#ad-phone").checked, unit:$("#ad-unit").checked };
-    const lines=new Array(count); for(let i=0;i<count;i++)lines[i]=genLine(c); lastLines=lines;
-    $("#ad-resultCard").style.display="block"; $("#ad-rc").textContent=count.toLocaleString();
-    const PREV=5000; $("#ad-out").value=lines.slice(0,PREV).join("\n");
-    const note=$("#ad-note"); if(count>PREV){ note.style.display="block"; note.textContent=`共 ${count.toLocaleString()} 行，仅预览前 ${PREV.toLocaleString()} 行；复制 / 下载为全部。`; } else note.style.display="none";
-  }
-  async function copyAll(){ if(!lastLines.length){toast("请先生成");return;} try{ await navigator.clipboard.writeText(lastLines.join("\r\n")); toast(`已复制全部 ${lastLines.length.toLocaleString()} 条`); }catch{ toast("复制失败，请改用下载"); } }
-  function dlAll(){ if(!lastLines.length){toast("请先生成");return;} download(new Blob([lastLines.join("\r\n")+"\r\n"],{type:"text/plain;charset=utf-8"}),"美国地址.txt"); }
-  $("#ad-gen").onclick=generate; $("#ad-copy").onclick=copyAll; $("#ad-copy2").onclick=copyAll; $("#ad-dl").onclick=dlAll; $("#ad-dl2").onclick=dlAll;
+  const STATE_INFO={AL:"阿拉巴马州 Alabama",AK:"阿拉斯加州 Alaska",AZ:"亚利桑那州 Arizona",AR:"阿肯色州 Arkansas",CA:"加利福尼亚州 California",CO:"科罗拉多州 Colorado",CT:"康涅狄格州 Connecticut",DE:"特拉华州 Delaware",DC:"华盛顿特区 Washington D.C.",FL:"佛罗里达州 Florida",GA:"佐治亚州 Georgia",HI:"夏威夷州 Hawaii",ID:"爱达荷州 Idaho",IL:"伊利诺伊州 Illinois",IN:"印第安纳州 Indiana",IA:"爱荷华州 Iowa",KS:"堪萨斯州 Kansas",KY:"肯塔基州 Kentucky",LA:"路易斯安那州 Louisiana",ME:"缅因州 Maine",MD:"马里兰州 Maryland",MA:"马萨诸塞州 Massachusetts",MI:"密歇根州 Michigan",MN:"明尼苏达州 Minnesota",MS:"密西西比州 Mississippi",MO:"密苏里州 Missouri",MT:"蒙大拿州 Montana",NE:"内布拉斯加州 Nebraska",NV:"内华达州 Nevada",NH:"新罕布什尔州 New Hampshire",NJ:"新泽西州 New Jersey",NM:"新墨西哥州 New Mexico",NY:"纽约州 New York",NC:"北卡罗来纳州 North Carolina",ND:"北达科他州 North Dakota",OH:"俄亥俄州 Ohio",OK:"俄克拉荷马州 Oklahoma",OR:"俄勒冈州 Oregon",PA:"宾夕法尼亚州 Pennsylvania",RI:"罗德岛州 Rhode Island",SC:"南卡罗来纳州 South Carolina",SD:"南达科他州 South Dakota",TN:"田纳西州 Tennessee",TX:"得克萨斯州 Texas",UT:"犹他州 Utah",VT:"佛蒙特州 Vermont",VA:"弗吉尼亚州 Virginia",WA:"华盛顿州 Washington",WV:"西弗吉尼亚州 West Virginia",WI:"威斯康星州 Wisconsin",WY:"怀俄明州 Wyoming"};
+  const EMAIL_DOMAINS="gmail.com outlook.com hotmail.com yahoo.com icloud.com proton.me".split(" ");
+  const L=()=>"ABCDEFGHIJKLMNOPQRSTUVWXYZ"[rint(26)];
+  const d=n=>{let s="";for(let i=0;i<n;i++)s+=rint(10);return s;};
+  const numHouse=()=>1+rint(9899);
+  /* 非西方姓名库 */
+  const JP_M="Haruto Yuto Sota Yuki Hayato Sora Riku Ren Hinata Takumi Kaito Daiki Kenta Shota Naoki Yusuke Ryota Kazuki Hiroshi Takashi Kenji Satoshi Ryo Sho".split(" ");
+  const JP_F="Yui Aoi Hina Sakura Yuna Mei Rin Hana Mio Akari Yuka Misaki Nana Haruka Ayaka Rina Saki Kana Emi Mai Nao".split(" ");
+  const JP_L="Sato Suzuki Takahashi Tanaka Watanabe Ito Yamamoto Nakamura Kobayashi Kato Yoshida Yamada Sasaki Yamaguchi Matsumoto Inoue Kimura Hayashi Shimizu Saito".split(" ");
+  const DE_M="Lukas Leon Luca Finn Jonas Paul Felix Maximilian Elias Noah Ben Luis Julian Moritz David Tim Jan Niklas".split(" ");
+  const DE_F="Mia Emma Hannah Sofia Anna Lena Lea Marie Lina Clara Johanna Laura Sophie Emily Nele Leonie Amelie".split(" ");
+  const DE_L="Mueller Schmidt Schneider Fischer Weber Meyer Wagner Becker Schulz Hoffmann Koch Bauer Richter Klein Wolf Schroeder Neumann Schwarz".split(" ");
+  const FR_M="Lucas Hugo Louis Gabriel Jules Arthur Paul Nathan Tom Theo Antoine Maxime Clement Julien Adam Raphael".split(" ");
+  const FR_F="Emma Jade Louise Alice Chloe Lea Manon Camille Sarah Clara Ines Juliette Lola Zoe Lucie Anna".split(" ");
+  const FR_L="Martin Bernard Dubois Thomas Robert Richard Petit Durand Leroy Moreau Simon Laurent Lefebvre Michel Garcia Roux Fournier".split(" ");
+  const HK_L="Chan Wong Lee Cheung Lam Chow Wu Yeung Ng Ho Cheng Tang Tsang Kwok Lau Leung Yip Tsui Fung Lai".split(" ");
+  function wName(){ const m=rint(2)===0; return {first:pick(m?window.MALE:window.FEMALE), last:pick(window.SURNAME), gender:m?"Male":"Female"}; }
+  function jName(){ const m=rint(2)===0; return {first:pick(m?JP_M:JP_F), last:pick(JP_L), gender:m?"Male":"Female"}; }
+  function deName(){ const m=rint(2)===0; return {first:pick(m?DE_M:DE_F), last:pick(DE_L), gender:m?"Male":"Female"}; }
+  function frName(){ const m=rint(2)===0; return {first:pick(m?FR_M:FR_F), last:pick(FR_L), gender:m?"Male":"Female"}; }
+  function hkName(){ const m=rint(2)===0; return {first:pick(m?window.MALE:window.FEMALE), last:pick(HK_L), gender:m?"Male":"Female"}; }
+  /* 各国城市数据 */
+  const UK=("London|SW1A|20;Manchester|M1|161;Birmingham|B1|121;Leeds|LS1|113;Liverpool|L1|151;Bristol|BS1|117;Glasgow|G1|141;Edinburgh|EH1|131;Sheffield|S1|114;Nottingham|NG1|115;Cardiff|CF10|29;Leicester|LE1|116").split(";").map(s=>{const p=s.split("|");return {city:p[0],area:p[1],ac:p[2]};});
+  const UK_ST="High Street,Station Road,Church Lane,London Road,Victoria Road,Kings Road,Queens Road,Mill Lane,Park Road,Main Street,Green Lane,New Road,Manor Road,Church Road".split(",");
+  const CA=("Toronto|ON|M5H|416;Mississauga|ON|L5B|905;Ottawa|ON|K1P|613;Hamilton|ON|L8P|905;Vancouver|BC|V6B|604;Victoria|BC|V8W|250;Montreal|QC|H2Y|514;Quebec City|QC|G1R|418;Calgary|AB|T2P|403;Edmonton|AB|T5J|780;Winnipeg|MB|R3C|204;Halifax|NS|B3J|902").split(";").map(s=>{const p=s.split("|");return {city:p[0],prov:p[1],fsa:p[2],ac:p[3]};});
+  const CA_PROV={ON:"安大略省 Ontario",BC:"不列颠哥伦比亚省 British Columbia",QC:"魁北克省 Quebec",AB:"阿尔伯塔省 Alberta",MB:"曼尼托巴省 Manitoba",NS:"新斯科舍省 Nova Scotia"};
+  const AU=("Sydney|NSW|2000;Newcastle|NSW|2300;Melbourne|VIC|3000;Geelong|VIC|3220;Brisbane|QLD|4000;Gold Coast|QLD|4217;Perth|WA|6000;Adelaide|SA|5000;Canberra|ACT|2600;Hobart|TAS|7000").split(";").map(s=>{const p=s.split("|");return {city:p[0],st:p[1],zip:p[2]};});
+  const AU_ST={NSW:"新南威尔士州 New South Wales",VIC:"维多利亚州 Victoria",QLD:"昆士兰州 Queensland",WA:"西澳大利亚州 Western Australia",SA:"南澳大利亚州 South Australia",ACT:"首都领地 ACT",TAS:"塔斯马尼亚州 Tasmania"};
+  const DEC=("Berlin|10115;Hamburg|20095;Munich|80331;Cologne|50667;Frankfurt|60311;Stuttgart|70173;Dusseldorf|40213;Leipzig|04109;Dortmund|44135;Bremen|28195").split(";").map(s=>{const p=s.split("|");return {city:p[0],plz:p[1]};});
+  const DE_ST="Hauptstrasse,Bahnhofstrasse,Schulstrasse,Gartenstrasse,Dorfstrasse,Kirchstrasse,Bergstrasse,Lindenstrasse,Goethestrasse,Schillerstrasse".split(",");
+  const FRC=("Paris|75001;Marseille|13001;Lyon|69001;Toulouse|31000;Nice|06000;Nantes|44000;Strasbourg|67000;Bordeaux|33000;Lille|59000;Rennes|35000").split(";").map(s=>{const p=s.split("|");return {city:p[0],cp:p[1]};});
+  const FR_ST="Rue de la Paix,Avenue des Champs,Rue Victor Hugo,Rue de Rivoli,Boulevard Saint-Germain,Rue du Faubourg,Avenue de la Republique,Rue Saint-Honore,Rue Lafayette".split(",");
+  const JPC=("Tokyo|Tokyo|Shinjuku|160;Tokyo|Tokyo|Shibuya|150;Osaka|Osaka|Kita|530;Osaka|Osaka|Chuo|540;Yokohama|Kanagawa|Naka|231;Nagoya|Aichi|Naka|460;Sapporo|Hokkaido|Chuo|060;Fukuoka|Fukuoka|Hakata|812;Kobe|Hyogo|Chuo|650;Kyoto|Kyoto|Nakagyo|604").split(";").map(s=>{const p=s.split("|");return {city:p[0],pref:p[1],ward:p[2],post3:p[3]};});
+  const HK=("Central|Hong Kong Island;Wan Chai|Hong Kong Island;Causeway Bay|Hong Kong Island;North Point|Hong Kong Island;Tsim Sha Tsui|Kowloon;Mong Kok|Kowloon;Kwun Tong|Kowloon;Sham Shui Po|Kowloon;Sha Tin|New Territories;Tsuen Wan|New Territories;Yuen Long|New Territories;Tai Po|New Territories").split(";").map(s=>{const p=s.split("|");return {dist:p[0],region:p[1]};});
+  const HK_ST="Nathan Road,Queen's Road,Des Voeux Road,Hennessy Road,Argyle Street,Canton Road,Lockhart Road,Jaffe Road,Portland Street,Waterloo Road".split(",");
+  /* 收尾：补邮箱 + 国家名 */
+  function finalize(r,countryEn){ r.country=countryEn; const em=(r.first+"."+r.last+d(rint(3)+2)).toLowerCase().replace(/[^a-z0-9.]/g,""); r.email=em+"@"+pick(EMAIL_DOMAINS);
+    const by=1956+rint(50); r.birthday=by+"-"+String(1+rint(12)).padStart(2,"0")+"-"+String(1+rint(28)).padStart(2,"0"); r.age=String(2026-by); return r; }
+  function recUS(regionVal,statesFilter){ let pool=CITIES; if(statesFilter)pool=pool.filter(x=>statesFilter.includes(x.st)); if(regionVal)pool=pool.filter(x=>x.st===regionVal); if(!pool.length)pool=CITIES;
+    const loc=pick(pool),n=wName(); const street=numHouse()+" "+pick(STREETS)+" "+pick(ST_SUFFIX);
+    const r={first:n.first,last:n.last,gender:n.gender,phone:"+1 ("+loc.ac+") "+(2+rint(8))+d(2)+"-"+d(4),street,city:loc.city,region:loc.st,regionName:(STATE_INFO[loc.st]||loc.st),zip:loc.zip};
+    r.full=street+", "+loc.city+", "+loc.st+" "+loc.zip+", USA"; return finalize(r,"United States"); }
+  function recUK(regionVal){ let pool=UK; if(regionVal)pool=pool.filter(x=>x.city===regionVal); if(!pool.length)pool=UK;
+    const loc=pick(pool),n=wName(); const street=(1+rint(250))+" "+pick(UK_ST),post=loc.area+" "+(1+rint(9))+L()+L();
+    const r={first:n.first,last:n.last,gender:n.gender,phone:"+44 "+loc.ac+" "+d(4)+" "+d(4),street,city:loc.city,region:loc.city,regionName:loc.city,zip:post};
+    r.full=street+", "+loc.city+" "+post+", United Kingdom"; return finalize(r,"United Kingdom"); }
+  function recCA(regionVal){ let pool=CA; if(regionVal)pool=pool.filter(x=>x.prov===regionVal); if(!pool.length)pool=CA;
+    const loc=pick(pool),n=wName(); const street=numHouse()+" "+pick(STREETS)+" "+pick(ST_SUFFIX),post=loc.fsa+" "+rint(10)+L()+rint(10);
+    const r={first:n.first,last:n.last,gender:n.gender,phone:"+1 ("+loc.ac+") "+(2+rint(8))+d(2)+"-"+d(4),street,city:loc.city,region:loc.prov,regionName:(CA_PROV[loc.prov]||loc.prov),zip:post};
+    r.full=street+", "+loc.city+", "+loc.prov+" "+post+", Canada"; return finalize(r,"Canada"); }
+  function recAU(regionVal){ let pool=AU; if(regionVal)pool=pool.filter(x=>x.st===regionVal); if(!pool.length)pool=AU;
+    const loc=pick(pool),n=wName(); const street=numHouse()+" "+pick(STREETS)+" "+pick(ST_SUFFIX);
+    const r={first:n.first,last:n.last,gender:n.gender,phone:"+61 4"+d(2)+" "+d(3)+" "+d(3),street,city:loc.city,region:loc.st,regionName:(AU_ST[loc.st]||loc.st),zip:loc.zip};
+    r.full=street+", "+loc.city+" "+loc.st+" "+loc.zip+", Australia"; return finalize(r,"Australia"); }
+  function recDE(regionVal){ let pool=DEC; if(regionVal)pool=pool.filter(x=>x.city===regionVal); if(!pool.length)pool=DEC;
+    const loc=pick(pool),n=deName(); const street=pick(DE_ST)+" "+(1+rint(150));
+    const r={first:n.first,last:n.last,gender:n.gender,phone:"+49 1"+(50+rint(50))+" "+d(7),street,city:loc.city,region:loc.city,regionName:loc.city,zip:loc.plz};
+    r.full=street+", "+loc.plz+" "+loc.city+", Germany"; return finalize(r,"Germany"); }
+  function recFR(regionVal){ let pool=FRC; if(regionVal)pool=pool.filter(x=>x.city===regionVal); if(!pool.length)pool=FRC;
+    const loc=pick(pool),n=frName(); const street=(1+rint(150))+" "+pick(FR_ST);
+    const r={first:n.first,last:n.last,gender:n.gender,phone:"+33 6 "+d(2)+" "+d(2)+" "+d(2)+" "+d(2),street,city:loc.city,region:loc.city,regionName:loc.city,zip:loc.cp};
+    r.full=street+", "+loc.cp+" "+loc.city+", France"; return finalize(r,"France"); }
+  function recJP(regionVal){ let pool=JPC; if(regionVal)pool=pool.filter(x=>x.city===regionVal); if(!pool.length)pool=JPC;
+    const loc=pick(pool),n=jName(); const post=loc.post3+"-"+d(4),street=(1+rint(9))+"-"+(1+rint(20))+"-"+(1+rint(30))+" "+loc.ward;
+    const r={first:n.first,last:n.last,gender:n.gender,phone:"+81 90-"+d(4)+"-"+d(4),street,city:loc.city,region:loc.pref,regionName:loc.pref,zip:"〒"+post};
+    r.full=street+", "+loc.city+", "+loc.pref+" "+post+", Japan"; return finalize(r,"Japan"); }
+  function recHK(regionVal){ let pool=HK; if(regionVal)pool=pool.filter(x=>x.dist===regionVal); if(!pool.length)pool=HK;
+    const loc=pick(pool),n=hkName(); const street="Flat "+L()+", "+(1+rint(30))+"/F, "+(1+rint(400))+" "+pick(HK_ST);
+    const r={first:n.first,last:n.last,gender:n.gender,phone:"+852 "+pick([5,6,9])+d(3)+" "+d(4),street,city:loc.dist,region:loc.region,regionName:loc.region,zip:""};
+    r.full=street+", "+loc.dist+", "+loc.region+", Hong Kong"; return finalize(r,"Hong Kong"); }
+  /* ---- 更多国家 ---- */
+  const IT_M="Francesco Alessandro Lorenzo Leonardo Matteo Andrea Gabriele Riccardo Tommaso Marco Giuseppe Antonio Giovanni Luca Davide Simone Federico Stefano".split(" ");
+  const IT_F="Sofia Giulia Aurora Alice Ginevra Emma Giorgia Martina Chiara Sara Anna Francesca Elena Valentina Alessia Laura".split(" ");
+  const IT_L="Rossi Russo Ferrari Esposito Bianchi Romano Colombo Ricci Marino Greco Bruno Gallo Conti Costa Giordano Rizzo Lombardi Moretti".split(" ");
+  const ES_M="Antonio Manuel Jose Francisco David Juan Javier Daniel Carlos Miguel Alejandro Rafael Pablo Sergio Jorge Alberto".split(" ");
+  const ES_F="Maria Carmen Ana Isabel Laura Marta Cristina Lucia Paula Elena Sara Raquel Pilar Rosa Andrea Claudia".split(" ");
+  const ES_L="Garcia Fernandez Gonzalez Rodriguez Lopez Martinez Sanchez Perez Gomez Martin Jimenez Ruiz Hernandez Diaz Moreno Alvarez".split(" ");
+  const BR_M="Miguel Arthur Davi Gabriel Bernardo Lucas Matheus Rafael Heitor Pedro Guilherme Gustavo Felipe Bruno Rodrigo Thiago".split(" ");
+  const BR_F="Alice Sophia Helena Valentina Laura Isabella Manuela Julia Heloisa Luiza Maria Beatriz Mariana Lara Camila".split(" ");
+  const BR_L="Silva Santos Oliveira Souza Rodrigues Ferreira Alves Pereira Lima Gomes Costa Ribeiro Martins Carvalho Almeida Lopes".split(" ");
+  const KR_M="Minjun Seojun Doyoon Jisoo Jihu Hajun Junseo Junwoo Yejun Minseok Jiho Woojin Hyun Seungmin Jaeho".split(" ");
+  const KR_F="Seoyeon Seoyun Jiwoo Seohyun Hayoon Jimin Jiyu Soeun Yuna Chaewon Eunseo Yerin Subin Jiyoon Dahye".split(" ");
+  const KR_L="Kim Lee Park Choi Jung Kang Cho Yoon Jang Lim Han Oh Seo Shin Kwon Hwang Ahn Song".split(" ");
+  const IN_M="Aarav Vihaan Vivaan Aditya Arjun Reyansh Krishna Ishaan Rohan Rahul Amit Vikram Sanjay Rajesh Karan Nikhil".split(" ");
+  const IN_F="Saanvi Aadhya Ananya Diya Priya Ishita Anjali Pooja Neha Riya Kavya Meera Sneha Divya Shreya Aisha".split(" ");
+  const IN_L="Sharma Verma Gupta Kumar Singh Patel Reddy Rao Nair Iyer Das Bose Mehta Shah Chauhan Mishra Joshi Malhotra".split(" ");
+  const gname=(M,F)=>()=>{ const m=rint(2)===0; return {first:pick(m?M:F), last:"", gender:m?"Male":"Female"}; };
+  const gname3=(M,F,Lst)=>()=>{ const m=rint(2)===0; return {first:pick(m?M:F), last:pick(Lst), gender:m?"Male":"Female"}; };
+  const IT_ST="Via Roma,Via Milano,Corso Italia,Via Garibaldi,Via Dante,Viale Europa,Via Veneto,Via Marconi".split(",");
+  const ES_ST="Calle Mayor,Calle Real,Avenida de España,Calle del Sol,Calle Nueva,Gran Via,Paseo de Gracia".split(",");
+  const NL_ST="Dorpsstraat,Kerkstraat,Schoolstraat,Molenweg,Stationsstraat,Julianastraat,Beatrixstraat".split(",");
+  const SE_ST="Storgatan,Kungsgatan,Drottninggatan,Nygatan,Jarnvagsgatan,Skolgatan".split(",");
+  const PL_ST="Glowna,Polna,Lipowa,Sloneczna,Ogrodowa,Krotka,Lesna".split(",");
+  const BR_ST="Rua das Flores,Avenida Paulista,Rua XV de Novembro,Rua Sao Joao,Avenida Brasil,Rua da Praia".split(",");
+  const KR_ST="Teheran-ro,Gangnam-daero,Jongno,Sejong-daero,Yeoksam-ro,Nonhyeon-ro".split(",");
+  const IN_ST="MG Road,Park Street,Brigade Road,Nehru Road,Gandhi Road,Church Street,Station Road".split(",");
+  const mkArr=(str,keys)=>str.split(";").map(s=>{const p=s.split("|");const o={};keys.forEach((k,i)=>o[k]=p[i]);return o;});
+  const IT=mkArr("Rome|Lazio|00184;Milan|Lombardy|20121;Naples|Campania|80133;Turin|Piedmont|10121;Florence|Tuscany|50122;Bologna|Emilia-Romagna|40121;Venice|Veneto|30121;Genoa|Liguria|16121",["city","region","zip"]);
+  const ES=mkArr("Madrid|Madrid|28001;Barcelona|Catalonia|08001;Valencia|Valencia|46001;Seville|Andalusia|41001;Zaragoza|Aragon|50001;Malaga|Andalusia|29001;Bilbao|Basque Country|48001",["city","region","zip"]);
+  const NL=mkArr("Amsterdam|1011;Rotterdam|3011;The Hague|2511;Utrecht|3511;Eindhoven|5611;Groningen|9711",["city","zip"]);
+  const CH=mkArr("Zurich|8001;Geneva|1201;Basel|4001;Bern|3011;Lausanne|1003;Lucerne|6003",["city","zip"]);
+  const SE=mkArr("Stockholm|111 21;Gothenburg|411 01;Malmo|211 01;Uppsala|753 10",["city","zip"]);
+  const PL=mkArr("Warsaw|00-001;Krakow|30-001;Lodz|90-001;Wroclaw|50-001;Poznan|60-001",["city","zip"]);
+  const BR=mkArr("Sao Paulo|SP|01310-100;Rio de Janeiro|RJ|20040-002;Brasilia|DF|70040-010;Salvador|BA|40020-000;Fortaleza|CE|60160-230;Belo Horizonte|MG|30110-002",["city","region","zip"]);
+  const NZ=mkArr("Auckland|1010;Wellington|6011;Christchurch|8011;Hamilton|3204;Dunedin|9016",["city","zip"]);
+  const KR=mkArr("Seoul|Seoul|04524;Busan|Busan|48058;Incheon|Incheon|21554;Daegu|Daegu|41911;Daejeon|Daejeon|35208;Gwangju|Gwangju|61947",["city","region","zip"]);
+  const IN=mkArr("Mumbai|Maharashtra|400001;Delhi|Delhi|110001;Bangalore|Karnataka|560001;Chennai|Tamil Nadu|600001;Kolkata|West Bengal|700001;Hyderabad|Telangana|500001",["city","region","zip"]);
+  const SG=mkArr("Singapore|Central|238801;Singapore|East|460001;Singapore|West|600001;Singapore|North|730001",["city","region","zip"]);
+  function mkCountry(o){ return function(regionVal){ let pool=o.data; if(regionVal)pool=pool.filter(x=>x[o.key]===regionVal); if(!pool.length)pool=o.data;
+    const loc=pick(pool), n=o.name(); const street=o.street(), zip=o.postal?o.postal(loc):loc.zip;
+    const r={first:n.first,last:n.last,gender:n.gender,phone:o.phone(loc),street,city:loc.city,region:loc[o.key],regionName:o.regionLabel?o.regionLabel(loc):loc.city,zip};
+    r.full=o.full(street,loc,zip); return finalize(r,o.countryEn); }; }
+  function regionsOf(data,key,labelFn){ const seen=new Set(),out=[]; for(const x of data){ if(seen.has(x[key]))continue; seen.add(x[key]); out.push({v:x[key],label:labelFn(x)}); } return out; }
+  const recIT=mkCountry({data:IT,key:"region",regionLabel:x=>x.region,name:gname3(IT_M,IT_F,IT_L),phone:()=>"+39 3"+d(2)+" "+d(3)+" "+d(4),street:()=>pick(IT_ST)+" "+(1+rint(200)),full:(s,l,z)=>s+", "+z+" "+l.city+" "+l.region+", Italy",countryEn:"Italy"});
+  const recES=mkCountry({data:ES,key:"region",regionLabel:x=>x.region,name:gname3(ES_M,ES_F,ES_L),phone:()=>"+34 6"+d(2)+" "+d(3)+" "+d(3),street:()=>pick(ES_ST)+", "+(1+rint(200)),full:(s,l,z)=>s+", "+z+" "+l.city+", Spain",countryEn:"Spain"});
+  const recNL=mkCountry({data:NL,key:"city",name:gname3(window.MALE,window.FEMALE,window.SURNAME),phone:()=>"+31 6 "+d(8),street:()=>pick(NL_ST)+" "+(1+rint(200)),postal:l=>l.zip+" "+L()+L(),full:(s,l,z)=>s+", "+z+" "+l.city+", Netherlands",countryEn:"Netherlands"});
+  const recCH=mkCountry({data:CH,key:"city",name:gname3(DE_M,DE_F,DE_L),phone:()=>"+41 7"+d(1)+" "+d(3)+" "+d(2)+" "+d(2),street:()=>pick(DE_ST)+" "+(1+rint(150)),full:(s,l,z)=>s+", "+z+" "+l.city+", Switzerland",countryEn:"Switzerland"});
+  const recSE=mkCountry({data:SE,key:"city",name:gname3(window.MALE,window.FEMALE,window.SURNAME),phone:()=>"+46 7"+d(1)+" "+d(3)+" "+d(2)+" "+d(2),street:()=>pick(SE_ST)+" "+(1+rint(120)),full:(s,l,z)=>s+", "+z+" "+l.city+", Sweden",countryEn:"Sweden"});
+  const recPL=mkCountry({data:PL,key:"city",name:gname3(window.MALE,window.FEMALE,window.SURNAME),phone:()=>"+48 "+d(3)+" "+d(3)+" "+d(3),street:()=>"ul. "+pick(PL_ST)+" "+(1+rint(150)),full:(s,l,z)=>s+", "+z+" "+l.city+", Poland",countryEn:"Poland"});
+  const recBR=mkCountry({data:BR,key:"region",regionLabel:x=>x.region,name:gname3(BR_M,BR_F,BR_L),phone:()=>"+55 "+pick(["11","21","31","41","51"])+" 9"+d(4)+"-"+d(4),street:()=>pick(BR_ST)+", "+(1+rint(2000)),full:(s,l,z)=>s+", "+l.city+" - "+l.region+", "+z+", Brazil",countryEn:"Brazil"});
+  const recNZ=mkCountry({data:NZ,key:"city",name:gname3(window.MALE,window.FEMALE,window.SURNAME),phone:()=>"+64 21 "+d(3)+" "+d(4),street:()=>numHouse()+" "+pick(STREETS)+" "+pick(ST_SUFFIX),full:(s,l,z)=>s+", "+l.city+" "+z+", New Zealand",countryEn:"New Zealand"});
+  const recKR=mkCountry({data:KR,key:"city",name:gname3(KR_M,KR_F,KR_L),phone:()=>"+82 10-"+d(4)+"-"+d(4),street:()=>(1+rint(300))+" "+pick(KR_ST),full:(s,l,z)=>s+", "+l.city+" "+z+", South Korea",countryEn:"South Korea"});
+  const recIN=mkCountry({data:IN,key:"region",regionLabel:x=>x.region,name:gname3(IN_M,IN_F,IN_L),phone:()=>"+91 9"+d(4)+" "+d(5),street:()=>(1+rint(400))+" "+pick(IN_ST),full:(s,l,z)=>s+", "+l.city+" "+z+", "+l.region+", India",countryEn:"India"});
+  const recSG=mkCountry({data:SG,key:"region",regionLabel:x=>x.region,name:gname3(window.MALE,window.FEMALE,window.SURNAME),phone:()=>"+65 "+pick([8,9])+d(3)+" "+d(4),street:()=>numHouse()+" "+pick(STREETS)+" Road",postal:()=>(1+rint(9))+d(5),full:(s,l,z)=>s+", Singapore "+z+", Singapore",countryEn:"Singapore"});
+  const TAXFREE=["AK","DE","MT","NH","OR"];
+  function usRegions(filter){ let sts=[...new Set(CITIES.map(c=>c.st))]; if(filter)sts=sts.filter(s=>filter.includes(s)); sts.sort(); return sts.map(s=>({v:s,label:(STATE_INFO[s]||s)+" ("+s+")"})); }
+  const COUNTRIES={
+    us:{label:"🇺🇸 美国 USA", regions:()=>usRegions(null), rec:v=>recUS(v,null)},
+    ustax:{label:"🇺🇸 美国免税州", regions:()=>usRegions(TAXFREE), rec:v=>recUS(v,TAXFREE)},
+    hk:{label:"🇭🇰 香港 HK", regions:()=>HK.map(x=>({v:x.dist,label:x.dist+" · "+x.region})), rec:recHK},
+    uk:{label:"🇬🇧 英国 UK", regions:()=>UK.map(x=>({v:x.city,label:x.city})), rec:recUK},
+    jp:{label:"🇯🇵 日本 Japan", regions:()=>JPC.map(x=>({v:x.city,label:x.city+" "+x.pref})), rec:recJP},
+    ca:{label:"🇨🇦 加拿大 Canada", regions:()=>[...new Set(CA.map(c=>c.prov))].map(p=>({v:p,label:(CA_PROV[p]||p)+" ("+p+")"})), rec:recCA},
+    au:{label:"🇦🇺 澳大利亚 AU", regions:()=>[...new Set(AU.map(c=>c.st))].map(s=>({v:s,label:(AU_ST[s]||s)+" ("+s+")"})), rec:recAU},
+    de:{label:"🇩🇪 德国 Germany", regions:()=>DEC.map(x=>({v:x.city,label:x.city})), rec:recDE},
+    fr:{label:"🇫🇷 法国 France", regions:()=>FRC.map(x=>({v:x.city,label:x.city})), rec:recFR},
+    it:{label:"🇮🇹 意大利 Italy", regions:()=>regionsOf(IT,"region",x=>x.region), rec:recIT},
+    es:{label:"🇪🇸 西班牙 Spain", regions:()=>regionsOf(ES,"region",x=>x.region), rec:recES},
+    nl:{label:"🇳🇱 荷兰 Netherlands", regions:()=>regionsOf(NL,"city",x=>x.city), rec:recNL},
+    ch:{label:"🇨🇭 瑞士 Switzerland", regions:()=>regionsOf(CH,"city",x=>x.city), rec:recCH},
+    se:{label:"🇸🇪 瑞典 Sweden", regions:()=>regionsOf(SE,"city",x=>x.city), rec:recSE},
+    pl:{label:"🇵🇱 波兰 Poland", regions:()=>regionsOf(PL,"city",x=>x.city), rec:recPL},
+    br:{label:"🇧🇷 巴西 Brazil", regions:()=>regionsOf(BR,"region",x=>x.region+" ("+x.city+")"), rec:recBR},
+    nz:{label:"🇳🇿 新西兰 New Zealand", regions:()=>regionsOf(NZ,"city",x=>x.city), rec:recNZ},
+    kr:{label:"🇰🇷 韩国 South Korea", regions:()=>regionsOf(KR,"city",x=>x.city), rec:recKR},
+    in:{label:"🇮🇳 印度 India", regions:()=>regionsOf(IN,"region",x=>x.region+" ("+x.city+")"), rec:recIN},
+    sg:{label:"🇸🇬 新加坡 Singapore", regions:()=>regionsOf(SG,"region",x=>x.region), rec:recSG}
+  };
+  const ORDER=["us","ustax","ca","hk","uk","de","fr","it","es","nl","ch","se","pl","jp","kr","in","sg","au","nz","br"];
+  let curCountry="us";
+  const cc=$("#ad-countryChips");
+  cc.innerHTML=ORDER.map((k,i)=>`<button class="chip${i===0?" on":""}" data-c="${k}">${COUNTRIES[k].label}</button>`).join("");
+  function fillRegions(){ const sel=$("#ad-region"); const list=COUNTRIES[curCountry].regions(); sel.innerHTML=`<option value="" selected>随机（全部）</option>`+list.map(o=>`<option value="${o.v}">${o.label}</option>`).join(""); }
+  cc.addEventListener("click",e=>{ const b=e.target.closest(".chip"); if(!b)return; curCountry=b.dataset.c; cc.querySelectorAll(".chip").forEach(x=>x.classList.toggle("on",x===b)); fillRegions(); });
+  fillRegions();
+  const FIELD_LABELS=[["first","名 / First Name"],["last","姓 / Last Name"],["gender","性别 / Gender"],["birthday","生日 / Birthday"],["age","年龄 / Age"],["phone","电话 / Phone"],["email","电子邮件 / Email"],["street","街道 / Street Address"],["city","城市 / City"],["regionName","州省地区 / State"],["zip","邮编 / ZIP"],["full","完整地址 / Full Address"]];
+  function wanted(){ return { name:$("#ad-fName").checked, gender:$("#ad-fGender").checked, birth:$("#ad-fBirth").checked, phone:$("#ad-fPhone").checked, email:$("#ad-fEmail").checked }; }
+  function recToLine(r,w,fmt){ const cols=[]; if(w.name)cols.push(r.first+" "+r.last); if(w.gender)cols.push(r.gender); if(w.birth)cols.push(r.birthday+" ("+r.age+")"); if(w.phone)cols.push(r.phone); if(w.email)cols.push(r.email);
+    if(fmt==="tab")return [...cols,r.street,r.city,r.regionName,r.zip].join("\t");
+    if(fmt==="pipe")return [...cols,r.full].join(" | ");
+    return cols.length?cols.join(" · ")+" · "+r.full:r.full; }
+  const CSV_H=["First Name","Last Name","Gender","Birthday","Age","Phone","Email","Street","City","State","ZIP","Country","Full Address"];
+  const CSV_K=["first","last","gender","birthday","age","phone","email","street","city","regionName","zip","country","full"];
+  const csvCellA=v=>{ v=String(v==null?"":v); return /[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
+  const toCSV=recs=>"﻿"+[CSV_H.join(",")].concat(recs.map(r=>CSV_K.map(k=>csvCellA(r[k])).join(","))).join("\r\n");
+  const toJSON=recs=>JSON.stringify(recs.map(r=>{const o={};CSV_K.forEach(k=>o[k]=r[k]);return o;}),null,2);
+  let lastLines=[], lastRecs=[], curRec=null;
+  function renderCard(r){ $("#ad-cardCountry").textContent=r.country; const esc=escHTML;
+    $("#ad-fields").innerHTML=FIELD_LABELS.map(([k,lab])=>{ let v=r[k]; if(v==null||v==="")v="—";
+      return `<div class="ad-f${(k==="full"||k==="email"||k==="street")?" full":""}"><span class="l">${lab}</span><span class="r"><span class="v">${esc(String(v))}</span><button class="cp" data-v="${esc(String(v))}" title="复制">⧉</button></span></div>`; }).join("");
+    $("#ad-card").style.display="block"; }
+  function generate(){ let count=parseInt($("#ad-count").value)||1; count=Math.min(100000,Math.max(1,count)); $("#ad-count").value=count;
+    const genFn=COUNTRIES[curCountry].rec, regionVal=$("#ad-region").value;
+    const recs=new Array(count); for(let i=0;i<count;i++)recs[i]=genFn(regionVal); lastRecs=recs;
+    if(count===1){ curRec=recs[0]; renderCard(curRec); lastLines=[recToLine(curRec,{name:true,gender:true,birth:true,phone:true,email:true},$("#ad-fmt").value)]; $("#ad-batchCard").style.display="none"; $("#ad-card").scrollIntoView({behavior:"smooth",block:"nearest"}); }
+    else { const w=wanted(),fmt=$("#ad-fmt").value; lastLines=recs.map(r=>recToLine(r,w,fmt)); curRec=null;
+      $("#ad-card").style.display="none"; $("#ad-batchCard").style.display="block"; $("#ad-rc").textContent=count.toLocaleString();
+      const PREV=5000; $("#ad-out").value=lastLines.slice(0,PREV).join("\n");
+      const note=$("#ad-note"); if(count>PREV){ note.style.display="block"; note.textContent=`共 ${count.toLocaleString()} 行，仅预览前 ${PREV.toLocaleString()} 行；复制 / 下载为全部。`; } else note.style.display="none";
+      $("#ad-batchCard").scrollIntoView({behavior:"smooth",block:"nearest"}); } }
+  $("#ad-fields").addEventListener("click",async e=>{ const b=e.target.closest(".cp"); if(!b)return; if(await copyTextSafe(b.dataset.v))toast("已复制"); });
+  async function copyAll(){ if(!lastLines.length){toast("请先生成");return;} if(await copyTextSafe(lastLines.join("\r\n")))toast(`已复制 ${lastLines.length.toLocaleString()} 条`); }
+  $("#ad-copyAll").onclick=async ()=>{ if(!curRec){toast("请先生成");return;} const all=FIELD_LABELS.map(([k,lab])=>lab.split(" / ")[1]+": "+(curRec[k]||"")).join("\n"); if(await copyTextSafe(all))toast("已复制全部字段"); };
+  $("#ad-copy2").onclick=copyAll;
+  $("#ad-dl2").onclick=()=>{ if(!lastLines.length){toast("请先生成");return;} download(new Blob([lastLines.join("\r\n")+"\r\n"],{type:"text/plain;charset=utf-8"}),"地址_"+curCountry+".txt"); };
+  $("#ad-dlCsv").onclick=()=>{ if(!lastRecs.length){toast("请先生成");return;} download(new Blob([toCSV(lastRecs)],{type:"text/csv;charset=utf-8"}),"地址_"+curCountry+".csv"); };
+  $("#ad-dlJson").onclick=()=>{ if(!lastRecs.length){toast("请先生成");return;} download(new Blob([toJSON(lastRecs)],{type:"application/json;charset=utf-8"}),"地址_"+curCountry+".json"); };
+  $("#ad-map").onclick=()=>{ if(!curRec){toast("请先生成单条");return;} window.open("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(curRec.full),"_blank","noopener"); };
+  $("#ad-gen").onclick=generate;
+  const SKEY="tt.addr.saved";
+  function loadSaved(){ try{ return JSON.parse(localStorage.getItem(SKEY)||"[]"); }catch(e){ return []; } }
+  function saveSaved(a){ try{ localStorage.setItem(SKEY,JSON.stringify(a.slice(-500))); }catch(e){} }
+  function renderSaved(){ const a=loadSaved(),card=$("#ad-savedCard"); if(!a.length){ card.style.display="none"; return; } card.style.display="block"; $("#ad-sc").textContent=a.length;
+    $("#ad-savedList").innerHTML=a.map((x,i)=>`<div class="row"><span class="t">${escHTML(x.full)}</span><button class="x" data-i="${i}" title="删除">✕</button></div>`).join(""); }
+  $("#ad-save").onclick=()=>{ if(!curRec){toast("请先生成单条（数量=1）");return;} const a=loadSaved(); a.push({full:curRec.full, line:recToLine(curRec,{name:true,gender:true,phone:true,email:true},"pipe")}); saveSaved(a); renderSaved(); toast("已保存"); };
+  $("#ad-savedList").addEventListener("click",e=>{ const b=e.target.closest(".x"); if(!b)return; const a=loadSaved(); a.splice(+b.dataset.i,1); saveSaved(a); renderSaved(); });
+  $("#ad-copySaved").onclick=async ()=>{ const a=loadSaved(); if(!a.length){toast("没有已保存");return;} if(await copyTextSafe(a.map(x=>x.line).join("\r\n")))toast(`已复制 ${a.length} 条`); };
+  $("#ad-dlSaved").onclick=()=>{ const a=loadSaved(); if(!a.length){toast("没有已保存");return;} download(new Blob([a.map(x=>x.line).join("\r\n")+"\r\n"],{type:"text/plain;charset=utf-8"}),"已保存地址.txt"); };
+  $("#ad-clearSaved").onclick=()=>{ if(!loadSaved().length){toast("已是空的");return;} if(!confirm("清空已保存的地址？"))return; saveSaved([]); renderSaved(); };
+  renderSaved();
 })();
 </script>
 </body>
