@@ -188,6 +188,9 @@
   .pw-crack .c{background:var(--chip);border-radius:12px;padding:10px 14px;font-size:13px;color:var(--text-2)}
   .pw-crack .c b{display:block;color:var(--text);font-size:15px;margin-top:2px;font-weight:600}
   .pw-lenrow{display:flex;align-items:center;gap:14px}
+  .pw-range{display:flex;align-items:center;gap:10px}
+  .pw-range input{flex:1;min-width:0}
+  .pw-range span{color:var(--text-3);font-weight:600}
   .pw-lenrow input[type=number]{width:92px;flex:none;text-align:center}
   input[type=range].slider{-webkit-appearance:none;appearance:none;flex:1;height:4px;border-radius:999px;background:linear-gradient(90deg,var(--accent) var(--pct,50%),var(--line-strong) var(--pct,50%));outline:none;margin:0;border:0;padding:0}
   input[type=range].slider::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:#fff;border:0;box-shadow:0 1px 4px rgba(0,0,0,.35),0 0 0 .5px rgba(0,0,0,.08);cursor:pointer;transition:transform .1s}
@@ -1131,9 +1134,13 @@
           <div class="field"><label>组成方式</label>
             <select id="pw-emStyle"><option value="words" selected>英文单词组合（bravecoral）</option><option value="name">姓名组合（patricia.barnes）</option><option value="letters">随机字母</option></select>
           </div>
-          <div class="field"><label>段数 / 字母长度</label><input type="number" id="pw-emParts" min="1" max="12" value="2"><div class="hint">单词组合=几个词；随机字母=字母个数</div></div>
-          <div class="field"><label>分隔符</label><select id="pw-emSep"><option value="" selected>无</option><option value=".">点 .</option><option value="_">下划线 _</option><option value="-">连字符 -</option></select></div>
-          <div class="field"><label>追加数字位数</label><input type="number" id="pw-emDigits" min="0" max="8" value="2"><div class="hint">0 = 不加数字</div></div>
+          <div class="field"><label>段数 / 字母长度（区间）</label>
+            <div class="pw-range"><input type="number" id="pw-emPartsMin" min="1" max="24" value="1"><span>~</span><input type="number" id="pw-emPartsMax" min="1" max="24" value="2"></div>
+            <div class="hint">每条随机取区间内一个值；单词组合=词数，随机字母=字母数</div></div>
+          <div class="field"><label>分隔符</label><select id="pw-emSep"><option value="" selected>无</option><option value=".">点 .</option><option value="_">下划线 _</option><option value="-">连字符 -</option></select><div class="hint">随机字母模式下此项不生效</div></div>
+          <div class="field"><label>追加数字位数（区间）</label>
+            <div class="pw-range"><input type="number" id="pw-emDigitsMin" min="0" max="12" value="2"><span>~</span><input type="number" id="pw-emDigitsMax" min="0" max="12" value="4"></div>
+            <div class="hint">两个都填 0 = 不加数字</div></div>
           <div class="field"><label>大小写</label><select id="pw-emCase"><option value="lower" selected>全部小写</option><option value="cap">每段首字母大写</option><option value="upper">全部大写</option></select></div>
           <div class="field"><label>域名（可选）</label><input type="text" id="pw-emDomain" placeholder="如 gmail.com，留空只出前缀" spellcheck="false">
             <div class="chips" id="pw-emDomChips" style="margin-top:8px"><button class="chip on" data-dom="">无</button><button class="chip" data-dom="gmail.com">gmail.com</button><button class="chip" data-dom="outlook.com">outlook.com</button><button class="chip" data-dom="hotmail.com">hotmail.com</button><button class="chip" data-dom="yahoo.com">yahoo.com</button><button class="chip" data-dom="icloud.com">icloud.com</button><button class="chip" data-dom="proton.me">proton.me</button><button class="chip" data-dom="live.com">live.com</button><button class="chip" data-dom="aol.com">aol.com</button><button class="chip" data-dom="qq.com">qq.com</button><button class="chip" data-dom="163.com">163.com</button><button class="chip" data-dom="foxmail.com">foxmail.com</button></div>
@@ -2589,16 +2596,32 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
 
   /* ---- 邮箱前缀模式 ---- */
   const capWord=w=>w?w[0].toUpperCase()+w.slice(1).toLowerCase():w;
-  function cfgEmail(){ return { style:$("#pw-emStyle").value, parts:clampNum($("#pw-emParts"),1,12,2), sep:$("#pw-emSep").value, digits:clampNum($("#pw-emDigits"),0,8,2), kase:$("#pw-emCase").value, domain:$("#pw-emDomain").value.trim().replace(/^@+/,"").replace(/\s+/g,"") }; }
+  const rrange=(a,b)=>{ if(a>b){const t=a;a=b;b=t;} return a+(b>a?rint(b-a+1):0); };  // 区间内随机整数 [a,b]
+  function cfgEmail(){ return {
+    style:$("#pw-emStyle").value, sep:$("#pw-emSep").value, kase:$("#pw-emCase").value,
+    parts:rrange(clampNum($("#pw-emPartsMin"),1,24,1),clampNum($("#pw-emPartsMax"),1,24,2)),
+    digits:rrange(clampNum($("#pw-emDigitsMin"),0,12,2),clampNum($("#pw-emDigitsMax"),0,12,4)),
+    domain:$("#pw-emDomain").value.trim().replace(/^@+/,"").replace(/\s+/g,"") }; }
   function genEmail(c){
-    let segs=[], bits=0;
-    if(c.style==="name"){ segs=[pick(FIRST_ALL),pick(SURNAME)]; bits+=LOG2(FIRST_ALL.length)+LOG2(SURNAME.length); }
-    else if(c.style==="letters"){ let s=""; for(let i=0;i<c.parts;i++)s+=LETTERS[rint(26)]; segs=[s]; bits+=c.parts*LOG2(26); }
-    else { for(let i=0;i<c.parts;i++)segs.push(pick(WORDS)); bits+=c.parts*LOG2(WORDS.length); }
-    segs=segs.map(w=>c.kase==="upper"?w.toUpperCase():c.kase==="cap"?capWord(w):w.toLowerCase());
-    let pre=segs.join(c.sep);
-    if(c.digits>0){ let d=""; for(let i=0;i<c.digits;i++)d+=String(rint(10)); pre+=d; bits+=c.digits*LOG2(10); }
-    const seps=new Set(); if(c.sep)seps.add(c.sep);
+    let bits=0, pre="", mixed=false;
+    if(c.style==="letters"){
+      /* 字母 + 数字打散混排，不堆在末尾；首字符保证是字母 */
+      const chars=[]; const n=Math.max(1,c.parts);
+      for(let i=0;i<n;i++)chars.push(LETTERS[rint(26)]);
+      for(let i=0;i<c.digits;i++)chars.push(String(rint(10)));
+      for(let i=chars.length-1;i>0;i--){ const j=rint(i+1); const t=chars[i]; chars[i]=chars[j]; chars[j]=t; }
+      const fi=chars.findIndex(ch=>/[a-z]/.test(ch)); if(fi>0){ const t=chars[0]; chars[0]=chars[fi]; chars[fi]=t; }
+      let str=chars.join(""); str=c.kase==="upper"?str.toUpperCase():c.kase==="cap"?capWord(str):str.toLowerCase();
+      pre=str; bits=n*LOG2(26)+c.digits*LOG2(10); mixed=true;
+    } else {
+      let segs;
+      if(c.style==="name"){ segs=[pick(FIRST_ALL),pick(SURNAME)]; bits+=LOG2(FIRST_ALL.length)+LOG2(SURNAME.length); }
+      else { segs=[]; for(let i=0;i<c.parts;i++)segs.push(pick(WORDS)); bits+=c.parts*LOG2(WORDS.length); }
+      segs=segs.map(w=>c.kase==="upper"?w.toUpperCase():c.kase==="cap"?capWord(w):w.toLowerCase());
+      pre=segs.join(c.sep);
+      if(c.digits>0){ let d=""; for(let i=0;i<c.digits;i++)d+=String(rint(10)); pre+=d; bits+=c.digits*LOG2(10); }
+    }
+    const seps=new Set(); if(c.sep&&!mixed)seps.add(c.sep);
     let pw=pre; if(c.domain){ pw=pre+"@"+c.domain; seps.add("@"); seps.add("."); }
     return { pw, bits, seps, extra:(c.domain?"邮箱":"前缀")+" · "+pw.length+" 字符", small:pw.length>40 };
   }
@@ -2679,7 +2702,7 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
   function schedule(){ clearTimeout(timer); timer=setTimeout(generate,140); }
   $("#pw-settings").addEventListener("input",e=>{ if(e.target.id==="pw-count")return; if(e.target.type==="range"||e.target.type==="number")return; schedule(); });
   $("#pw-settings").addEventListener("change",e=>{ if(e.target.type==="checkbox"||e.target.tagName==="SELECT"||e.target.id==="pw-count")schedule(); });
-  ["pw-minDigit","pw-minSym","pw-group","pw-phNumLen","pw-emParts","pw-emDigits"].forEach(id=>$("#"+id).addEventListener("input",schedule));
+  ["pw-minDigit","pw-minSym","pw-group","pw-phNumLen","pw-emPartsMin","pw-emPartsMax","pw-emDigitsMin","pw-emDigitsMax"].forEach(id=>$("#"+id).addEventListener("input",schedule));
 
   function generate(){
     clearTimeout(timer);
@@ -2741,7 +2764,7 @@ document.querySelectorAll(".maintab").forEach(b=>b.addEventListener("click",()=>
     set("pw-words",5);set("pw-wordsNum",5);set("pw-phSep","-");set("pw-phSepCustom","");set("pw-phCase","cap");set("pw-phList","eff");set("pw-phNum",true);set("pw-phSym",false);set("pw-phNoDup",true);set("pw-phNumLen",2);set("pw-phExtraPos","end");
     set("pw-pin",6);set("pw-pinNum",6);set("pw-pinNoAdj",true);set("pw-pinNoSeq",true);set("pw-pinNoZero",false);set("pw-pinNoRep",false);set("pw-pinNoDate",false);
     set("pw-pattern","Aaaa-dddd-Aaaa-dddd");set("pw-count",1);
-    set("pw-emStyle","words");set("pw-emParts",2);set("pw-emSep","");set("pw-emDigits",2);set("pw-emCase","lower");set("pw-emDomain","");
+    set("pw-emStyle","words");set("pw-emPartsMin",1);set("pw-emPartsMax",2);set("pw-emSep","");set("pw-emDigitsMin",2);set("pw-emDigitsMax",4);set("pw-emCase","lower");set("pw-emDomain","");
     set("pw-nmGender","any");set("pw-nmOrder","fl");set("pw-nmSep"," ");set("pw-nmCase","title");set("pw-nmMid",false);
     $("#pw-phSepCustom").style.display="none"; syncDomChips();
     ["pw-len","pw-words","pw-pin"].forEach(r=>$("#"+r).dispatchEvent(new Event("input")));
