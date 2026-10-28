@@ -3947,7 +3947,7 @@ const makeQR=(function(){
     if(e.status==="wait")return '<span class="st wait"><span class="ac-spin"></span>'+escHTML(e.statusText||"等待中")+'</span>';
     return '<span class="st">'+escHTML(e.statusText||"待开始")+'</span>'; }
   function codeCell(e,i){ return e.code?`<span class="cd" data-i="${i}" title="点击复制">${escHTML(e.code)}</span>`:`<span class="cd none">—</span>`; }
-  function actsCell(e,i){ const acts=[`<button class="btn btn-ghost btn-sm" data-act="retry" data-i="${i}">重试</button>`];
+  function actsCell(e,i){ const acts=[`<button class="btn btn-ghost btn-sm" data-act="retry" data-i="${i}">重试</button>`,`<button class="btn btn-ghost btn-sm" data-act="activate" data-i="${i}">激活</button>`];
     if(e.content)acts.push(`<button class="btn btn-ghost btn-sm" data-act="view" data-i="${i}">查看邮件</button>`);
     if(e.link)acts.push(`<button class="btn btn-ghost btn-sm" data-act="open" data-i="${i}">打开链接</button>`); return acts.join(""); }
   function rowHTML(e,i){ return `<div class="ac-row" id="ac-row-${i}"><span class="em" data-i="${i}" title="点击复制邮箱：${escHTML(e.email)}">${escHTML(e.email)}</span>`
@@ -4006,7 +4006,10 @@ const makeQR=(function(){
     const b=e.target.closest("[data-act]"); if(!b)return; const i=+b.dataset.i, en=entries[i], act=b.dataset.act;
     if(act==="open"){ window.open(en.link,"_blank","noopener"); }
     else if(act==="view"){ if(!en.content){toast("没有邮件内容");return;} const safe=String(en.content).replace(/<script[\s\S]*?<\/script>/gi,""); const w=window.open("","_blank"); if(w){ w.document.open(); w.document.write(safe); w.document.close(); } else toast("弹窗被拦截，请允许弹窗"); }
-    else if(act==="retry"){ if(running){toast("正在运行中");return;} en.code=""; en.content=""; en.status="wait"; en.statusText="重试中…"; renderRow(i); running=true; $("#ac-run").disabled=true; stopFlag=false; processEntry(i).then(()=>{ running=false; $("#ac-run").disabled=false; updCounts(); }); } });
+    else if(act==="retry"){ if(running){toast("正在运行中");return;} en.code=""; en.content=""; en.status="wait"; en.statusText="重试中…"; renderRow(i); running=true; $("#ac-run").disabled=true; stopFlag=false; processEntry(i).then(()=>{ running=false; $("#ac-run").disabled=false; updCounts(); }); }
+    else if(act==="activate"){ if(running){toast("正在运行中");return;} if(!$("#ac-apikey")||!$("#ac-apikey").value.trim()){toast("请先在高级区填 API Key 再激活");return;}
+      en.actTries=0; en.code=""; en.content=""; en.status="wait"; en.statusText="激活中…"; renderRow(i); running=true; $("#ac-run").disabled=true; stopFlag=false;
+      (async()=>{ const ok=await tryActivate(en); if(ok){ en.status="wait"; en.statusText="已激活，接码中…"; renderRow(i); await processEntry(i); toast("已激活："+en.email); } else { en.status="error"; renderRow(i); toast("激活失败："+(en.statusText||"")); } running=false; $("#ac-run").disabled=false; updCounts(); })(); } });
   $("#ac-list").addEventListener("input",e=>{ const n=e.target.closest(".ac-note"); if(!n)return; const i=+n.dataset.i; if(entries[i]){ entries[i].note=n.value; saveNote(entries[i].orderId,n.value.trim()); updateFilterOptions(); updateExHint(); } });
   $("#ac-copyCodes").onclick=async ()=>{ const codes=entries.filter(e=>e.code).map(e=>e.code); if(!codes.length){toast("还没有验证码");return;} if(await copyTextSafe(codes.join("\n")))toast(`已复制 ${codes.length} 个验证码`); };
   $("#ac-copyPair").onclick=async ()=>{ const rows=entries.filter(e=>e.code).map(e=>e.email+"----"+e.code+(e.note?"----"+e.note:"")); if(!rows.length){toast("还没有验证码");return;} if(await copyTextSafe(rows.join("\n")))toast(`已复制 ${rows.length} 条`); };
