@@ -203,7 +203,7 @@
   #ad-countryChips .chip:hover{color:var(--text);background:var(--line)}
   #ad-countryChips .chip.on{background:var(--card-solid);color:var(--text);box-shadow:var(--shadow)}
   .ad-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .ad-f{background:var(--card-solid);border:1px solid var(--line);border-radius:14px;padding:13px 16px;display:flex;align-items:center;justify-content:space-between;gap:14px;min-width:0;transition:.15s}
+  .ad-f{background:var(--card-solid);border:1px solid var(--line);border-radius:14px;padding:13px 16px;display:flex;align-items:center;justify-content:space-between;gap:14px;min-width:0;transition:.15s;cursor:pointer}
   .ad-f:hover{box-shadow:var(--shadow)}
   .ad-f .l{font-size:13px;font-weight:500;color:var(--text-2);flex:none}
   .ad-f .r{display:flex;align-items:center;gap:10px;min-width:0;justify-content:flex-end}
@@ -1587,6 +1587,7 @@
           <option value="tab">Tab 分列（贴 Excel / WPS）</option>
           <option value="pipe">竖线 | 分隔</option>
         </select></div>
+        <div class="field"><label>日本读音形式</label><select id="ad-jaKana"><option value="katakana" selected>片假名 カタカナ</option><option value="hiragana">平假名 ひらがな</option></select><div class="hint">仅日本地址生效</div></div>
       </div>
       <div class="pw-sub">包含字段</div>
       <div class="toggles" style="margin-top:0">
@@ -3723,6 +3724,11 @@ const makeQR=(function(){
   const JP_M="Haruto Yuto Sota Yuki Hayato Sora Riku Ren Hinata Takumi Kaito Daiki Kenta Shota Naoki Yusuke Ryota Kazuki Hiroshi Takashi Kenji Satoshi Ryo Sho".split(" ");
   const JP_F="Yui Aoi Hina Sakura Yuna Mei Rin Hana Mio Akari Yuka Misaki Nana Haruka Ayaka Rina Saki Kana Emi Mai Nao".split(" ");
   const JP_L="Sato Suzuki Takahashi Tanaka Watanabe Ito Yamamoto Nakamura Kobayashi Kato Yoshida Yamada Sasaki Yamaguchi Matsumoto Inoue Kimura Hayashi Shimizu Saito".split(" ");
+  /* 日文姓名：汉字|片假名读音|罗马字 */
+  const mkJ=str=>str.split(";").map(x=>{const p=x.split("|");return {kanji:p[0],kana:p[1],romaji:p[2]};});
+  const JA_SUR=mkJ("佐藤|サトウ|Sato;鈴木|スズキ|Suzuki;高橋|タカハシ|Takahashi;田中|タナカ|Tanaka;渡辺|ワタナベ|Watanabe;伊藤|イトウ|Ito;山本|ヤマモト|Yamamoto;中村|ナカムラ|Nakamura;小林|コバヤシ|Kobayashi;加藤|カトウ|Kato;吉田|ヨシダ|Yoshida;山田|ヤマダ|Yamada;佐々木|ササキ|Sasaki;山口|ヤマグチ|Yamaguchi;松本|マツモト|Matsumoto;井上|イノウエ|Inoue;木村|キムラ|Kimura;林|ハヤシ|Hayashi;清水|シミズ|Shimizu;斎藤|サイトウ|Saito");
+  const JA_GM=mkJ("大翔|ヒロト|Hiroto;悠人|ユウト|Yuto;蓮|レン|Ren;陽翔|ハルト|Haruto;樹|イツキ|Itsuki;颯太|ソウタ|Sota;大和|ヤマト|Yamato;翔太|ショウタ|Shota;健太|ケンタ|Kenta;拓海|タクミ|Takumi;海斗|カイト|Kaito;翔|ショウ|Sho;陸|リク|Riku;大輔|ダイスケ|Daisuke;直樹|ナオキ|Naoki;健|ケン|Ken;亮|リョウ|Ryo");
+  const JA_GF=mkJ("陽菜|ヒナ|Hina;葵|アオイ|Aoi;結衣|ユイ|Yui;さくら|サクラ|Sakura;美咲|ミサキ|Misaki;凛|リン|Rin;芽衣|メイ|Mei;莉子|リコ|Riko;花|ハナ|Hana;愛|アイ|Ai;楓|カエデ|Kaede;七海|ナナミ|Nanami;美羽|ミウ|Miu;結菜|ユイナ|Yuina;彩|アヤ|Aya;遥|ハルカ|Haruka");
   const DE_M="Lukas Leon Luca Finn Jonas Paul Felix Maximilian Elias Noah Ben Luis Julian Moritz David Tim Jan Niklas".split(" ");
   const DE_F="Mia Emma Hannah Sofia Anna Lena Lea Marie Lina Clara Johanna Laura Sophie Emily Nele Leonie Amelie".split(" ");
   const DE_L="Mueller Schmidt Schneider Fischer Weber Meyer Wagner Becker Schulz Hoffmann Koch Bauer Richter Klein Wolf Schroeder Neumann Schwarz".split(" ");
@@ -3746,11 +3752,11 @@ const makeQR=(function(){
   const DE_ST="Hauptstrasse,Bahnhofstrasse,Schulstrasse,Gartenstrasse,Dorfstrasse,Kirchstrasse,Bergstrasse,Lindenstrasse,Goethestrasse,Schillerstrasse".split(",");
   const FRC=("Paris|75001;Marseille|13001;Lyon|69001;Toulouse|31000;Nice|06000;Nantes|44000;Strasbourg|67000;Bordeaux|33000;Lille|59000;Rennes|35000").split(";").map(s=>{const p=s.split("|");return {city:p[0],cp:p[1]};});
   const FR_ST="Rue de la Paix,Avenue des Champs,Rue Victor Hugo,Rue de Rivoli,Boulevard Saint-Germain,Rue du Faubourg,Avenue de la Republique,Rue Saint-Honore,Rue Lafayette".split(",");
-  const JPC=("Tokyo|Tokyo|Shinjuku|160;Tokyo|Tokyo|Shibuya|150;Osaka|Osaka|Kita|530;Osaka|Osaka|Chuo|540;Yokohama|Kanagawa|Naka|231;Nagoya|Aichi|Naka|460;Sapporo|Hokkaido|Chuo|060;Fukuoka|Fukuoka|Hakata|812;Kobe|Hyogo|Chuo|650;Kyoto|Kyoto|Nakagyo|604").split(";").map(s=>{const p=s.split("|");return {city:p[0],pref:p[1],ward:p[2],post3:p[3]};});
+  const JPC=("Tokyo|Tokyo-to|Shinjuku|160;Tokyo|Tokyo-to|Shibuya|150;Osaka|Osaka-fu|Kita|530;Osaka|Osaka-fu|Chuo|540;Yokohama|Kanagawa-ken|Naka|231;Nagoya|Aichi-ken|Naka|460;Sapporo|Hokkaido|Chuo|060;Fukuoka|Fukuoka-ken|Hakata|812;Kobe|Hyogo-ken|Chuo|650;Kyoto|Kyoto-fu|Nakagyo|604").split(";").map(s=>{const p=s.split("|");return {city:p[0],pref:p[1],ward:p[2],post3:p[3]};});
   const HK=("Central|Hong Kong Island;Wan Chai|Hong Kong Island;Causeway Bay|Hong Kong Island;North Point|Hong Kong Island;Tsim Sha Tsui|Kowloon;Mong Kok|Kowloon;Kwun Tong|Kowloon;Sham Shui Po|Kowloon;Sha Tin|New Territories;Tsuen Wan|New Territories;Yuen Long|New Territories;Tai Po|New Territories").split(";").map(s=>{const p=s.split("|");return {dist:p[0],region:p[1]};});
   const HK_ST="Nathan Road,Queen's Road,Des Voeux Road,Hennessy Road,Argyle Street,Canton Road,Lockhart Road,Jaffe Road,Portland Street,Waterloo Road".split(",");
   /* 收尾：补邮箱 + 国家名 */
-  function finalize(r,countryEn){ r.country=countryEn; const em=(r.first+"."+r.last+d(rint(3)+2)).toLowerCase().replace(/[^a-z0-9.]/g,""); r.email=em+"@"+pick(EMAIL_DOMAINS);
+  function finalize(r,countryEn){ r.country=countryEn; if(!r.email){ const em=(r.first+"."+r.last+d(rint(3)+2)).toLowerCase().replace(/[^a-z0-9.]/g,""); r.email=em+"@"+pick(EMAIL_DOMAINS); }
     const by=1956+rint(50); r.birthday=by+"-"+String(1+rint(12)).padStart(2,"0")+"-"+String(1+rint(28)).padStart(2,"0"); r.age=String(2026-by); return r; }
   function recUS(regionVal,statesFilter){ let pool=CITIES; if(statesFilter)pool=pool.filter(x=>statesFilter.includes(x.st)); if(regionVal)pool=pool.filter(x=>x.st===regionVal); if(!pool.length)pool=CITIES;
     const loc=pick(pool),n=wName(); const street=numHouse()+" "+pick(STREETS)+" "+pick(ST_SUFFIX);
@@ -3777,9 +3783,13 @@ const makeQR=(function(){
     const r={first:n.first,last:n.last,gender:n.gender,phone:"+33 6 "+d(2)+" "+d(2)+" "+d(2)+" "+d(2),street,city:loc.city,region:loc.city,regionName:loc.city,zip:loc.cp};
     r.full=street+", "+loc.cp+" "+loc.city+", France"; return finalize(r,"France"); }
   function recJP(regionVal){ let pool=JPC; if(regionVal)pool=pool.filter(x=>x.city===regionVal); if(!pool.length)pool=JPC;
-    const loc=pick(pool),n=jName(); const post=loc.post3+"-"+d(4),street=(1+rint(9))+"-"+(1+rint(20))+"-"+(1+rint(30))+" "+loc.ward;
-    const r={first:n.first,last:n.last,gender:n.gender,phone:"+81 90-"+d(4)+"-"+d(4),street,city:loc.city,region:loc.pref,regionName:loc.pref,zip:"〒"+post};
-    r.full=street+", "+loc.city+", "+loc.pref+" "+post+", Japan"; return finalize(r,"Japan"); }
+    const loc=pick(pool); const male=rint(2)===0, g=male?pick(JA_GM):pick(JA_GF), sur=pick(JA_SUR);
+    let hira=false; try{ const el=$("#ad-jaKana"); hira=el&&el.value==="hiragana"; }catch(e){} const kn=x=>hira?kata2hira(x):x;
+    const post=loc.post3+"-"+d(4),street=(1+rint(9))+"-"+(1+rint(20))+"-"+(1+rint(30))+" "+loc.ward;
+    const r={first:g.kanji,last:sur.kanji,firstKana:kn(g.kana),lastKana:kn(sur.kana),firstRoma:g.romaji,lastRoma:sur.romaji,gender:male?"Male":"Female",
+      phone:"+81 90-"+d(4)+"-"+d(4),street,city:loc.city,region:loc.pref,regionName:loc.pref,zip:"〒"+post,
+      email:(g.romaji+"."+sur.romaji+d(rint(3)+2)).toLowerCase()+"@"+pick(EMAIL_DOMAINS)};
+    r.full=sur.kanji+" "+g.kanji+", "+street+", "+loc.city+", "+loc.pref+" "+post+", Japan"; return finalize(r,"Japan"); }
   function recHK(regionVal){ let pool=HK; if(regionVal)pool=pool.filter(x=>x.dist===regionVal); if(!pool.length)pool=HK;
     const loc=pick(pool),n=hkName(); const street="Flat "+L()+", "+(1+rint(30))+"/F, "+(1+rint(400))+" "+pick(HK_ST);
     const r={first:n.first,last:n.last,gender:n.gender,phone:"+852 "+pick([5,6,9])+d(3)+" "+d(4),street,city:loc.dist,region:loc.region,regionName:loc.region,zip:""};
@@ -3822,6 +3832,17 @@ const makeQR=(function(){
   const KR=mkArr("Seoul|Seoul|04524;Busan|Busan|48058;Incheon|Incheon|21554;Daegu|Daegu|41911;Daejeon|Daejeon|35208;Gwangju|Gwangju|61947",["city","region","zip"]);
   const IN=mkArr("Mumbai|Maharashtra|400001;Delhi|Delhi|110001;Bangalore|Karnataka|560001;Chennai|Tamil Nadu|600001;Kolkata|West Bengal|700001;Hyderabad|Telangana|500001",["city","region","zip"]);
   const SG=mkArr("Singapore|Central|238801;Singapore|East|460001;Singapore|West|600001;Singapore|North|730001",["city","region","zip"]);
+  /* 本地文字姓名：韩国 한글 / 俄罗斯 西里尔（local|罗马音）*/
+  const mk2=str=>str.split(";").map(x=>{const p=x.split("|");return {local:p[0],roma:p[1]};});
+  const kata2hira=s=>String(s).replace(/[ァ-ヶ]/g,c=>String.fromCharCode(c.charCodeAt(0)-0x60));
+  const KR_SUR=mk2("김|Kim;이|Lee;박|Park;최|Choi;정|Jung;강|Kang;조|Cho;윤|Yoon;장|Jang;임|Lim;한|Han;오|Oh;서|Seo;신|Shin;권|Kwon;황|Hwang;안|Ahn;송|Song");
+  const KR_GM=mk2("민준|Minjun;서준|Seojun;도윤|Doyoon;예준|Yejun;시우|Siwoo;하준|Hajun;주원|Juwon;지호|Jiho;준우|Junwoo;현우|Hyunwoo;지훈|Jihoon;건우|Gunwoo;우진|Woojin;선우|Sunwoo;민재|Minjae");
+  const KR_GF=mk2("서연|Seoyeon;서윤|Seoyun;지우|Jiwoo;서현|Seohyun;하윤|Hayoon;하은|Haeun;지유|Jiyu;지민|Jimin;채원|Chaewon;수아|Sua;지아|Jia;예은|Yeeun;다은|Daeun;은서|Eunseo;소율|Soyul");
+  const RU_SUR=mk2("Иванов|Ivanov;Смирнов|Smirnov;Кузнецов|Kuznetsov;Попов|Popov;Васильев|Vasiliev;Петров|Petrov;Соколов|Sokolov;Михайлов|Mikhailov;Новиков|Novikov;Фёдоров|Fyodorov;Морозов|Morozov;Волков|Volkov;Лебедев|Lebedev;Семёнов|Semyonov;Козлов|Kozlov");
+  const RU_GM=mk2("Александр|Alexander;Дмитрий|Dmitry;Максим|Maxim;Иван|Ivan;Артём|Artyom;Никита|Nikita;Михаил|Mikhail;Егор|Egor;Андрей|Andrey;Алексей|Alexey;Сергей|Sergey;Кирилл|Kirill;Роман|Roman;Павел|Pavel;Денис|Denis");
+  const RU_GF=mk2("Анастасия|Anastasia;Мария|Maria;Анна|Anna;Виктория|Victoria;Екатерина|Ekaterina;Полина|Polina;Елизавета|Elizaveta;Дарья|Darya;София|Sofia;Алиса|Alisa;Ксения|Ksenia;Валерия|Valeria;Арина|Arina;Ольга|Olga;Татьяна|Tatyana");
+  const RU_ST="Ленина;Советская;Молодёжная;Центральная;Школьная;Садовая;Лесная;Набережная;Мира;Гагарина".split(";");
+  const RU=mkArr("Moscow|Moscow|101000;Saint Petersburg|Saint Petersburg|190000;Novosibirsk|Novosibirsk Oblast|630000;Yekaterinburg|Sverdlovsk Oblast|620000;Kazan|Tatarstan|420000;Nizhny Novgorod|Nizhny Novgorod Oblast|603000;Samara|Samara Oblast|443000;Rostov-on-Don|Rostov Oblast|344000",["city","region","zip"]);
   function mkCountry(o){ return function(regionVal){ let pool=o.data; if(regionVal)pool=pool.filter(x=>x[o.key]===regionVal); if(!pool.length)pool=o.data;
     const loc=pick(pool), n=o.name(); const street=o.street(), zip=o.postal?o.postal(loc):loc.zip;
     const r={first:n.first,last:n.last,gender:n.gender,phone:o.phone(loc),street,city:loc.city,region:loc[o.key],regionName:o.regionLabel?o.regionLabel(loc):loc.city,zip};
@@ -3835,7 +3856,18 @@ const makeQR=(function(){
   const recPL=mkCountry({data:PL,key:"city",name:gname3(window.MALE,window.FEMALE,window.SURNAME),phone:()=>"+48 "+d(3)+" "+d(3)+" "+d(3),street:()=>"ul. "+pick(PL_ST)+" "+(1+rint(150)),full:(s,l,z)=>s+", "+z+" "+l.city+", Poland",countryEn:"Poland"});
   const recBR=mkCountry({data:BR,key:"region",regionLabel:x=>x.region,name:gname3(BR_M,BR_F,BR_L),phone:()=>"+55 "+pick(["11","21","31","41","51"])+" 9"+d(4)+"-"+d(4),street:()=>pick(BR_ST)+", "+(1+rint(2000)),full:(s,l,z)=>s+", "+l.city+" - "+l.region+", "+z+", Brazil",countryEn:"Brazil"});
   const recNZ=mkCountry({data:NZ,key:"city",name:gname3(window.MALE,window.FEMALE,window.SURNAME),phone:()=>"+64 21 "+d(3)+" "+d(4),street:()=>numHouse()+" "+pick(STREETS)+" "+pick(ST_SUFFIX),full:(s,l,z)=>s+", "+l.city+" "+z+", New Zealand",countryEn:"New Zealand"});
-  const recKR=mkCountry({data:KR,key:"city",name:gname3(KR_M,KR_F,KR_L),phone:()=>"+82 10-"+d(4)+"-"+d(4),street:()=>(1+rint(300))+" "+pick(KR_ST),full:(s,l,z)=>s+", "+l.city+" "+z+", South Korea",countryEn:"South Korea"});
+  function recKR(regionVal){ let pool=KR; if(regionVal)pool=pool.filter(x=>x.city===regionVal); if(!pool.length)pool=KR;
+    const loc=pick(pool),male=rint(2)===0,g=male?pick(KR_GM):pick(KR_GF),sur=pick(KR_SUR),street=(1+rint(300))+" "+pick(KR_ST);
+    const r={first:g.local,last:sur.local,firstRoma:g.roma,lastRoma:sur.roma,gender:male?"Male":"Female",phone:"+82 10-"+d(4)+"-"+d(4),street,city:loc.city,region:loc.region,regionName:loc.region,zip:loc.zip,
+      email:(g.roma+"."+sur.roma+d(rint(3)+2)).toLowerCase()+"@"+pick(EMAIL_DOMAINS)};
+    r.full=sur.local+g.local+", "+street+", "+loc.city+" "+loc.zip+", South Korea"; return finalize(r,"South Korea"); }
+  function recRU(regionVal){ let pool=RU; if(regionVal)pool=pool.filter(x=>x.region===regionVal); if(!pool.length)pool=RU;
+    const loc=pick(pool),male=rint(2)===0,g=male?pick(RU_GM):pick(RU_GF),s=pick(RU_SUR);
+    const surL=male?s.local:s.local.replace(/([вн])$/,"$1а"),surR=male?s.roma:s.roma+"a";
+    const street="ул. "+pick(RU_ST)+", д. "+(1+rint(120))+", кв. "+(1+rint(200));
+    const r={first:g.local,last:surL,firstRoma:g.roma,lastRoma:surR,gender:male?"Male":"Female",phone:"+7 9"+d(2)+" "+d(3)+"-"+d(2)+"-"+d(2),street,city:loc.city,region:loc.region,regionName:loc.region,zip:loc.zip,
+      email:(g.roma+"."+surR+d(rint(3)+2)).toLowerCase()+"@"+pick(EMAIL_DOMAINS)};
+    r.full=street+", "+loc.city+", "+loc.zip+", Russia"; return finalize(r,"Russia"); }
   const recIN=mkCountry({data:IN,key:"region",regionLabel:x=>x.region,name:gname3(IN_M,IN_F,IN_L),phone:()=>"+91 9"+d(4)+" "+d(5),street:()=>(1+rint(400))+" "+pick(IN_ST),full:(s,l,z)=>s+", "+l.city+" "+z+", "+l.region+", India",countryEn:"India"});
   const recSG=mkCountry({data:SG,key:"region",regionLabel:x=>x.region,name:gname3(window.MALE,window.FEMALE,window.SURNAME),phone:()=>"+65 "+pick([8,9])+d(3)+" "+d(4),street:()=>numHouse()+" "+pick(STREETS)+" Road",postal:()=>(1+rint(9))+d(5),full:(s,l,z)=>s+", Singapore "+z+", Singapore",countryEn:"Singapore"});
   const TAXFREE=["AK","DE","MT","NH","OR"];
@@ -3859,31 +3891,33 @@ const makeQR=(function(){
     br:{label:"🇧🇷 巴西 Brazil", regions:()=>regionsOf(BR,"region",x=>x.region+" ("+x.city+")"), rec:recBR},
     nz:{label:"🇳🇿 新西兰 New Zealand", regions:()=>regionsOf(NZ,"city",x=>x.city), rec:recNZ},
     kr:{label:"🇰🇷 韩国 South Korea", regions:()=>regionsOf(KR,"city",x=>x.city), rec:recKR},
+    ru:{label:"🇷🇺 俄罗斯 Russia", regions:()=>regionsOf(RU,"region",x=>x.region), rec:recRU},
     in:{label:"🇮🇳 印度 India", regions:()=>regionsOf(IN,"region",x=>x.region+" ("+x.city+")"), rec:recIN},
     sg:{label:"🇸🇬 新加坡 Singapore", regions:()=>regionsOf(SG,"region",x=>x.region), rec:recSG}
   };
-  const ORDER=["us","ustax","ca","hk","uk","de","fr","it","es","nl","ch","se","pl","jp","kr","in","sg","au","nz","br"];
+  const ORDER=["us","ustax","ca","hk","uk","de","fr","it","es","nl","ch","se","pl","jp","kr","ru","in","sg","au","nz","br"];
   let curCountry="us";
   const cc=$("#ad-countryChips");
   cc.innerHTML=ORDER.map((k,i)=>`<button class="chip${i===0?" on":""}" data-c="${k}">${COUNTRIES[k].label}</button>`).join("");
   function fillRegions(){ const sel=$("#ad-region"); const list=COUNTRIES[curCountry].regions(); sel.innerHTML=`<option value="" selected>随机（全部）</option>`+list.map(o=>`<option value="${o.v}">${o.label}</option>`).join(""); }
   cc.addEventListener("click",e=>{ const b=e.target.closest(".chip"); if(!b)return; curCountry=b.dataset.c; cc.querySelectorAll(".chip").forEach(x=>x.classList.toggle("on",x===b)); fillRegions(); });
   fillRegions();
-  const FIELD_LABELS=[["first","名 / First Name"],["last","姓 / Last Name"],["gender","性别 / Gender"],["birthday","生日 / Birthday"],["age","年龄 / Age"],["phone","电话 / Phone"],["email","电子邮件 / Email"],["street","街道 / Street Address"],["city","城市 / City"],["regionName","州省地区 / State"],["zip","邮编 / ZIP"],["full","完整地址 / Full Address"]];
+  const FIELD_LABELS=[["first","名 / First Name"],["firstKana","名·读音 / First name pronunciation"],["firstRoma","名·罗马音 / Romanized"],["last","姓 / Last Name"],["lastKana","姓·读音 / Last name pronunciation"],["lastRoma","姓·罗马音 / Romanized"],["gender","性别 / Gender"],["birthday","生日 / Birthday"],["age","年龄 / Age"],["phone","电话 / Phone"],["email","电子邮件 / Email"],["street","街道 / Street Address"],["city","城市 / City"],["regionName","州省地区 / State"],["zip","邮编 / ZIP"],["full","完整地址 / Full Address"]];
+  const OPTIONAL_FIELDS=new Set(["firstKana","lastKana","firstRoma","lastRoma"]);
   function wanted(){ return { name:$("#ad-fName").checked, gender:$("#ad-fGender").checked, birth:$("#ad-fBirth").checked, phone:$("#ad-fPhone").checked, email:$("#ad-fEmail").checked }; }
   function recToLine(r,w,fmt){ const cols=[]; if(w.name)cols.push(r.first+" "+r.last); if(w.gender)cols.push(r.gender); if(w.birth)cols.push(r.birthday+" ("+r.age+")"); if(w.phone)cols.push(r.phone); if(w.email)cols.push(r.email);
     if(fmt==="tab")return [...cols,r.street,r.city,r.regionName,r.zip].join("\t");
     if(fmt==="pipe")return [...cols,r.full].join(" | ");
     return cols.length?cols.join(" · ")+" · "+r.full:r.full; }
-  const CSV_H=["First Name","Last Name","Gender","Birthday","Age","Phone","Email","Street","City","State","ZIP","Country","Full Address"];
-  const CSV_K=["first","last","gender","birthday","age","phone","email","street","city","regionName","zip","country","full"];
+  const CSV_H=["First Name","First Pronunciation","First Romanized","Last Name","Last Pronunciation","Last Romanized","Gender","Birthday","Age","Phone","Email","Street","City","State","ZIP","Country","Full Address"];
+  const CSV_K=["first","firstKana","firstRoma","last","lastKana","lastRoma","gender","birthday","age","phone","email","street","city","regionName","zip","country","full"];
   const csvCellA=v=>{ v=String(v==null?"":v); return /[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
   const toCSV=recs=>"﻿"+[CSV_H.join(",")].concat(recs.map(r=>CSV_K.map(k=>csvCellA(r[k])).join(","))).join("\r\n");
   const toJSON=recs=>JSON.stringify(recs.map(r=>{const o={};CSV_K.forEach(k=>o[k]=r[k]);return o;}),null,2);
   let lastLines=[], lastRecs=[], curRec=null;
   function renderCard(r){ $("#ad-cardCountry").textContent=r.country; const esc=escHTML;
-    $("#ad-fields").innerHTML=FIELD_LABELS.map(([k,lab])=>{ let v=r[k]; if(v==null||v==="")v="—";
-      return `<div class="ad-f${(k==="full"||k==="email"||k==="street")?" full":""}"><span class="l">${lab}</span><span class="r"><span class="v">${esc(String(v))}</span><button class="cp" data-v="${esc(String(v))}" title="复制">⧉</button></span></div>`; }).join("");
+    $("#ad-fields").innerHTML=FIELD_LABELS.map(([k,lab])=>{ let v=r[k]; if(OPTIONAL_FIELDS.has(k)&&!v)return ""; if(v==null||v==="")v="—";
+      return `<div class="ad-f${(k==="full"||k==="email"||k==="street")?" full":""}" data-v="${esc(String(v))}" title="点击复制"><span class="l">${lab}</span><span class="r"><span class="v">${esc(String(v))}</span><button class="cp" data-v="${esc(String(v))}" title="复制">⧉</button></span></div>`; }).join("");
     $("#ad-card").style.display="block"; }
   function generate(){ let count=parseInt($("#ad-count").value)||1; count=Math.min(100000,Math.max(1,count)); $("#ad-count").value=count;
     const genFn=COUNTRIES[curCountry].rec, regionVal=$("#ad-region").value;
@@ -3894,7 +3928,7 @@ const makeQR=(function(){
       const PREV=5000; $("#ad-out").value=lastLines.slice(0,PREV).join("\n");
       const note=$("#ad-note"); if(count>PREV){ note.style.display="block"; note.textContent=`共 ${count.toLocaleString()} 行，仅预览前 ${PREV.toLocaleString()} 行；复制 / 下载为全部。`; } else note.style.display="none";
       $("#ad-batchCard").scrollIntoView({behavior:"smooth",block:"nearest"}); } }
-  $("#ad-fields").addEventListener("click",async e=>{ const b=e.target.closest(".cp"); if(!b)return; if(await copyTextSafe(b.dataset.v))toast("已复制"); });
+  $("#ad-fields").addEventListener("click",async e=>{ const f=e.target.closest(".ad-f"); if(!f)return; const v=f.dataset.v; if(!v||v==="—")return; if(await copyTextSafe(v))toast("已复制"); });
   async function copyAll(){ if(!lastLines.length){toast("请先生成");return;} if(await copyTextSafe(lastLines.join("\r\n")))toast(`已复制 ${lastLines.length.toLocaleString()} 条`); }
   $("#ad-copyAll").onclick=async ()=>{ if(!curRec){toast("请先生成");return;} const all=FIELD_LABELS.map(([k,lab])=>lab.split(" / ")[1]+": "+(curRec[k]||"")).join("\n"); if(await copyTextSafe(all))toast("已复制全部字段"); };
   $("#ad-copy2").onclick=copyAll;
