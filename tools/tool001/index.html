@@ -223,7 +223,14 @@
   .ac-list{display:flex;flex-direction:column;gap:8px;max-height:560px;overflow:auto}
   .ac-row{display:grid;grid-template-columns:minmax(130px,1.2fr) minmax(90px,.8fr) 148px minmax(86px,.7fr) auto;gap:12px;align-items:center;background:var(--card-solid);border:1px solid var(--line);border-radius:12px;padding:11px 14px;font-size:13px;transition:.15s}
   .ac-row:hover{box-shadow:var(--shadow)}
-  .ac-row .em{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ac-row .em{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+  .ac-row .em:hover{color:var(--accent)}
+  .ac-saved .row .t{cursor:pointer}
+  .ac-saved .row .t:hover{color:var(--accent)}
+  .ac-fchip{display:inline-flex;align-items:center;gap:5px;max-width:100%;background:var(--chip);border-radius:8px;padding:4px 9px;font-size:12px;cursor:pointer;margin:4px 6px 0 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:.12s}
+  .ac-fchip b{color:var(--text-3);font-weight:600;flex:none}
+  .ac-fchip:hover{background:var(--accent);color:#fff}
+  .ac-fchip:hover b{color:#fff}
   .ac-note{width:100%;font-size:12px;color:var(--text);background:var(--chip);border:1px solid transparent;border-radius:8px;padding:6px 9px;outline:none;font-family:inherit;transition:.15s}
   .ac-note:focus{border-color:var(--accent);background:var(--field)}
   .ac-note::placeholder{color:var(--text-3)}
@@ -3942,7 +3949,7 @@ const makeQR=(function(){
   function actsCell(e,i){ const acts=[`<button class="btn btn-ghost btn-sm" data-act="retry" data-i="${i}">重试</button>`];
     if(e.content)acts.push(`<button class="btn btn-ghost btn-sm" data-act="view" data-i="${i}">查看邮件</button>`);
     if(e.link)acts.push(`<button class="btn btn-ghost btn-sm" data-act="open" data-i="${i}">打开链接</button>`); return acts.join(""); }
-  function rowHTML(e,i){ return `<div class="ac-row" id="ac-row-${i}"><span class="em" title="${escHTML(e.email)}">${escHTML(e.email)}</span>`
+  function rowHTML(e,i){ return `<div class="ac-row" id="ac-row-${i}"><span class="em" data-i="${i}" title="点击复制邮箱：${escHTML(e.email)}">${escHTML(e.email)}</span>`
     +`<input class="ac-note" id="ac-note-${i}" data-i="${i}" value="${escHTML(e.note||"")}" placeholder="备注项目" spellcheck="false">`
     +`<span id="ac-st-${i}">${badge(e)}</span><span id="ac-cd-${i}">${codeCell(e,i)}</span><span class="acts" id="ac-acts-${i}">${actsCell(e,i)}</span></div>`; }
   let filterNote="";
@@ -3978,6 +3985,7 @@ const makeQR=(function(){
   $("#ac-stop").onclick=()=>{ stopFlag=true; $("#ac-stop").disabled=true; toast("正在停止…"); };
   $("#ac-clear").onclick=()=>{ $("#ac-in").value=""; entries=[]; filterNote=""; $("#ac-list").innerHTML=""; $("#ac-resCard").style.display="none"; updateFilterOptions(); updHint(); };
   $("#ac-list").addEventListener("click",async e=>{ const cd=e.target.closest(".cd"); if(cd&&!cd.classList.contains("none")){ const c=entries[+cd.dataset.i].code; if(await copyTextSafe(c))toast("已复制验证码 "+c); return; }
+    const em=e.target.closest(".em"); if(em){ const m=entries[+em.dataset.i]; if(m&&m.email&&m.email!=="(未提供邮箱)"){ if(await copyTextSafe(m.email))toast("已复制邮箱 "+m.email); } return; }
     const b=e.target.closest("[data-act]"); if(!b)return; const i=+b.dataset.i, en=entries[i], act=b.dataset.act;
     if(act==="open"){ window.open(en.link,"_blank","noopener"); }
     else if(act==="view"){ if(!en.content){toast("没有邮件内容");return;} const safe=String(en.content).replace(/<script[\s\S]*?<\/script>/gi,""); const w=window.open("","_blank"); if(w){ w.document.open(); w.document.write(safe); w.document.close(); } else toast("弹窗被拦截，请允许弹窗"); }
@@ -4077,9 +4085,12 @@ const makeQR=(function(){
     rows.sort((x,y)=> sort==="time_asc"?x.time-y.time : sort==="project"?(String(x.project||"").localeCompare(String(y.project||""))||y.time-x.time) : y.time-x.time);
     card.style.display="block"; $("#ac-buyc").textContent=rows.length;
     $("#ac-buyList").innerHTML=rows.map(b=>{ const meta=(b.type==="account"?"👤 账号":"📧 邮箱订单")+" · "+escHTML(b.project||"")+" · "+new Date(b.time).toLocaleString();
-      return `<div class="row"><span class="t"><b style="color:var(--text-2);font-weight:600;font-size:11px">${meta}</b><br>${escHTML(buyLine(b))}</span><button class="x" data-id="${b.id}" title="删除">✕</button></div>`; }).join(""); }
+      const fields=b.type==="account"? (fchip("邮箱",b.email)+fchip("密码",b.password)+fchip("辅助",b.aux))
+        : (fchip("邮箱",b.email)+(b.link?`<span class="ac-fchip" data-copy="${escHTML(b.link)}" title="点击复制接码链接"><b>链接</b> 复制</span>`:"")+(b.orderId?fchip("订单",b.orderId):""));
+      return `<div class="row"><div style="min-width:0;flex:1"><div style="color:var(--text-3);font-weight:600;font-size:11px">${meta}</div><div style="display:flex;flex-wrap:wrap">${fields||escHTML(buyLine(b))}</div></div><button class="x" data-id="${b.id}" title="删除">✕</button></div>`; }).join(""); }
+  function fchip(label,val){ return val?`<span class="ac-fchip" data-copy="${escHTML(val)}" title="点击复制${label}"><b>${label}</b> ${escHTML(val)}</span>`:""; }
   $("#ac-buyFilter").onchange=renderBuys; $("#ac-buySort").onchange=renderBuys;
-  $("#ac-buyList").addEventListener("click",e=>{ const b=e.target.closest(".x"); if(!b)return; saveBuys(loadBuys().filter(x=>x.id!==b.dataset.id)); renderBuys(); });
+  $("#ac-buyList").addEventListener("click",async e=>{ const cp=e.target.closest("[data-copy]"); if(cp){ if(await copyTextSafe(cp.dataset.copy))toast("已复制"); return; } const b=e.target.closest(".x"); if(!b)return; saveBuys(loadBuys().filter(x=>x.id!==b.dataset.id)); renderBuys(); });
   $("#ac-buyCopy").onclick=async ()=>{ const f=$("#ac-buyFilter").value,a=loadBuys().filter(b=>!f||b.type===f); if(!a.length){toast("没有记录");return;} if(await copyTextSafe(a.map(buyLine).join("\r\n")))toast(`已复制 ${a.length} 条`); };
   $("#ac-buyToAc").onclick=()=>{ const a=loadBuys().filter(b=>b.type==="mailbox"); if(!a.length){toast("没有邮箱订单记录");return;} const lines=a.map(b=>b.email+"----"+b.link+(b.project?"----"+b.project:"")); const cur=$("#ac-in").value.trim(); $("#ac-in").value=(cur?cur+"\n":"")+lines.join("\n"); updHint(); toast(`已填入 ${a.length} 条邮箱订单`); };
   $("#ac-buyCsv").onclick=()=>{ const f=$("#ac-buyFilter").value,a=loadBuys().filter(b=>!f||b.type===f); if(!a.length){toast("没有记录");return;}
