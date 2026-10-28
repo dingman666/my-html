@@ -233,6 +233,12 @@
   .ac-row .cd.none{color:var(--text-3);font-size:14px;font-weight:500;letter-spacing:0;cursor:default}
   .ac-row .acts{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
   .ac-spin{width:12px;height:12px;border:2px solid var(--line-strong);border-top-color:var(--orange);border-radius:50%;display:inline-block;animation:apispin .7s linear infinite}
+  .ac-combo{position:relative}
+  .ac-combo-list{position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:30;background:var(--card-solid);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);max-height:280px;overflow:auto;display:none}
+  .ac-opt{padding:9px 13px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;gap:10px;align-items:center}
+  .ac-opt:hover,.ac-opt.hl{background:var(--accent-soft)}
+  .ac-opt .oid{color:var(--text-3);font-size:11px;font-family:ui-monospace,monospace;flex:none}
+  .ac-opt.none{color:var(--text-3);cursor:default}
   @media(max-width:760px){.ac-row{grid-template-columns:1fr 1fr}.ac-row .em{grid-column:1/-1}.ac-row .acts{grid-column:1/-1;justify-content:flex-start}}
   .pw-lenrow input[type=number]{width:92px;flex:none;text-align:center}
   input[type=range].slider{-webkit-appearance:none;appearance:none;flex:1;height:4px;border-radius:999px;background:linear-gradient(90deg,var(--accent) var(--pct,50%),var(--line-strong) var(--pct,50%));outline:none;margin:0;border:0;padding:0}
@@ -1649,21 +1655,39 @@
       <h2 id="ac-advToggle" style="cursor:pointer;user-select:none">② 高级 · API Key 功能（余额 / 购买 / 激活）<span id="ac-advArrow">▾</span></h2>
       <div id="ac-adv" style="display:none">
         <div class="field"><label>API Key（仅保存在本机浏览器）</label><input type="text" id="ac-apikey" placeholder="你的 apiKey" spellcheck="false" autocomplete="off"></div>
-        <div class="actions" style="margin-top:12px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" id="ac-balance">💰 查余额</button><button class="btn btn-ghost btn-sm" id="ac-services">📋 查询服务</button><button class="btn btn-ghost btn-sm" id="ac-types">📮 查询邮箱类型</button></div>
+        <div class="arcinfo" style="margin-top:12px"><div class="txt">账户余额　<b id="ac-balShow" style="font-size:18px;color:var(--green)">—</b><div class="sub">展开本区 / 购买后会自动刷新</div></div><button class="btn btn-ghost btn-sm" id="ac-balance">🔄 刷新余额</button></div>
+        <div class="actions" style="margin-top:12px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" id="ac-reload">🔄 刷新服务/类型列表</button></div>
         <div class="grid" style="margin-top:14px">
-          <div class="field"><label>serviceId 服务ID</label><input type="number" id="ac-sid" placeholder="如 2=Github"></div>
-          <div class="field"><label>emailTypeId 邮箱类型ID</label><input type="number" id="ac-tid" placeholder="如 3=Gmail"></div>
+          <div class="field"><label>① 选择服务（可搜索）</label>
+            <div class="ac-combo"><input type="text" id="ac-svcSearch" placeholder="点此搜索/选择服务，如 Github、微软…" autocomplete="off" spellcheck="false"><div class="ac-combo-list" id="ac-svcList"></div></div>
+            <input type="hidden" id="ac-sid"><div class="hint" id="ac-svcHint">未加载（点上方「刷新服务/类型列表」）</div></div>
+          <div class="field"><label>② 选择邮箱类型（可搜索）</label>
+            <div class="ac-combo"><input type="text" id="ac-tidSearch" placeholder="点此搜索/选择邮箱类型，如 Gmail、Outlook…" autocomplete="off" spellcheck="false"><div class="ac-combo-list" id="ac-tidList"></div></div>
+            <input type="hidden" id="ac-tid"><div class="hint" id="ac-tidHint">&nbsp;</div></div>
           <div class="field"><label>数量</label><input type="number" id="ac-qty" min="1" max="100" value="1"></div>
         </div>
-        <div class="actions" style="margin-top:12px;flex-wrap:wrap"><button class="btn btn-primary btn-sm" id="ac-buy">🛒 购买邮箱</button><button class="btn btn-ghost btn-sm" id="ac-buyacc">👤 购买账号</button><span class="hint" style="margin:0;align-self:center">购买成功会自动把「邮箱--链接」填进上方接码框</span></div>
+        <div class="actions" style="margin-top:12px;flex-wrap:wrap"><button class="btn btn-primary btn-sm" id="ac-buy">🛒 购买邮箱</button><button class="btn btn-ghost btn-sm" id="ac-buyacc">👤 购买账号</button><span class="hint" style="margin:0;align-self:center">购买成功自动存「购买记录」，邮箱订单并填进接码框</span></div>
         <div class="grid" style="margin-top:14px">
           <div class="field"><label>激活：orderId</label><input type="text" id="ac-actOrder" placeholder="订单ID"></div>
-          <div class="field"><label>激活：serviceItemId 功能ID</label><input type="number" id="ac-actItem" placeholder="如 7"></div>
+          <div class="field"><label>激活：功能（选服务后自动列出，也可手填ID）</label><input type="text" id="ac-actItem" list="ac-itemDatalist" placeholder="如 7=注册"><datalist id="ac-itemDatalist"></datalist></div>
         </div>
         <div class="actions" style="margin-top:12px"><button class="btn btn-ghost btn-sm" id="ac-activate">♻️ 激活邮箱（接新一轮码）</button></div>
         <div class="note" id="ac-advNote" style="display:none"></div>
         <textarea id="ac-advOut" readonly spellcheck="false" style="min-height:160px;margin-top:12px" placeholder="接口返回会显示在这里（原始 JSON）"></textarea>
       </div>
+    </div>
+
+    <div class="card" id="ac-buysCard" style="display:none">
+      <div class="pane-head"><span class="desc">💾 购买记录（自动保存在本机）· <b id="ac-buyc">0</b> 条</span><div class="tools">
+        <select id="ac-buySort" style="width:auto"><option value="time_desc">时间新→旧</option><option value="time_asc">时间旧→新</option><option value="project">按项目</option></select>
+        <select id="ac-buyFilter" style="width:auto"><option value="">全部</option><option value="mailbox">邮箱订单</option><option value="account">账号</option></select>
+        <button class="btn btn-ghost btn-sm" id="ac-buyToAc">邮箱订单填入接码框</button>
+        <button class="btn btn-ghost btn-sm" id="ac-buyCopy">复制全部</button>
+        <button class="btn btn-ghost btn-sm" id="ac-buyCsv">下载 CSV</button>
+        <button class="btn btn-ghost btn-sm" id="ac-buyClear">清空</button>
+      </div></div>
+      <div class="hint" style="margin-bottom:10px">购买邮箱/账号成功即自动保存到这里，刷新也不会丢。账号格式：邮箱----密码----辅助邮箱。</div>
+      <div id="ac-buyList" class="ad-saved"></div>
     </div>
   </section>
 
@@ -3977,16 +4001,64 @@ const makeQR=(function(){
   function showAdv(obj){ $("#ac-advOut").value=typeof obj==="string"?obj:JSON.stringify(obj,null,2); }
   function needKey(){ const k=$("#ac-apikey").value.trim(); if(!k){toast("请先填 API Key");return null;} return k; }
   async function apiGet(path){ const resp=await fetch(BASE+path,{cache:"no-store",headers:{Accept:"application/json"}}); return resp.json(); }
-  $("#ac-balance").onclick=async ()=>{ const k=needKey(); if(!k)return; try{ showAdv(await apiGet("/balance?apiKey="+encodeURIComponent(k))); }catch(e){ showAdv("请求失败："+(e.message||e)); } };
-  $("#ac-services").onclick=async ()=>{ try{ const j=await apiGet("/services"); if(j&&j.code===200&&Array.isArray(j.data))servicesCache=j.data; showAdv(j); }catch(e){ showAdv("请求失败："+(e.message||e)); } };
-  $("#ac-types").onclick=async ()=>{ try{ showAdv(await apiGet("/types")); }catch(e){ showAdv("请求失败："+(e.message||e)); } };
-  $("#ac-buy").onclick=async ()=>{ const k=needKey(); if(!k)return; const sid=$("#ac-sid").value.trim(), tid=$("#ac-tid").value.trim(), qty=+$("#ac-qty").value||1; if(!sid||!tid){toast("请填 serviceId 和 emailTypeId");return;}
-    try{ if(!servicesCache){ try{ const sj=await apiGet("/services"); if(sj&&sj.code===200&&Array.isArray(sj.data))servicesCache=sj.data; }catch(_){} }
-      const j=await apiGet(`/mailbox?apiKey=${encodeURIComponent(k)}&serviceId=${sid}&emailTypeId=${tid}&quantity=${qty}`); showAdv(j);
-      if(j.code===200&&j.data&&j.data.orders){ const pname=svcName(sid); const lines=j.data.orders.map(o=>{ saveNote(String(o.orderId),pname); return o.email+"----"+BASE+"/latest/code?orderId="+o.orderId+"----"+pname; }); const cur=$("#ac-in").value.trim(); $("#ac-in").value=(cur?cur+"\n":"")+lines.join("\n"); updHint(); toast(`已购买 ${j.data.orders.length} 个 · 项目：${pname}，已填入接码框`); } }catch(e){ showAdv("请求失败："+(e.message||e)); } };
-  $("#ac-buyacc").onclick=async ()=>{ const k=needKey(); if(!k)return; const sid=$("#ac-sid").value.trim(), tid=$("#ac-tid").value.trim(), qty=+$("#ac-qty").value||1; if(!sid){toast("请填 serviceId");return;}
-    try{ showAdv(await apiGet(`/mailbox/sell?apiKey=${encodeURIComponent(k)}&serviceId=${sid}${tid?"&emailTypeId="+tid:""}&quantity=${qty}`)); }catch(e){ showAdv("请求失败："+(e.message||e)); } };
-  $("#ac-activate").onclick=async ()=>{ const k=needKey(); if(!k)return; const o=$("#ac-actOrder").value.trim(), it=$("#ac-actItem").value.trim(); if(!o||!it){toast("请填 orderId 和 serviceItemId");return;}
+  let typesCache=null;
+  async function loadServices(force){ if(servicesCache&&!force)return servicesCache; try{ const j=await apiGet("/services"); if(j&&j.code===200&&Array.isArray(j.data))servicesCache=j.data; }catch(e){} return servicesCache; }
+  async function loadTypes(force){ if(typesCache&&!force)return typesCache; try{ const j=await apiGet("/types"); if(j&&j.code===200&&Array.isArray(j.data))typesCache=j.data; }catch(e){} return typesCache; }
+  function svcItems(sid){ if(!servicesCache)return []; const s=servicesCache.find(x=>String(x.id||x.serviceId)===String(sid)); return (s&&s.items)||[]; }
+  function fillItemDatalist(sid){ const dl=$("#ac-itemDatalist"); if(!dl)return; dl.innerHTML=svcItems(sid).map(it=>`<option value="${escHTML(String(it.serviceItemId))}">${escHTML(it.serviceItemName||"")}</option>`).join(""); }
+  /* 组合框：搜索 + 下拉选择 */
+  function setupCombo(search,list,hidden,getItems,onPick){ const sEl=$(search),lEl=$(list),hEl=$(hidden); if(!sEl)return;
+    function render(q){ const items=getItems()||[]; q=(q||"").toLowerCase().trim(); const f=q?items.filter(it=>String(it.name).toLowerCase().includes(q)||String(it.id)===q):items;
+      lEl.innerHTML=(f.length?f.slice(0,500).map(it=>`<div class="ac-opt" data-id="${escHTML(String(it.id))}" data-name="${escHTML(it.name)}"><span>${escHTML(it.name)}</span><span class="oid">#${escHTML(String(it.id))}</span></div>`).join(""):`<div class="ac-opt none">${items.length?"无匹配":'未加载，点上方「刷新服务/类型列表」'}</div>`); lEl.style.display="block"; }
+    sEl.addEventListener("focus",()=>render(sEl.value));
+    sEl.addEventListener("input",()=>{ hEl.value=""; render(sEl.value); });
+    lEl.addEventListener("mousedown",e=>{ const o=e.target.closest(".ac-opt"); if(!o||o.classList.contains("none"))return; e.preventDefault(); hEl.value=o.dataset.id; sEl.value=o.dataset.name; lEl.style.display="none"; if(onPick)onPick(o.dataset.id,o.dataset.name); });
+    document.addEventListener("click",e=>{ if(!sEl.parentNode.contains(e.target))lEl.style.display="none"; }); }
+  setupCombo("#ac-svcSearch","#ac-svcList","#ac-sid",()=>(servicesCache||[]).map(s=>({id:s.id||s.serviceId,name:s.name||s.serviceName})),id=>{ fillItemDatalist(id); $("#ac-svcHint").textContent="已选 serviceId="+id; });
+  setupCombo("#ac-tidSearch","#ac-tidList","#ac-tid",()=>(typesCache||[]).map(t=>({id:t.id,name:t.name})),id=>{ $("#ac-tidHint").textContent="已选 emailTypeId="+id; });
+  async function reloadLists(){ $("#ac-svcHint").textContent="加载中…"; await Promise.all([loadServices(true),loadTypes(true)]); $("#ac-svcHint").textContent=servicesCache?`已加载 ${servicesCache.length} 个服务，点上方框搜索选择`:"加载失败（检查网络）"; $("#ac-tidHint").textContent=typesCache?`已加载 ${typesCache.length} 种邮箱类型`:" "; }
+  $("#ac-reload").onclick=reloadLists;
+  async function refreshBalance(){ const el=$("#ac-balShow"); const k=$("#ac-apikey").value.trim(); if(!k){ el.textContent="未填 Key"; el.style.color="var(--text-3)"; return; } el.textContent="查询中…"; el.style.color="var(--text-2)";
+    try{ const j=await apiGet("/balance?apiKey="+encodeURIComponent(k)); if(j&&j.code===200&&j.data!=null){ el.textContent="$ "+j.data; el.style.color="var(--green)"; } else { el.textContent=(j&&j.msg)||"查询失败"; el.style.color="var(--red)"; } }catch(e){ el.textContent="查询失败"; el.style.color="var(--red)"; } }
+  const _origAdv=$("#ac-advToggle").onclick;
+  $("#ac-advToggle").onclick=()=>{ _origAdv(); if($("#ac-adv").style.display!=="none"){ if(!servicesCache)reloadLists(); refreshBalance(); } };
+  $("#ac-balance").onclick=refreshBalance;
+  $("#ac-apikey").addEventListener("change",refreshBalance);
+  /* 购买记录（本机持久保存，刷新不丢）*/
+  const BUYKEY="tt.apicode.buys";
+  function loadBuys(){ try{return JSON.parse(localStorage.getItem(BUYKEY)||"[]");}catch(e){return [];} }
+  function saveBuys(a){ try{localStorage.setItem(BUYKEY,JSON.stringify(a.slice(-3000)));}catch(e){} }
+  function addBuys(recs){ const a=loadBuys(); a.push(...recs); saveBuys(a); renderBuys(); }
+  const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+  function buyLine(b){ return b.type==="account"?[b.email,b.password,b.aux].filter(Boolean).join("----"):(b.email+"----"+b.link); }
+  function renderBuys(){ const a=loadBuys(),f=$("#ac-buyFilter").value,sort=$("#ac-buySort").value,card=$("#ac-buysCard"); if(!a.length){card.style.display="none";return;}
+    const rows=a.filter(b=>!f||b.type===f);
+    rows.sort((x,y)=> sort==="time_asc"?x.time-y.time : sort==="project"?(String(x.project||"").localeCompare(String(y.project||""))||y.time-x.time) : y.time-x.time);
+    card.style.display="block"; $("#ac-buyc").textContent=rows.length;
+    $("#ac-buyList").innerHTML=rows.map(b=>{ const meta=(b.type==="account"?"👤 账号":"📧 邮箱订单")+" · "+escHTML(b.project||"")+" · "+new Date(b.time).toLocaleString();
+      return `<div class="row"><span class="t"><b style="color:var(--text-2);font-weight:600;font-size:11px">${meta}</b><br>${escHTML(buyLine(b))}</span><button class="x" data-id="${b.id}" title="删除">✕</button></div>`; }).join(""); }
+  $("#ac-buyFilter").onchange=renderBuys; $("#ac-buySort").onchange=renderBuys;
+  $("#ac-buyList").addEventListener("click",e=>{ const b=e.target.closest(".x"); if(!b)return; saveBuys(loadBuys().filter(x=>x.id!==b.dataset.id)); renderBuys(); });
+  $("#ac-buyCopy").onclick=async ()=>{ const f=$("#ac-buyFilter").value,a=loadBuys().filter(b=>!f||b.type===f); if(!a.length){toast("没有记录");return;} if(await copyTextSafe(a.map(buyLine).join("\r\n")))toast(`已复制 ${a.length} 条`); };
+  $("#ac-buyToAc").onclick=()=>{ const a=loadBuys().filter(b=>b.type==="mailbox"); if(!a.length){toast("没有邮箱订单记录");return;} const lines=a.map(b=>b.email+"----"+b.link+(b.project?"----"+b.project:"")); const cur=$("#ac-in").value.trim(); $("#ac-in").value=(cur?cur+"\n":"")+lines.join("\n"); updHint(); toast(`已填入 ${a.length} 条邮箱订单`); };
+  $("#ac-buyCsv").onclick=()=>{ const f=$("#ac-buyFilter").value,a=loadBuys().filter(b=>!f||b.type===f); if(!a.length){toast("没有记录");return;}
+    const H=["类型","项目","邮箱","密码","辅助邮箱","接码链接","orderId","时间"],cc=v=>{v=String(v==null?"":v);return /[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+    const lines=[H.join(",")]; for(const b of a)lines.push([b.type==="account"?"账号":"邮箱订单",b.project||"",b.email||"",b.password||"",b.aux||"",b.link||"",b.orderId||"",new Date(b.time).toLocaleString()].map(cc).join(","));
+    download(new Blob(["﻿"+lines.join("\r\n")],{type:"text/csv;charset=utf-8"}),"购买记录.csv"); };
+  $("#ac-buyClear").onclick=()=>{ if(!loadBuys().length){toast("已是空的");return;} if(!confirm("清空全部购买记录？不可恢复（建议先下载 CSV 备份）。"))return; saveBuys([]); renderBuys(); };
+  renderBuys();
+  $("#ac-buy").onclick=async ()=>{ const k=needKey(); if(!k)return; const sid=$("#ac-sid").value.trim(),tid=$("#ac-tid").value.trim(),qty=+$("#ac-qty").value||1; if(!sid||!tid){toast("请先选择服务和邮箱类型");return;}
+    try{ await loadServices(); const j=await apiGet(`/mailbox?apiKey=${encodeURIComponent(k)}&serviceId=${sid}&emailTypeId=${tid}&quantity=${qty}`); showAdv(j);
+      if(j.code===200&&j.data&&j.data.orders){ const pname=svcName(sid),now=Date.now();
+        const recs=j.data.orders.map(o=>{ saveNote(String(o.orderId),pname); return {id:uid(),type:"mailbox",email:o.email,orderId:String(o.orderId),link:BASE+"/latest/code?orderId="+o.orderId,project:pname,time:now}; });
+        addBuys(recs); const cur=$("#ac-in").value.trim(); $("#ac-in").value=(cur?cur+"\n":"")+recs.map(r=>r.email+"----"+r.link+"----"+pname).join("\n"); updHint();
+        toast(`已购买 ${recs.length} 个 · ${pname}，已存购买记录并填入接码框`); refreshBalance(); } }catch(e){ showAdv("请求失败："+(e.message||e)); } };
+  $("#ac-buyacc").onclick=async ()=>{ const k=needKey(); if(!k)return; const sid=$("#ac-sid").value.trim(),tid=$("#ac-tid").value.trim(),qty=+$("#ac-qty").value||1; if(!sid){toast("请先选择服务");return;}
+    try{ await loadServices(); const j=await apiGet(`/mailbox/sell?apiKey=${encodeURIComponent(k)}&serviceId=${sid}${tid?"&emailTypeId="+tid:""}&quantity=${qty}`); showAdv(j);
+      if(j.code===200&&j.data&&j.data.content){ const pname=svcName(sid),now=Date.now();
+        const recs=String(j.data.content).split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map(l=>{ const p=l.split("----"); return {id:uid(),type:"account",email:p[0]||"",password:p[1]||"",aux:p[2]||"",project:pname,time:now}; });
+        addBuys(recs); toast(`已购买 ${recs.length} 个账号 · ${pname}，已存入「购买记录」（刷新不丢）`); refreshBalance(); } }catch(e){ showAdv("请求失败："+(e.message||e)); } };
+  $("#ac-activate").onclick=async ()=>{ const k=needKey(); if(!k)return; const o=$("#ac-actOrder").value.trim(),it=($("#ac-actItem").value.match(/\d+/)||[])[0]; if(!o||!it){toast("请填 orderId 并选择功能");return;}
     try{ const resp=await fetch(BASE+"/active",{method:"PUT",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify({apiKey:k,orderId:isNaN(+o)?o:+o,serviceItemId:+it})}); const j=await resp.json(); showAdv(j);
       if(j.code===200&&j.data){ const line=(j.data.email||"")+"----"+BASE+"/latest/code?orderId="+(j.data.orderId||o); const cur=$("#ac-in").value.trim(); $("#ac-in").value=(cur?cur+"\n":"")+line; updHint(); toast("已激活，新一轮接码链接已填入"); } }catch(e){ showAdv("请求失败："+(e.message||e)); } };
 })();
