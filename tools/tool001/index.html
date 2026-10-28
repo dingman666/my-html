@@ -239,6 +239,13 @@
   .ac-opt:hover,.ac-opt.hl{background:var(--accent-soft)}
   .ac-opt .oid{color:var(--text-3);font-size:11px;font-family:ui-monospace,monospace;flex:none}
   .ac-opt.none{color:var(--text-3);cursor:default}
+  .ac-opt.dim{opacity:.45}
+  .ac-opt .ac-left{display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden}
+  .ac-opt .ac-left>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ac-opt .oid.av{color:var(--green);font-size:12px;font-family:inherit;font-weight:600}
+  .ac-star{cursor:pointer;color:var(--text-3);font-size:14px;flex:none;line-height:1}
+  .ac-star:hover{color:var(--orange)}
+  .ac-star.on{color:var(--orange)}
   @media(max-width:760px){.ac-row{grid-template-columns:1fr 1fr}.ac-row .em{grid-column:1/-1}.ac-row .acts{grid-column:1/-1;justify-content:flex-start}}
   .pw-lenrow input[type=number]{width:92px;flex:none;text-align:center}
   input[type=range].slider{-webkit-appearance:none;appearance:none;flex:1;height:4px;border-radius:999px;background:linear-gradient(90deg,var(--accent) var(--pct,50%),var(--line-strong) var(--pct,50%));outline:none;margin:0;border:0;padding:0}
@@ -1666,7 +1673,7 @@
             <input type="hidden" id="ac-tid"><div class="hint" id="ac-tidHint">&nbsp;</div></div>
           <div class="field"><label>数量</label><input type="number" id="ac-qty" min="1" max="100" value="1"></div>
         </div>
-        <div class="actions" style="margin-top:12px;flex-wrap:wrap"><button class="btn btn-primary btn-sm" id="ac-buy">🛒 购买邮箱</button><button class="btn btn-ghost btn-sm" id="ac-buyacc">👤 购买账号</button><span class="hint" style="margin:0;align-self:center">购买成功自动存「购买记录」，邮箱订单并填进接码框</span></div>
+        <div class="actions" style="margin-top:12px;flex-wrap:wrap"><button class="btn btn-primary btn-sm" id="ac-buy">🛒 购买邮箱</button><button class="btn btn-ghost btn-sm" id="ac-buyacc">👤 购买账号</button><span class="hint" style="margin:0;align-self:center">选服务后邮箱类型按该服务库存自动过滤并显示可用数；购买成功自动存记录。单价以官网为准（API 未提供价格）。</span></div>
         <div class="grid" style="margin-top:14px">
           <div class="field"><label>激活：orderId</label><input type="text" id="ac-actOrder" placeholder="订单ID"></div>
           <div class="field"><label>激活：功能（选服务后自动列出，也可手填ID）</label><input type="text" id="ac-actItem" list="ac-itemDatalist" placeholder="如 7=注册"><datalist id="ac-itemDatalist"></datalist></div>
@@ -4006,17 +4013,41 @@ const makeQR=(function(){
   async function loadTypes(force){ if(typesCache&&!force)return typesCache; try{ const j=await apiGet("/types"); if(j&&j.code===200&&Array.isArray(j.data))typesCache=j.data; }catch(e){} return typesCache; }
   function svcItems(sid){ if(!servicesCache)return []; const s=servicesCache.find(x=>String(x.id||x.serviceId)===String(sid)); return (s&&s.items)||[]; }
   function fillItemDatalist(sid){ const dl=$("#ac-itemDatalist"); if(!dl)return; dl.innerHTML=svcItems(sid).map(it=>`<option value="${escHTML(String(it.serviceItemId))}">${escHTML(it.serviceItemName||"")}</option>`).join(""); }
-  /* 组合框：搜索 + 下拉选择 */
-  function setupCombo(search,list,hidden,getItems,onPick){ const sEl=$(search),lEl=$(list),hEl=$(hidden); if(!sEl)return;
+  function typeName(id){ const t=(typesCache||[]).find(x=>String(x.id)===String(id)); return t?t.name:("类型"+id); }
+  let curStock=null; const stockCache={};
+  async function loadStock(sid,force){ if(!force&&stockCache[sid])return stockCache[sid]; try{ const j=await apiGet("/services/stock?serviceId="+encodeURIComponent(sid)); if(j&&j.code===200&&j.data&&Array.isArray(j.data.typeStock)){ await loadTypes(); stockCache[sid]=j.data; return j.data; } }catch(e){} return null; }
+  /* 收藏服务（本机） */
+  const SVCFAV="tt.apicode.svcfav";
+  function loadFav(){ try{return new Set(JSON.parse(localStorage.getItem(SVCFAV)||"[]"));}catch(e){return new Set();} }
+  let favSet=loadFav();
+  function toggleFav(id){ id=String(id); if(favSet.has(id))favSet.delete(id); else favSet.add(id); try{localStorage.setItem(SVCFAV,JSON.stringify([...favSet]));}catch(e){} }
+  /* 组合框：搜索 + 下拉选择（右侧附加信息/淡显/星标）；返回 {refresh} */
+  function setupCombo(search,list,hidden,getItems,onPick,favCfg){ const sEl=$(search),lEl=$(list),hEl=$(hidden); if(!sEl)return {refresh(){}};
     function render(q){ const items=getItems()||[]; q=(q||"").toLowerCase().trim(); const f=q?items.filter(it=>String(it.name).toLowerCase().includes(q)||String(it.id)===q):items;
-      lEl.innerHTML=(f.length?f.slice(0,500).map(it=>`<div class="ac-opt" data-id="${escHTML(String(it.id))}" data-name="${escHTML(it.name)}"><span>${escHTML(it.name)}</span><span class="oid">#${escHTML(String(it.id))}</span></div>`).join(""):`<div class="ac-opt none">${items.length?"无匹配":'未加载，点上方「刷新服务/类型列表」'}</div>`); lEl.style.display="block"; }
+      lEl.innerHTML=(f.length?f.slice(0,600).map(it=>`<div class="ac-opt${it.dim?" dim":""}" data-id="${escHTML(String(it.id))}" data-name="${escHTML(it.name)}"><span class="ac-left">${favCfg?`<span class="ac-star${it.fav?" on":""}" data-star="${escHTML(String(it.id))}">${it.fav?"★":"☆"}</span>`:""}<span>${escHTML(it.name)}</span></span><span class="oid${it.av?" av":""}">${escHTML(it.extra||("#"+it.id))}</span></div>`).join(""):`<div class="ac-opt none">${items.length?"无匹配":'未加载，点上方「刷新服务/类型列表」'}</div>`); lEl.style.display="block"; }
     sEl.addEventListener("focus",()=>render(sEl.value));
     sEl.addEventListener("input",()=>{ hEl.value=""; render(sEl.value); });
-    lEl.addEventListener("mousedown",e=>{ const o=e.target.closest(".ac-opt"); if(!o||o.classList.contains("none"))return; e.preventDefault(); hEl.value=o.dataset.id; sEl.value=o.dataset.name; lEl.style.display="none"; if(onPick)onPick(o.dataset.id,o.dataset.name); });
-    document.addEventListener("click",e=>{ if(!sEl.parentNode.contains(e.target))lEl.style.display="none"; }); }
-  setupCombo("#ac-svcSearch","#ac-svcList","#ac-sid",()=>(servicesCache||[]).map(s=>({id:s.id||s.serviceId,name:s.name||s.serviceName})),id=>{ fillItemDatalist(id); $("#ac-svcHint").textContent="已选 serviceId="+id; });
-  setupCombo("#ac-tidSearch","#ac-tidList","#ac-tid",()=>(typesCache||[]).map(t=>({id:t.id,name:t.name})),id=>{ $("#ac-tidHint").textContent="已选 emailTypeId="+id; });
-  async function reloadLists(){ $("#ac-svcHint").textContent="加载中…"; await Promise.all([loadServices(true),loadTypes(true)]); $("#ac-svcHint").textContent=servicesCache?`已加载 ${servicesCache.length} 个服务，点上方框搜索选择`:"加载失败（检查网络）"; $("#ac-tidHint").textContent=typesCache?`已加载 ${typesCache.length} 种邮箱类型`:" "; }
+    lEl.addEventListener("mousedown",e=>{ const star=e.target.closest(".ac-star"); if(star&&favCfg){ e.preventDefault(); favCfg.toggle(star.dataset.star); render(sEl.value); return; }
+      const o=e.target.closest(".ac-opt"); if(!o||o.classList.contains("none"))return; e.preventDefault(); hEl.value=o.dataset.id; sEl.value=o.dataset.name; lEl.style.display="none"; if(onPick)onPick(o.dataset.id,o.dataset.name); });
+    document.addEventListener("click",e=>{ if(!sEl.parentNode.contains(e.target))lEl.style.display="none"; });
+    return { refresh(){ if(lEl.style.display!=="none")render(sEl.value); } }; }
+  const grp=x=>x.avail>0?0:(x.avail<0?1:2);
+  const svcCombo=setupCombo("#ac-svcSearch","#ac-svcList","#ac-sid",
+    ()=>{ const list=(servicesCache||[]).map(s=>{ const id=String(s.id||s.serviceId), st=stockCache[id], avail=st?(st.totalAvailable||0):-1; return {id,name:s.name||s.serviceName, avail, fav:favSet.has(id), extra: st?(st.totalAvailable||0).toLocaleString()+" 可用":"查询中…", av:!!st, dim:!!st&&avail===0}; });
+      list.sort((a,b)=>{ if(a.fav!==b.fav)return a.fav?-1:1; const ga=grp(a),gb=grp(b); if(ga!==gb)return ga-gb; if(ga===0)return b.avail-a.avail; return String(a.name).localeCompare(String(b.name)); }); return list; },
+    async id=>{ fillItemDatalist(id); $("#ac-tid").value=""; $("#ac-tidSearch").value=""; $("#ac-svcHint").textContent="加载该服务可用邮箱…"; curStock=await loadStock(id);
+      if(curStock){ $("#ac-svcHint").textContent="serviceId="+id+" · 共 "+(curStock.totalAvailable||0).toLocaleString()+" 个可用"; $("#ac-tidHint").textContent="已按该服务过滤 "+curStock.typeStock.length+" 种邮箱类型，点右框选择"; }
+      else { $("#ac-svcHint").textContent="serviceId="+id+"（库存获取失败，可选全部类型）"; } },
+    {toggle:toggleFav});
+  setupCombo("#ac-tidSearch","#ac-tidList","#ac-tid",
+    ()=>{ if(curStock&&curStock.typeStock){ return curStock.typeStock.slice().sort((a,b)=>b.available-a.available).map(ts=>({id:ts.typeId,name:typeName(ts.typeId),extra:(ts.available||0).toLocaleString()+" 可用",av:true,dim:(ts.available||0)===0})); } return (typesCache||[]).map(t=>({id:t.id,name:t.name,extra:"#"+t.id})); },
+    id=>{ let av=""; if(curStock){ const ts=curStock.typeStock.find(t=>String(t.typeId)===String(id)); if(ts)av=" · "+(ts.available||0).toLocaleString()+" 可用"; } $("#ac-tidHint").textContent="已选 emailTypeId="+id+av; });
+  /* 后台并发预取所有服务库存，数量到达即刷新下拉 */
+  let prefetching=false;
+  async function prefetchStocks(){ if(prefetching)return; prefetching=true; const svc=(servicesCache||[]).slice(); let idx=0,done=0;
+    const worker=async()=>{ while(idx<svc.length){ const s=svc[idx++],id=s.id||s.serviceId; if(!stockCache[id])await loadStock(id); done++; if(done%4===0)svcCombo.refresh(); } };
+    await Promise.all(Array.from({length:Math.min(6,svc.length)},worker)); svcCombo.refresh(); prefetching=false; }
+  async function reloadLists(){ $("#ac-svcHint").textContent="加载中…"; for(const k in stockCache)delete stockCache[k]; await Promise.all([loadServices(true),loadTypes(true)]); $("#ac-svcHint").textContent=servicesCache?`已加载 ${servicesCache.length} 个服务，点上方框搜索（可用数量后台加载中…）`:"加载失败（检查网络）"; $("#ac-tidHint").textContent=typesCache?`已加载 ${typesCache.length} 种邮箱类型`:" "; if(servicesCache)prefetchStocks(); }
   $("#ac-reload").onclick=reloadLists;
   async function refreshBalance(){ const el=$("#ac-balShow"); const k=$("#ac-apikey").value.trim(); if(!k){ el.textContent="未填 Key"; el.style.color="var(--text-3)"; return; } el.textContent="查询中…"; el.style.color="var(--text-2)";
     try{ const j=await apiGet("/balance?apiKey="+encodeURIComponent(k)); if(j&&j.code===200&&j.data!=null){ el.textContent="$ "+j.data; el.style.color="var(--green)"; } else { el.textContent=(j&&j.msg)||"查询失败"; el.style.color="var(--red)"; } }catch(e){ el.textContent="查询失败"; el.style.color="var(--red)"; } }
