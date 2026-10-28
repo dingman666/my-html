@@ -3930,7 +3930,8 @@ const makeQR=(function(){
   let servicesCache=null;
   function svcName(id){ if(!servicesCache)return "服务"+id; const s=servicesCache.find(x=>String(x.id||x.serviceId)===String(id)); return s?(s.name||s.serviceName||("服务"+id)):("服务"+id); }
   const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-  const STAT={42001:"等待接码中…",401:"等待接码中…",42002:"订单已关闭",42003:"邮箱已失效",42006:"超时未接到码"};
+  const STAT={401:"等待接码中…",42001:"等待接码中…",403:"邮箱已失效（不可用）",42003:"邮箱已失效",42002:"订单已关闭",42006:"超时未接到码",404:"订单未找到",42004:"订单未找到"};
+  const DEAD=[403,42003];  /* 邮箱彻底失效/报废（激活通常也救不回） */
   function parseInput(text){ const out=[], notes=loadNotes(); for(const raw0 of String(text||"").split(/\r\n|\r|\n/)){ const raw=raw0.trim(); if(!raw)continue;
     let email="",link="",note=""; if(raw.includes("----")){ const p=raw.split("----"); email=p[0].trim(); link=(p[1]||"").trim(); note=p.slice(2).join("----").trim(); } else link=raw;
     let orderId=""; const mm=link.match(/orderId=(\d+)/i)||raw.match(/orderId=(\d+)/i)||raw.match(/(?:^|[^\d])(\d{15,})(?:[^\d]|$)/); if(mm)orderId=mm[1]||mm[0].replace(/\D/g,"");
@@ -3943,7 +3944,7 @@ const makeQR=(function(){
   let entries=[], running=false, stopFlag=false;
   function badge(e){ if(e.status==="success")return '<span class="st ok">✅ 已来码</span>';
     if(e.status==="content")return '<span class="st content">📩 收到邮件</span>';
-    if(e.status==="error")return '<span class="st err">✕ '+escHTML(e.statusText||"失败")+'</span>';
+    if(e.status==="error")return '<span class="st err">✕ '+escHTML(e.statusText||"失败")+'</span>'+((DEAD.includes(e.lastCode)||e.dead)?'<br><span class="st err" style="opacity:.85;font-size:11px">💀 邮箱已报废，激活多半无效，建议找客服</span>':'');
     if(e.status==="wait")return '<span class="st wait"><span class="ac-spin"></span>'+escHTML(e.statusText||"等待中")+'</span>';
     return '<span class="st">'+escHTML(e.statusText||"待开始")+'</span>'; }
   function codeCell(e,i){ return e.code?`<span class="cd" data-i="${i}" title="点击复制">${escHTML(e.code)}</span>`:`<span class="cd none">—</span>`; }
@@ -3968,13 +3969,13 @@ const makeQR=(function(){
       if(j.code===42001||j.code===401){ e.status="wait"; e.statusText=STAT[j.code]||j.msg||"等待中"; return "wait"; }
       e.status="error"; e.statusText=STAT[j.code]||j.msg||("错误 "+j.code); return "done";
     }catch(err){ e.status="error"; e.statusText="请求失败（网络/CORS）"; return "done"; } }
-  const ACTIVATABLE=[42002,42003,42006];  /* 订单关闭 / 邮箱失效 / 任务超时 → 可尝试激活重试 */
+  const ACTIVATABLE=[403,42003,42002,42006];  /* 邮箱失效 / 订单关闭 / 任务超时 → 可尝试激活重试 */
   async function tryActivate(e){ const k=$("#ac-apikey")?$("#ac-apikey").value.trim():""; if(!k||!e.orderId)return false;
     const body={apiKey:k,orderId:isNaN(+e.orderId)?e.orderId:+e.orderId};
     try{ const b=(typeof loadBuys==="function")?loadBuys().find(x=>x.orderId===e.orderId):null; if(b&&b.serviceId&&typeof svcItems==="function"){ const its=svcItems(b.serviceId); if(its&&its[0])body.serviceItemId=+its[0].serviceItemId; } }catch(_){}
     try{ const resp=await fetch(BASE+"/active",{method:"PUT",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify(body)}); const j=await resp.json();
       if(j.code===200&&j.data){ if(j.data.orderId)e.orderId=String(j.data.orderId); if(j.data.email)e.email=j.data.email; e.link=BASE+"/latest/code?orderId="+e.orderId; return true; }
-      e.statusText="激活失败："+(STAT[j.code]||j.msg||("code "+j.code)); return false;
+      e.statusText="激活失败："+(STAT[j.code]||j.msg||("code "+j.code)); if([43001,403,42003].includes(j.code))e.dead=true; return false;
     }catch(err){ e.statusText="激活请求失败（网络/CORS）"; return false; } }
   async function processEntry(i){ const e=entries[i]; const poll=$("#ac-poll").checked, interval=Math.max(2,+$("#ac-interval").value||3), maxwait=Math.max(10,+$("#ac-maxwait").value||120); let t0=Date.now();
     while(!stopFlag){ const r=await fetchOne(e); updCounts();
