@@ -1628,7 +1628,7 @@
         <div class="field"><label>最长等待（秒）</label><input type="number" id="ac-maxwait" min="10" max="600" value="120"></div>
         <div class="field"><label>并发数</label><input type="number" id="ac-conc" min="1" max="20" value="5"></div>
       </div>
-      <div class="actions"><button class="btn btn-primary" id="ac-run">🚀 获取验证码</button><button class="btn btn-ghost" id="ac-stop" disabled>⏹ 停止</button><button class="btn btn-ghost" id="ac-clear">清空</button></div>
+      <div class="actions"><button class="btn btn-primary" id="ac-run">🚀 获取验证码</button><button class="btn btn-ghost" id="ac-stop" disabled>⏹ 停止</button><button class="btn btn-ghost" id="ac-saveOrders">💾 存入购买记录</button><button class="btn btn-ghost" id="ac-clear">清空</button></div>
       <div class="hint" style="margin-top:12px;line-height:1.7">接码只用链接里的 <b>orderId</b>，不需要 API Key。来码即显示验证码，<b>点验证码可复制</b>。你买的是哪个项目（如微软），平台就只返回该项目的验证码。平台：online-disposablemail.com</div>
     </div>
 
@@ -4046,7 +4046,11 @@ const makeQR=(function(){
     id=>{ let av=""; if(curStock){ const ts=curStock.typeStock.find(t=>String(t.typeId)===String(id)); if(ts)av=" · "+(ts.available||0).toLocaleString()+" 可用"; } $("#ac-tidHint").textContent="已选 emailTypeId="+id+av; });
   /* 激活：从购买记录 + 当前接码列表选择已购订单（显示邮箱）*/
   setupCombo("#ac-actOrderSearch","#ac-actOrderList","#ac-actOrder",
-    ()=>{ const seen=new Set(),out=[]; for(const b of loadBuys()){ if(b.type==="mailbox"&&b.orderId&&!seen.has(b.orderId)){ seen.add(b.orderId); out.push({id:b.orderId,name:b.email||b.orderId,extra:b.project||"订单"}); } } for(const e of entries){ if(e.orderId&&!seen.has(e.orderId)){ seen.add(e.orderId); out.push({id:e.orderId,name:e.email||e.orderId,extra:e.note||"接码中"}); } } return out; },
+    ()=>{ const seen=new Set(),out=[]; const add=(id,name,extra)=>{ id=String(id||"").trim(); if(!id||seen.has(id))return; seen.add(id); out.push({id,name:name||id,extra:extra||""}); };
+      for(const b of loadBuys())if(b.type==="mailbox")add(b.orderId,b.email,b.project||"已购");
+      for(const e of entries)add(e.orderId,e.email,e.note||"接码中");
+      try{ for(const e of parseInput($("#ac-in").value))add(e.orderId,e.email,e.note||"接码框"); }catch(_){}
+      return out; },
     (id,name)=>{ const b=loadBuys().find(x=>x.orderId===id), sid=b&&b.serviceId; if(sid){ if(servicesCache)fillItemDatalist(sid); else loadServices().then(()=>fillItemDatalist(sid)); } $("#ac-actHint").textContent="已选："+name+(b&&b.project?" · "+b.project:""); });
   /* 后台并发预取所有服务库存，数量到达即刷新下拉 */
   let prefetching=false;
@@ -4083,6 +4087,9 @@ const makeQR=(function(){
     const lines=[H.join(",")]; for(const b of a)lines.push([b.type==="account"?"账号":"邮箱订单",b.project||"",b.email||"",b.password||"",b.aux||"",b.link||"",b.orderId||"",new Date(b.time).toLocaleString()].map(cc).join(","));
     download(new Blob(["﻿"+lines.join("\r\n")],{type:"text/csv;charset=utf-8"}),"购买记录.csv"); };
   $("#ac-buyClear").onclick=()=>{ if(!loadBuys().length){toast("已是空的");return;} if(!confirm("清空全部购买记录？不可恢复（建议先下载 CSV 备份）。"))return; saveBuys([]); renderBuys(); };
+  $("#ac-saveOrders").onclick=()=>{ const list=parseInput($("#ac-in").value); if(!list.length){toast("接码框没有可导入的订单");return;} const a=loadBuys(),have=new Set(a.filter(b=>b.type==="mailbox").map(b=>b.orderId)),now=Date.now(); let n=0;
+    for(const e of list){ if(!e.orderId||have.has(e.orderId))continue; have.add(e.orderId); a.push({id:uid(),type:"mailbox",email:e.email==="(未提供邮箱)"?"":e.email,orderId:e.orderId,link:e.link,project:e.note||"",time:now}); n++; }
+    saveBuys(a); renderBuys(); toast(n?`已存入 ${n} 条订单到购买记录（刷新不丢）`:"没有新订单（可能都已存在）"); };
   renderBuys();
   $("#ac-buy").onclick=async ()=>{ const k=needKey(); if(!k)return; const sid=$("#ac-sid").value.trim(),tid=$("#ac-tid").value.trim(),qty=+$("#ac-qty").value||1; if(!sid||!tid){toast("请先选择服务和邮箱类型");return;}
     try{ await loadServices(); const j=await apiGet(`/mailbox?apiKey=${encodeURIComponent(k)}&serviceId=${sid}&emailTypeId=${tid}&quantity=${qty}`); showAdv(j);
