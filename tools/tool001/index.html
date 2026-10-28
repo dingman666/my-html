@@ -220,6 +220,20 @@
   .ad-saved .row .x{cursor:pointer;color:var(--text-3);border:none;background:none;flex:none;font-size:16px;line-height:1;transition:.15s}
   .ad-saved .row .x:hover{color:var(--red)}
   @media(max-width:640px){.ad-fields{grid-template-columns:1fr}.ad-f .v{font-size:14px}}
+  .ac-list{display:flex;flex-direction:column;gap:8px;max-height:560px;overflow:auto}
+  .ac-row{display:grid;grid-template-columns:minmax(130px,1.2fr) minmax(90px,.8fr) 148px minmax(86px,.7fr) auto;gap:12px;align-items:center;background:var(--card-solid);border:1px solid var(--line);border-radius:12px;padding:11px 14px;font-size:13px;transition:.15s}
+  .ac-row:hover{box-shadow:var(--shadow)}
+  .ac-row .em{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ac-note{width:100%;font-size:12px;color:var(--text);background:var(--chip);border:1px solid transparent;border-radius:8px;padding:6px 9px;outline:none;font-family:inherit;transition:.15s}
+  .ac-note:focus{border-color:var(--accent);background:var(--field)}
+  .ac-note::placeholder{color:var(--text-3)}
+  .ac-row .st{font-size:12px;display:inline-flex;align-items:center;gap:6px}
+  .ac-row .st.wait{color:var(--orange)} .ac-row .st.err{color:var(--red)} .ac-row .st.ok{color:var(--green)} .ac-row .st.content{color:var(--purple)}
+  .ac-row .cd{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:19px;font-weight:700;letter-spacing:.08em;color:var(--accent);cursor:pointer;white-space:nowrap}
+  .ac-row .cd.none{color:var(--text-3);font-size:14px;font-weight:500;letter-spacing:0;cursor:default}
+  .ac-row .acts{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
+  .ac-spin{width:12px;height:12px;border:2px solid var(--line-strong);border-top-color:var(--orange);border-radius:50%;display:inline-block;animation:apispin .7s linear infinite}
+  @media(max-width:760px){.ac-row{grid-template-columns:1fr 1fr}.ac-row .em{grid-column:1/-1}.ac-row .acts{grid-column:1/-1;justify-content:flex-start}}
   .pw-lenrow input[type=number]{width:92px;flex:none;text-align:center}
   input[type=range].slider{-webkit-appearance:none;appearance:none;flex:1;height:4px;border-radius:999px;background:linear-gradient(90deg,var(--accent) var(--pct,50%),var(--line-strong) var(--pct,50%));outline:none;margin:0;border:0;padding:0}
   input[type=range].slider::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:#fff;border:0;box-shadow:0 1px 4px rgba(0,0,0,.35),0 0 0 .5px rgba(0,0,0,.08);cursor:pointer;transition:transform .1s}
@@ -505,6 +519,7 @@
       <button class="maintab" data-page="ms" data-sub="微软账号信息整理成表格，支持自定义格式提取；可按行调接口收取最新邮件 / 验证码" style="--ic:#0078d4"><span class="ic">Ⓜ️</span>微软专用</button>
       <button class="maintab" data-page="tf" data-sub="粘贴密钥即出验证码，批量、倒计时、纯本地" style="--ic:#32ade6"><span class="ic">🛡️</span>2FA 验证码</button>
       <button class="maintab" data-page="addr" data-sub="离线生成真实格式地址：美国/免税州/香港/英国/日本/加拿大/澳洲/德国/法国，城市·邮编·电话区号匹配，单条卡片或批量" style="--ic:#34c759"><span class="ic">📍</span>地址生成</button>
+      <button class="maintab" data-page="apicode" data-sub="粘贴 邮箱----接码链接，自动请求取回验证码；支持批量、自动轮询；含余额/购买/激活等 API" style="--ic:#ff2d55"><span class="ic">📩</span>API 接码</button>
     </nav>
     <div class="side-foot">界面仅预览前 5000 行<br>大文件请开「写入文件夹」</div>
   </aside>
@@ -1583,6 +1598,72 @@
     <div class="card" id="ad-savedCard" style="display:none">
       <div class="pane-head"><span class="desc">已保存 <b id="ad-sc">0</b> 条</span><div class="tools"><button class="btn btn-ghost btn-sm" id="ad-copySaved">复制全部</button><button class="btn btn-ghost btn-sm" id="ad-dlSaved">下载</button><button class="btn btn-ghost btn-sm" id="ad-clearSaved">清空</button></div></div>
       <div id="ad-savedList" class="ad-saved"></div>
+    </div>
+  </section>
+
+  <!-- ================= API 接码 ================= -->
+  <section class="page" id="page-apicode">
+    <div class="card">
+      <h2>① 粘贴订单 <span class="badge on">实时接码</span></h2>
+      <div class="field"><label>每行一条：<b>邮箱----接码链接</b>（也可只粘链接或 orderId）</label>
+        <textarea id="ac-in" class="paste" spellcheck="false" placeholder="maximqnpad02@gmail.com----https://api.online-disposablemail.com/api/latest/code?orderId=2115409693606989825"></textarea>
+        <div class="hint" id="ac-inHint">尚未输入</div>
+      </div>
+      <div class="grid">
+        <div class="field"><label>自动轮询（没来码时自动重试）</label><label class="toggle" style="margin-top:2px"><input type="checkbox" id="ac-poll" checked><span class="sw"></span>开启自动轮询</label></div>
+        <div class="field"><label>轮询间隔（秒）</label><input type="number" id="ac-interval" min="2" max="60" value="3"></div>
+        <div class="field"><label>最长等待（秒）</label><input type="number" id="ac-maxwait" min="10" max="600" value="120"></div>
+        <div class="field"><label>并发数</label><input type="number" id="ac-conc" min="1" max="20" value="5"></div>
+      </div>
+      <div class="actions"><button class="btn btn-primary" id="ac-run">🚀 获取验证码</button><button class="btn btn-ghost" id="ac-stop" disabled>⏹ 停止</button><button class="btn btn-ghost" id="ac-clear">清空</button></div>
+      <div class="hint" style="margin-top:12px;line-height:1.7">接码只用链接里的 <b>orderId</b>，不需要 API Key。来码即显示验证码，<b>点验证码可复制</b>。你买的是哪个项目（如微软），平台就只返回该项目的验证码。平台：online-disposablemail.com</div>
+    </div>
+
+    <div class="card" id="ac-resCard" style="display:none">
+      <div class="pane-head"><span class="desc">结果 <b id="ac-rc">0</b> 条 · 已来码 <b id="ac-okc">0</b></span><div class="tools"><button class="btn btn-ghost btn-sm" id="ac-copyCodes">复制全部验证码</button><button class="btn btn-ghost btn-sm" id="ac-copyPair">复制 邮箱--验证码</button></div></div>
+      <div class="zipbar" style="flex-direction:column;align-items:stretch;gap:10px;margin-bottom:14px">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <span class="hint" style="margin:0">筛选项目</span>
+          <select id="ac-filter" style="width:auto;min-width:150px"><option value="">全部</option></select>
+          <span class="hint" style="margin:0 0 0 10px">导出列</span>
+          <label class="toggle toggle-sm"><input type="checkbox" class="ac-col" value="email" checked><span class="sw"></span>邮箱</label>
+          <label class="toggle toggle-sm"><input type="checkbox" class="ac-col" value="link" checked><span class="sw"></span>链接</label>
+          <label class="toggle toggle-sm"><input type="checkbox" class="ac-col" value="note" checked><span class="sw"></span>项目用途</label>
+          <label class="toggle toggle-sm"><input type="checkbox" class="ac-col" value="code" checked><span class="sw"></span>验证码</label>
+          <label class="toggle toggle-sm"><input type="checkbox" class="ac-col" value="status"><span class="sw"></span>状态</label>
+          <label class="toggle toggle-sm"><input type="checkbox" class="ac-col" value="orderId"><span class="sw"></span>订单号</label>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <label class="toggle toggle-sm"><input type="checkbox" id="ac-exHead" checked><span class="sw"></span>含标题行</label>
+          <button class="btn btn-ghost btn-sm" id="ac-exTable">复制表格</button>
+          <button class="btn btn-ghost btn-sm" id="ac-exTxt">下载 TXT</button>
+          <button class="btn btn-ghost btn-sm" id="ac-exCsv">下载 CSV</button>
+          <button class="btn btn-ghost btn-sm" id="ac-exXlsx">下载 Excel</button>
+          <span class="hint" id="ac-exHint" style="margin:0"></span>
+        </div>
+      </div>
+      <div id="ac-list" class="ac-list"></div>
+    </div>
+
+    <div class="card">
+      <h2 id="ac-advToggle" style="cursor:pointer;user-select:none">② 高级 · API Key 功能（余额 / 购买 / 激活）<span id="ac-advArrow">▾</span></h2>
+      <div id="ac-adv" style="display:none">
+        <div class="field"><label>API Key（仅保存在本机浏览器）</label><input type="text" id="ac-apikey" placeholder="你的 apiKey" spellcheck="false" autocomplete="off"></div>
+        <div class="actions" style="margin-top:12px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" id="ac-balance">💰 查余额</button><button class="btn btn-ghost btn-sm" id="ac-services">📋 查询服务</button><button class="btn btn-ghost btn-sm" id="ac-types">📮 查询邮箱类型</button></div>
+        <div class="grid" style="margin-top:14px">
+          <div class="field"><label>serviceId 服务ID</label><input type="number" id="ac-sid" placeholder="如 2=Github"></div>
+          <div class="field"><label>emailTypeId 邮箱类型ID</label><input type="number" id="ac-tid" placeholder="如 3=Gmail"></div>
+          <div class="field"><label>数量</label><input type="number" id="ac-qty" min="1" max="100" value="1"></div>
+        </div>
+        <div class="actions" style="margin-top:12px;flex-wrap:wrap"><button class="btn btn-primary btn-sm" id="ac-buy">🛒 购买邮箱</button><button class="btn btn-ghost btn-sm" id="ac-buyacc">👤 购买账号</button><span class="hint" style="margin:0;align-self:center">购买成功会自动把「邮箱--链接」填进上方接码框</span></div>
+        <div class="grid" style="margin-top:14px">
+          <div class="field"><label>激活：orderId</label><input type="text" id="ac-actOrder" placeholder="订单ID"></div>
+          <div class="field"><label>激活：serviceItemId 功能ID</label><input type="number" id="ac-actItem" placeholder="如 7"></div>
+        </div>
+        <div class="actions" style="margin-top:12px"><button class="btn btn-ghost btn-sm" id="ac-activate">♻️ 激活邮箱（接新一轮码）</button></div>
+        <div class="note" id="ac-advNote" style="display:none"></div>
+        <textarea id="ac-advOut" readonly spellcheck="false" style="min-height:160px;margin-top:12px" placeholder="接口返回会显示在这里（原始 JSON）"></textarea>
+      </div>
     </div>
   </section>
 
@@ -3792,6 +3873,122 @@ const makeQR=(function(){
   $("#ad-dlSaved").onclick=()=>{ const a=loadSaved(); if(!a.length){toast("没有已保存");return;} download(new Blob([a.map(x=>x.line).join("\r\n")+"\r\n"],{type:"text/plain;charset=utf-8"}),"已保存地址.txt"); };
   $("#ad-clearSaved").onclick=()=>{ if(!loadSaved().length){toast("已是空的");return;} if(!confirm("清空已保存的地址？"))return; saveSaved([]); renderSaved(); };
   renderSaved();
+})();
+
+/* ================= API 接码 ================= */
+(function(){
+  const $=s=>document.querySelector(s); if(!$("#page-apicode"))return;
+  const BASE="https://api.online-disposablemail.com/api";
+  const AKEY="tt.apicode.key";
+  try{ const k=localStorage.getItem(AKEY); if(k)$("#ac-apikey").value=k; }catch(e){}
+  $("#ac-apikey").addEventListener("change",()=>{ try{localStorage.setItem(AKEY,$("#ac-apikey").value.trim());}catch(e){} });
+  $("#ac-advToggle").onclick=()=>{ const a=$("#ac-adv"); const open=a.style.display==="none"; a.style.display=open?"block":"none"; $("#ac-advArrow").textContent=open?"▴":"▾"; };
+  const NKEY="tt.apicode.notes";
+  function loadNotes(){ try{return JSON.parse(localStorage.getItem(NKEY)||"{}");}catch(e){return {};} }
+  function saveNote(orderId,note){ if(!orderId)return; try{ const m=loadNotes(); if(note)m[orderId]=note; else delete m[orderId]; localStorage.setItem(NKEY,JSON.stringify(m)); }catch(e){} }
+  let servicesCache=null;
+  function svcName(id){ if(!servicesCache)return "服务"+id; const s=servicesCache.find(x=>String(x.id||x.serviceId)===String(id)); return s?(s.name||s.serviceName||("服务"+id)):("服务"+id); }
+  const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+  const STAT={42001:"等待接码中…",401:"等待接码中…",42002:"订单已关闭",42003:"邮箱已失效",42006:"超时未接到码"};
+  function parseInput(text){ const out=[], notes=loadNotes(); for(const raw0 of String(text||"").split(/\r\n|\r|\n/)){ const raw=raw0.trim(); if(!raw)continue;
+    let email="",link="",note=""; if(raw.includes("----")){ const p=raw.split("----"); email=p[0].trim(); link=(p[1]||"").trim(); note=p.slice(2).join("----").trim(); } else link=raw;
+    let orderId=""; const mm=link.match(/orderId=(\d+)/i)||raw.match(/orderId=(\d+)/i)||raw.match(/(?:^|[^\d])(\d{15,})(?:[^\d]|$)/); if(mm)orderId=mm[1]||mm[0].replace(/\D/g,"");
+    if(!/^https?:\/\//i.test(link))link=orderId?BASE+"/latest/code?orderId="+orderId:"";
+    if(!link&&!orderId)continue;
+    if(!note&&orderId&&notes[orderId])note=notes[orderId];
+    out.push({email:email||"(未提供邮箱)",link,orderId,note,status:"pending",statusText:"待开始",code:"",content:"",lastCode:0}); } return out; }
+  function updHint(){ const n=parseInput($("#ac-in").value).length; $("#ac-inHint").textContent=n?`已识别 ${n} 条订单`:"尚未输入（或格式不对）"; }
+  $("#ac-in").addEventListener("input",updHint);
+  let entries=[], running=false, stopFlag=false;
+  function badge(e){ if(e.status==="success")return '<span class="st ok">✅ 已来码</span>';
+    if(e.status==="content")return '<span class="st content">📩 收到邮件</span>';
+    if(e.status==="error")return '<span class="st err">✕ '+escHTML(e.statusText||"失败")+'</span>';
+    if(e.status==="wait")return '<span class="st wait"><span class="ac-spin"></span>'+escHTML(e.statusText||"等待中")+'</span>';
+    return '<span class="st">'+escHTML(e.statusText||"待开始")+'</span>'; }
+  function codeCell(e,i){ return e.code?`<span class="cd" data-i="${i}" title="点击复制">${escHTML(e.code)}</span>`:`<span class="cd none">—</span>`; }
+  function actsCell(e,i){ const acts=[`<button class="btn btn-ghost btn-sm" data-act="retry" data-i="${i}">重试</button>`];
+    if(e.content)acts.push(`<button class="btn btn-ghost btn-sm" data-act="view" data-i="${i}">查看邮件</button>`);
+    if(e.link)acts.push(`<button class="btn btn-ghost btn-sm" data-act="open" data-i="${i}">打开链接</button>`); return acts.join(""); }
+  function rowHTML(e,i){ return `<div class="ac-row" id="ac-row-${i}"><span class="em" title="${escHTML(e.email)}">${escHTML(e.email)}</span>`
+    +`<input class="ac-note" id="ac-note-${i}" data-i="${i}" value="${escHTML(e.note||"")}" placeholder="备注项目" spellcheck="false">`
+    +`<span id="ac-st-${i}">${badge(e)}</span><span id="ac-cd-${i}">${codeCell(e,i)}</span><span class="acts" id="ac-acts-${i}">${actsCell(e,i)}</span></div>`; }
+  let filterNote="";
+  function matchFilter(e){ if(!filterNote)return true; if(filterNote==="__none__")return !(e.note&&e.note.trim()); return (e.note||"")===filterNote; }
+  function renderAll(){ $("#ac-list").innerHTML=entries.map((e,i)=>matchFilter(e)?rowHTML(e,i):"").join(""); updateExHint(); }
+  function renderRow(i){ const e=entries[i]; const st=$("#ac-st-"+i); if(!st){ const el=$("#ac-row-"+i); if(el)el.outerHTML=rowHTML(e,i); return; }
+    st.innerHTML=badge(e); const cd=$("#ac-cd-"+i); if(cd)cd.innerHTML=codeCell(e,i); const ac=$("#ac-acts-"+i); if(ac)ac.innerHTML=actsCell(e,i); }
+  function updCounts(){ $("#ac-rc").textContent=entries.length; $("#ac-okc").textContent=entries.filter(e=>e.status==="success").length; }
+  function extractCode(content){ if(!content)return ""; const t=String(content).replace(/<[^>]+>/g," ").replace(/&nbsp;/g," "); const m=t.match(/\b(\d{4,8})\b/); return m?m[1]:""; }
+  async function fetchOne(e){ try{ const resp=await fetch(e.link,{cache:"no-store",headers:{Accept:"application/json"}}); const txt=await resp.text(); let j; try{j=JSON.parse(txt);}catch{ e.status="error"; e.statusText="返回非JSON"; return "done"; }
+      e.lastCode=j.code;
+      if(j.code===200&&j.data){ if(j.data.code){ e.code=String(j.data.code); e.status="success"; e.content=j.data.content||""; return "done"; }
+        if(j.data.content){ e.content=j.data.content; const c=extractCode(j.data.content); if(c){e.code=c;e.status="success";}else e.status="content"; return "done"; }
+        e.status="wait"; e.statusText=j.msg||"等待中"; return "wait"; }
+      if(j.code===42001||j.code===401){ e.status="wait"; e.statusText=STAT[j.code]||j.msg||"等待中"; return "wait"; }
+      e.status="error"; e.statusText=STAT[j.code]||j.msg||("错误 "+j.code); return "done";
+    }catch(err){ e.status="error"; e.statusText="请求失败（网络/CORS）"; return "done"; } }
+  async function processEntry(i){ const e=entries[i]; const poll=$("#ac-poll").checked, interval=Math.max(2,+$("#ac-interval").value||3), maxwait=Math.max(10,+$("#ac-maxwait").value||120); const t0=Date.now();
+    while(!stopFlag){ const r=await fetchOne(e); updCounts();
+      if(r==="done"){ renderRow(i); return; }
+      const secs=Math.round((Date.now()-t0)/1000); e.statusText=(STAT[e.lastCode]||"等待中")+" · "+secs+"s";
+      if(!poll){ renderRow(i); return; }
+      if(Date.now()-t0>=maxwait*1000){ e.status="error"; e.statusText="本地等待超时（"+maxwait+"s）"; renderRow(i); return; }
+      renderRow(i); await sleep(interval*1000); } renderRow(i); }
+  async function run(){ if(running)return; const list=parseInput($("#ac-in").value); if(!list.length){toast("没识别到订单，请检查格式");return;}
+    entries=list; filterNote=""; running=true; stopFlag=false; $("#ac-run").disabled=true; $("#ac-stop").disabled=false; $("#ac-resCard").style.display="block"; updateFilterOptions(); renderAll(); updCounts();
+    const conc=Math.max(1,Math.min(20,+$("#ac-conc").value||5)); let idx=0;
+    const worker=async()=>{ while(idx<entries.length&&!stopFlag){ const i=idx++; entries[i].status="wait"; entries[i].statusText="查询中…"; renderRow(i); await processEntry(i); } };
+    await Promise.all(Array.from({length:Math.min(conc,entries.length)},worker));
+    running=false; $("#ac-run").disabled=false; $("#ac-stop").disabled=true;
+    const ok=entries.filter(e=>e.status==="success").length; toast(stopFlag?`已停止 · 来码 ${ok}/${entries.length}`:`完成 · 来码 ${ok}/${entries.length}`); }
+  $("#ac-run").onclick=run;
+  $("#ac-stop").onclick=()=>{ stopFlag=true; $("#ac-stop").disabled=true; toast("正在停止…"); };
+  $("#ac-clear").onclick=()=>{ $("#ac-in").value=""; entries=[]; filterNote=""; $("#ac-list").innerHTML=""; $("#ac-resCard").style.display="none"; updateFilterOptions(); updHint(); };
+  $("#ac-list").addEventListener("click",async e=>{ const cd=e.target.closest(".cd"); if(cd&&!cd.classList.contains("none")){ const c=entries[+cd.dataset.i].code; if(await copyTextSafe(c))toast("已复制验证码 "+c); return; }
+    const b=e.target.closest("[data-act]"); if(!b)return; const i=+b.dataset.i, en=entries[i], act=b.dataset.act;
+    if(act==="open"){ window.open(en.link,"_blank","noopener"); }
+    else if(act==="view"){ if(!en.content){toast("没有邮件内容");return;} const safe=String(en.content).replace(/<script[\s\S]*?<\/script>/gi,""); const w=window.open("","_blank"); if(w){ w.document.open(); w.document.write(safe); w.document.close(); } else toast("弹窗被拦截，请允许弹窗"); }
+    else if(act==="retry"){ if(running){toast("正在运行中");return;} en.code=""; en.content=""; en.status="wait"; en.statusText="重试中…"; renderRow(i); running=true; $("#ac-run").disabled=true; stopFlag=false; processEntry(i).then(()=>{ running=false; $("#ac-run").disabled=false; updCounts(); }); } });
+  $("#ac-list").addEventListener("input",e=>{ const n=e.target.closest(".ac-note"); if(!n)return; const i=+n.dataset.i; if(entries[i]){ entries[i].note=n.value; saveNote(entries[i].orderId,n.value.trim()); updateFilterOptions(); updateExHint(); } });
+  $("#ac-copyCodes").onclick=async ()=>{ const codes=entries.filter(e=>e.code).map(e=>e.code); if(!codes.length){toast("还没有验证码");return;} if(await copyTextSafe(codes.join("\n")))toast(`已复制 ${codes.length} 个验证码`); };
+  $("#ac-copyPair").onclick=async ()=>{ const rows=entries.filter(e=>e.code).map(e=>e.email+"----"+e.code+(e.note?"----"+e.note:"")); if(!rows.length){toast("还没有验证码");return;} if(await copyTextSafe(rows.join("\n")))toast(`已复制 ${rows.length} 条`); };
+  /* 导出：列可自选 + 按项目筛选 */
+  const COL_LABELS={email:"邮箱",link:"链接",note:"项目用途",code:"验证码",status:"状态",orderId:"订单号"};
+  function statusLabel(e){ return e.status==="success"?"已来码":e.status==="content"?"收到邮件":e.status==="wait"?"等待中":e.status==="error"?(e.statusText||"失败"):(e.statusText||"待开始"); }
+  function colVal(e,k){ return k==="status"?statusLabel(e):k==="note"?(e.note||""):k==="code"?(e.code||""):k==="orderId"?(e.orderId||""):(e[k]||""); }
+  function selCols(){ return [...document.querySelectorAll(".ac-col:checked")].map(c=>c.value); }
+  function exEntries(){ return entries.filter(matchFilter); }
+  const csvCellX=v=>{ v=String(v==null?"":v); return /[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
+  function exText(sep){ const cols=selCols(), rows=exEntries(), lines=[]; if($("#ac-exHead").checked)lines.push(cols.map(k=>COL_LABELS[k]).join(sep)); for(const e of rows)lines.push(cols.map(k=>colVal(e,k)).join(sep)); return lines.join("\r\n"); }
+  function exCSV(){ const cols=selCols(), rows=exEntries(), lines=[]; if($("#ac-exHead").checked)lines.push(cols.map(k=>csvCellX(COL_LABELS[k])).join(",")); for(const e of rows)lines.push(cols.map(k=>csvCellX(colVal(e,k))).join(",")); return "﻿"+lines.join("\r\n"); }
+  function updateExHint(){ const h=$("#ac-exHint"); if(!h)return; const n=exEntries().length, c=selCols().length; h.textContent=`将导出 ${n} 条 · ${c} 列`+(filterNote?`（筛选：${filterNote==="__none__"?"无备注":filterNote}）`:""); }
+  function updateFilterOptions(){ const sel=$("#ac-filter"); if(!sel)return; const cur=sel.value; const notes=[...new Set(entries.map(e=>(e.note||"").trim()).filter(Boolean))].sort();
+    const hasBlank=entries.some(e=>!(e.note&&e.note.trim()));
+    sel.innerHTML=`<option value="">全部（${entries.length}）</option>`+notes.map(n=>`<option value="${escHTML(n)}">${escHTML(n)}（${entries.filter(e=>(e.note||"")===n).length}）</option>`).join("")+(hasBlank?`<option value="__none__">（无备注）</option>`:"");
+    if([...sel.options].some(o=>o.value===cur))sel.value=cur; else { sel.value=""; filterNote=""; } }
+  $("#ac-filter").onchange=()=>{ filterNote=$("#ac-filter").value; renderAll(); };
+  document.querySelectorAll(".ac-col").forEach(c=>c.addEventListener("change",updateExHint));
+  function noData(){ if(!exEntries().length){toast(filterNote?"该筛选下没有数据":"没有数据");return true;} if(!selCols().length){toast("请至少勾选一列");return true;} return false; }
+  $("#ac-exTable").onclick=async ()=>{ if(noData())return; if(await copyTextSafe(exText("\t")))toast("已复制表格（Tab 分隔，可直接贴 Excel / WPS）"); };
+  $("#ac-exTxt").onclick=()=>{ if(noData())return; download(new Blob([exText("\t")+"\r\n"],{type:"text/plain;charset=utf-8"}),"接码结果.txt"); };
+  $("#ac-exCsv").onclick=()=>{ if(noData())return; download(new Blob([exCSV()],{type:"text/csv;charset=utf-8"}),"接码结果.csv"); };
+  $("#ac-exXlsx").onclick=()=>{ if(noData())return; const X=window.__toXLSX; if(!X){toast("Excel 暂不可用，请用 CSV");return;} const cols=selCols(); download(X({head:cols.map(k=>COL_LABELS[k]),body:exEntries().map(e=>cols.map(k=>colVal(e,k))),kinds:cols.map(()=>"")},{header:$("#ac-exHead").checked},"接码结果"),"接码结果.xlsx"); };
+  /* 高级 API */
+  function showAdv(obj){ $("#ac-advOut").value=typeof obj==="string"?obj:JSON.stringify(obj,null,2); }
+  function needKey(){ const k=$("#ac-apikey").value.trim(); if(!k){toast("请先填 API Key");return null;} return k; }
+  async function apiGet(path){ const resp=await fetch(BASE+path,{cache:"no-store",headers:{Accept:"application/json"}}); return resp.json(); }
+  $("#ac-balance").onclick=async ()=>{ const k=needKey(); if(!k)return; try{ showAdv(await apiGet("/balance?apiKey="+encodeURIComponent(k))); }catch(e){ showAdv("请求失败："+(e.message||e)); } };
+  $("#ac-services").onclick=async ()=>{ try{ const j=await apiGet("/services"); if(j&&j.code===200&&Array.isArray(j.data))servicesCache=j.data; showAdv(j); }catch(e){ showAdv("请求失败："+(e.message||e)); } };
+  $("#ac-types").onclick=async ()=>{ try{ showAdv(await apiGet("/types")); }catch(e){ showAdv("请求失败："+(e.message||e)); } };
+  $("#ac-buy").onclick=async ()=>{ const k=needKey(); if(!k)return; const sid=$("#ac-sid").value.trim(), tid=$("#ac-tid").value.trim(), qty=+$("#ac-qty").value||1; if(!sid||!tid){toast("请填 serviceId 和 emailTypeId");return;}
+    try{ if(!servicesCache){ try{ const sj=await apiGet("/services"); if(sj&&sj.code===200&&Array.isArray(sj.data))servicesCache=sj.data; }catch(_){} }
+      const j=await apiGet(`/mailbox?apiKey=${encodeURIComponent(k)}&serviceId=${sid}&emailTypeId=${tid}&quantity=${qty}`); showAdv(j);
+      if(j.code===200&&j.data&&j.data.orders){ const pname=svcName(sid); const lines=j.data.orders.map(o=>{ saveNote(String(o.orderId),pname); return o.email+"----"+BASE+"/latest/code?orderId="+o.orderId+"----"+pname; }); const cur=$("#ac-in").value.trim(); $("#ac-in").value=(cur?cur+"\n":"")+lines.join("\n"); updHint(); toast(`已购买 ${j.data.orders.length} 个 · 项目：${pname}，已填入接码框`); } }catch(e){ showAdv("请求失败："+(e.message||e)); } };
+  $("#ac-buyacc").onclick=async ()=>{ const k=needKey(); if(!k)return; const sid=$("#ac-sid").value.trim(), tid=$("#ac-tid").value.trim(), qty=+$("#ac-qty").value||1; if(!sid){toast("请填 serviceId");return;}
+    try{ showAdv(await apiGet(`/mailbox/sell?apiKey=${encodeURIComponent(k)}&serviceId=${sid}${tid?"&emailTypeId="+tid:""}&quantity=${qty}`)); }catch(e){ showAdv("请求失败："+(e.message||e)); } };
+  $("#ac-activate").onclick=async ()=>{ const k=needKey(); if(!k)return; const o=$("#ac-actOrder").value.trim(), it=$("#ac-actItem").value.trim(); if(!o||!it){toast("请填 orderId 和 serviceItemId");return;}
+    try{ const resp=await fetch(BASE+"/active",{method:"PUT",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify({apiKey:k,orderId:isNaN(+o)?o:+o,serviceItemId:+it})}); const j=await resp.json(); showAdv(j);
+      if(j.code===200&&j.data){ const line=(j.data.email||"")+"----"+BASE+"/latest/code?orderId="+(j.data.orderId||o); const cur=$("#ac-in").value.trim(); $("#ac-in").value=(cur?cur+"\n":"")+line; updHint(); toast("已激活，新一轮接码链接已填入"); } }catch(e){ showAdv("请求失败："+(e.message||e)); } };
 })();
 </script>
 </body>
