@@ -1635,6 +1635,7 @@
         <div class="field"><label>最长等待（秒）</label><input type="number" id="ac-maxwait" min="10" max="600" value="120"></div>
         <div class="field"><label>并发数</label><input type="number" id="ac-conc" min="1" max="20" value="5"></div>
       </div>
+      <div class="toggles" style="margin-top:4px"><label class="toggle"><input type="checkbox" id="ac-autoAct"><span class="sw"></span>邮箱失效/订单关闭/超时时，自动激活重试（需在高级区填 API Key；激活可能消耗余额）</label></div>
       <div class="actions"><button class="btn btn-primary" id="ac-run">🚀 获取验证码</button><button class="btn btn-ghost" id="ac-stop" disabled>⏹ 停止</button><button class="btn btn-ghost" id="ac-saveOrders">💾 存入购买记录</button><button class="btn btn-ghost" id="ac-clear">清空</button></div>
       <div class="hint" style="margin-top:12px;line-height:1.7">接码只用链接里的 <b>orderId</b>，不需要 API Key。来码即显示验证码，<b>点验证码可复制</b>。你买的是哪个项目（如微软），平台就只返回该项目的验证码。平台：online-disposablemail.com</div>
     </div>
@@ -3967,9 +3968,25 @@ const makeQR=(function(){
       if(j.code===42001||j.code===401){ e.status="wait"; e.statusText=STAT[j.code]||j.msg||"等待中"; return "wait"; }
       e.status="error"; e.statusText=STAT[j.code]||j.msg||("错误 "+j.code); return "done";
     }catch(err){ e.status="error"; e.statusText="请求失败（网络/CORS）"; return "done"; } }
-  async function processEntry(i){ const e=entries[i]; const poll=$("#ac-poll").checked, interval=Math.max(2,+$("#ac-interval").value||3), maxwait=Math.max(10,+$("#ac-maxwait").value||120); const t0=Date.now();
+  const ACTIVATABLE=[42002,42003,42006];  /* 订单关闭 / 邮箱失效 / 任务超时 → 可尝试激活重试 */
+  async function tryActivate(e){ const k=$("#ac-apikey")?$("#ac-apikey").value.trim():""; if(!k||!e.orderId)return false;
+    const body={apiKey:k,orderId:isNaN(+e.orderId)?e.orderId:+e.orderId};
+    try{ const b=(typeof loadBuys==="function")?loadBuys().find(x=>x.orderId===e.orderId):null; if(b&&b.serviceId&&typeof svcItems==="function"){ const its=svcItems(b.serviceId); if(its&&its[0])body.serviceItemId=+its[0].serviceItemId; } }catch(_){}
+    try{ const resp=await fetch(BASE+"/active",{method:"PUT",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify(body)}); const j=await resp.json();
+      if(j.code===200&&j.data){ if(j.data.orderId)e.orderId=String(j.data.orderId); if(j.data.email)e.email=j.data.email; e.link=BASE+"/latest/code?orderId="+e.orderId; return true; }
+      e.statusText="激活失败："+(STAT[j.code]||j.msg||("code "+j.code)); return false;
+    }catch(err){ e.statusText="激活请求失败（网络/CORS）"; return false; } }
+  async function processEntry(i){ const e=entries[i]; const poll=$("#ac-poll").checked, interval=Math.max(2,+$("#ac-interval").value||3), maxwait=Math.max(10,+$("#ac-maxwait").value||120); let t0=Date.now();
     while(!stopFlag){ const r=await fetchOne(e); updCounts();
-      if(r==="done"){ renderRow(i); return; }
+      if(r==="done"){
+        if(e.status==="error"&&$("#ac-autoAct").checked&&$("#ac-apikey")&&$("#ac-apikey").value.trim()&&ACTIVATABLE.includes(e.lastCode)&&(e.actTries||0)<3){
+          e.actTries=(e.actTries||0)+1; e.status="wait"; e.statusText="自动激活中（第 "+e.actTries+" 次）…"; renderRow(i);
+          const ok=await tryActivate(e);
+          if(ok){ e.status="wait"; e.statusText="已激活，重新接码…"; renderRow(i); t0=Date.now(); await sleep(1500); continue; }
+          e.status="error"; renderRow(i); return;   // 激活失败（如邮箱彻底失效）→ 报错停止
+        }
+        renderRow(i); return;
+      }
       const secs=Math.round((Date.now()-t0)/1000); e.statusText=(STAT[e.lastCode]||"等待中")+" · "+secs+"s";
       if(!poll){ renderRow(i); return; }
       if(Date.now()-t0>=maxwait*1000){ e.status="error"; e.statusText="本地等待超时（"+maxwait+"s）"; renderRow(i); return; }
@@ -4113,9 +4130,10 @@ const makeQR=(function(){
       if(j.code===200&&j.data&&j.data.content){ const pname=svcName(sid),now=Date.now();
         const recs=String(j.data.content).split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map(l=>{ const p=l.split("----"); return {id:uid(),type:"account",email:p[0]||"",password:p[1]||"",aux:p[2]||"",project:pname,serviceId:sid,time:now}; });
         addBuys(recs); toast(`已购买 ${recs.length} 个账号 · ${pname}，已存入「购买记录」（刷新不丢）`); refreshBalance(); } }catch(e){ showAdv("请求失败："+(e.message||e)); } };
-  $("#ac-activate").onclick=async ()=>{ const k=needKey(); if(!k)return; const o=$("#ac-actOrder").value.trim()||($("#ac-actOrderSearch").value.match(/\d{6,}/)||[])[0]||"", it=($("#ac-actItem").value.match(/\d+/)||[])[0]; if(!o||!it){toast("请选择订单并选择功能");return;}
-    try{ const resp=await fetch(BASE+"/active",{method:"PUT",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify({apiKey:k,orderId:isNaN(+o)?o:+o,serviceItemId:+it})}); const j=await resp.json(); showAdv(j);
-      if(j.code===200&&j.data){ const line=(j.data.email||"")+"----"+BASE+"/latest/code?orderId="+(j.data.orderId||o); const cur=$("#ac-in").value.trim(); $("#ac-in").value=(cur?cur+"\n":"")+line; updHint(); toast("已激活，新一轮接码链接已填入"); } }catch(e){ showAdv("请求失败："+(e.message||e)); } };
+  $("#ac-activate").onclick=async ()=>{ const k=needKey(); if(!k)return; const o=$("#ac-actOrder").value.trim()||($("#ac-actOrderSearch").value.match(/\d{6,}/)||[])[0]||"", it=($("#ac-actItem").value.match(/\d+/)||[])[0]; if(!o){toast("请选择订单或输入 orderId");return;}
+    const body={apiKey:k,orderId:isNaN(+o)?o:+o}; if(it)body.serviceItemId=+it;
+    try{ const resp=await fetch(BASE+"/active",{method:"PUT",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify(body)}); const j=await resp.json(); showAdv(j);
+      if(j.code===200&&j.data){ const line=(j.data.email||"")+"----"+BASE+"/latest/code?orderId="+(j.data.orderId||o); const cur=$("#ac-in").value.trim(); $("#ac-in").value=(cur?cur+"\n":"")+line; updHint(); toast("已激活，新一轮接码链接已填入接码框"); } else toast("激活失败："+(STAT[j.code]||j.msg||("code "+j.code))); }catch(e){ showAdv("请求失败："+(e.message||e)); } };
 })();
 </script>
 </body>
