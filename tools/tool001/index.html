@@ -253,6 +253,38 @@
   .ac-star{cursor:pointer;color:var(--text-3);font-size:14px;flex:none;line-height:1}
   .ac-star:hover{color:var(--orange)}
   .ac-star.on{color:var(--orange)}
+  /* ===== IP 检测 ===== */
+  .ipc-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:14px}
+  .ipc-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+  .ipc-bar select,.ipc-bar input[type=text]{width:auto;min-width:140px;padding:8px 12px;font-size:13px}
+  .ipc-wrap{overflow:auto;max-height:640px;border:1px solid var(--line);border-radius:14px;background:var(--card-solid)}
+  .ipc-table{width:100%;border-collapse:collapse;font-size:13px}
+  .ipc-table th{position:sticky;top:0;z-index:2;background:var(--card-solid);text-align:left;font-size:12px;font-weight:600;color:var(--text-2);padding:10px;border-bottom:1px solid var(--line);white-space:nowrap}
+  .ipc-table td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+  .ipc-table tbody tr:last-child td{border-bottom:none}
+  .ipc-table tr.ok td:first-child{box-shadow:inset 3px 0 0 var(--green)}
+  .ipc-table tr.bad td:first-child{box-shadow:inset 3px 0 0 var(--red)}
+  .ipc-table tr.review td:first-child{box-shadow:inset 3px 0 0 var(--orange)}
+  .ipc-table input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer}
+  .ipc-res{font-weight:700;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+  .ipc-res.ok{color:var(--green)} .ipc-res.bad{color:var(--red)} .ipc-res.wait{color:var(--accent)} .ipc-res.review{color:var(--orange)}
+  .stat.ipc-wait .n{color:var(--accent)}
+  .ipc-why{font-size:11px;color:var(--text-3);margin-top:3px;max-width:250px;line-height:1.45}
+  .ipc-mono{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace}
+  .ipc-ip{cursor:pointer;font-weight:600} .ipc-ip:hover{color:var(--accent)}
+  .ipc-sub{font-size:11px;color:var(--text-3);white-space:nowrap}
+  .ipc-pill{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;margin:1px 3px 1px 0;background:var(--chip);color:var(--text-2);white-space:nowrap}
+  .ipc-pill.res{background:rgba(52,199,89,.15);color:var(--green)}
+  .ipc-pill.biz{background:var(--accent-soft);color:var(--accent)}
+  .ipc-pill.mobile{background:rgba(175,82,222,.14);color:var(--purple)}
+  .ipc-pill.dc,.ipc-pill.abuse{background:rgba(255,59,48,.13);color:var(--red)}
+  .ipc-pill.proxy{background:rgba(255,149,0,.16);color:var(--orange)}
+  .ipc-num{font-weight:700} .ipc-num.zero{color:var(--green)} .ipc-num.hot{color:var(--red)}
+  .ipc-cd{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-weight:700;white-space:nowrap}
+  .ipc-cd.ok{color:var(--green)} .ipc-cd.warn{color:var(--orange)} .ipc-cd.bad{color:var(--red)} .ipc-cd.dead{color:var(--text-3);font-weight:500}
+  .ipc-act{display:flex;gap:4px}
+  .ipc-act button{border:none;background:var(--chip);color:var(--text);border-radius:8px;padding:5px 9px;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap}
+  .ipc-act button:hover{background:var(--accent);color:#fff}
   @media(max-width:760px){.ac-row{grid-template-columns:1fr 1fr}.ac-row .em{grid-column:1/-1}.ac-row .acts{grid-column:1/-1;justify-content:flex-start}}
   .pw-lenrow input[type=number]{width:92px;flex:none;text-align:center}
   input[type=range].slider{-webkit-appearance:none;appearance:none;flex:1;height:4px;border-radius:999px;background:linear-gradient(90deg,var(--accent) var(--pct,50%),var(--line-strong) var(--pct,50%));outline:none;margin:0;border:0;padding:0}
@@ -540,6 +572,8 @@
       <button class="maintab" data-page="tf" data-sub="粘贴密钥即出验证码，批量、倒计时、纯本地" style="--ic:#32ade6"><span class="ic">🛡️</span>2FA 验证码</button>
       <button class="maintab" data-page="addr" data-sub="离线生成真实格式地址：美国/免税州/香港/英国/日本/加拿大/澳洲/德国/法国，城市·邮编·电话区号匹配，单条卡片或批量" style="--ic:#34c759"><span class="ic">📍</span>地址生成</button>
       <button class="maintab" data-page="apicode" data-sub="粘贴 邮箱----接码链接，自动请求取回验证码；支持批量、自动轮询；含余额/购买/激活等 API" style="--ic:#ff2d55"><span class="ic">📩</span>API 接码</button>
+      <button class="maintab" data-page="imap" data-sub="粘贴 邮箱----密码，按域名自动选 IMAP 服务器批量接码（Gmail/Outlook/Rambler/Firstmail/Mail.ru 等）；含通用改密调用器" style="--ic:#5856d6"><span class="ic">📨</span>IMAP 接码</button>
+      <button class="maintab" data-page="ipc" data-sub="批量检测代理出口 IP：iplark 使用场景（家宽/商宽/机房）+ C段恶意滥用 B=0 才算成功；按 life-N 倒计时，可筛选、批量复制" style="--ic:#00c7be"><span class="ic">🌐</span>IP 检测</button>
     </nav>
     <div class="side-foot">界面仅预览前 5000 行<br>大文件请开「写入文件夹」</div>
   </aside>
@@ -1709,6 +1743,109 @@
     </div>
   </section>
 
+  <!-- ================= IMAP 接码 ================= -->
+  <section class="page" id="page-imap">
+    <div class="card">
+      <h2>① 批量接码 <span class="badge on">IMAP 多域名</span></h2>
+      <div class="field"><label>每行一条：<b>邮箱----密码</b>（按域名自动选 IMAP 服务器）</label>
+        <textarea id="im-in" class="paste" spellcheck="false" placeholder="example@rambler.ru----password&#10;user@firstmail.ltd----password&#10;someone@gmail.com----应用专用密码"></textarea>
+        <div class="hint" id="im-inHint">尚未输入</div>
+      </div>
+      <div class="grid">
+        <div class="field"><label>收件代理地址</label><input type="text" id="im-proxy" value="http://15.204.106.173:16347" spellcheck="false"><div class="hint">IMAP→HTTP 代理（浏览器不能直连 IMAP）。本地打开用 http 即可；https 页面需 https 代理</div></div>
+        <div class="field"><label>未知域名的 IMAP 服务器（可选）</label><input type="text" id="im-host" placeholder="主机:端口，如 imap.example.com:993" spellcheck="false"><div class="hint">域名不在内置表里时用这个；留空则跳过未知域名</div></div>
+        <div class="field"><label>读取最新几封</label><input type="number" id="im-limit" min="1" max="10" value="3"></div>
+        <div class="field"><label>并发数</label><input type="number" id="im-conc" min="1" max="15" value="5"></div>
+      </div>
+      <div class="toggles" style="margin-top:4px"><label class="toggle"><input type="checkbox" id="im-poll"><span class="sw"></span>没来码自动重试</label>
+        <label class="toggle"><input type="checkbox" id="im-mailbox"><span class="sw"></span>同时查垃圾箱</label></div>
+      <div class="actions"><button class="btn btn-primary" id="im-run">🚀 接码</button><button class="btn btn-ghost" id="im-stop" disabled>⏹ 停止</button><button class="btn btn-ghost" id="im-clear">清空</button><button class="btn btn-ghost" id="im-domains">查看支持的域名</button></div>
+      <div class="hint" style="margin-top:12px;line-height:1.7">支持 Gmail / Outlook / Yahoo / Rambler / Firstmail / Mail.ru / Yandex / GMX / iCloud / 163 / 126 / QQ / Naver 等常见域名，按邮箱后缀自动选 IMAP。点验证码即复制。<br>注意：<b>Gmail / Yahoo / iCloud 需「应用专用密码」</b>（非登录密码）；<b>Proton / Tuta 不支持标准 IMAP</b>。</div>
+      <div id="im-domainList" class="hint" style="display:none;margin-top:10px;line-height:1.9"></div>
+    </div>
+    <div class="card" id="im-resCard" style="display:none">
+      <div class="pane-head"><span class="desc">结果 <b id="im-rc">0</b> 条 · 已来码 <b id="im-okc">0</b></span><div class="tools"><button class="btn btn-ghost btn-sm" id="im-copyCodes">复制全部验证码</button><button class="btn btn-ghost btn-sm" id="im-copyPair">复制 邮箱--验证码</button><button class="btn btn-ghost btn-sm" id="im-csv">下载 CSV</button></div></div>
+      <div id="im-list" class="ac-list"></div>
+    </div>
+
+    <div class="card">
+      <h2 id="im-cpToggle" style="cursor:pointer;user-select:none">② 账号改密码（通用 API 调用器）<span id="im-cpArrow">▾</span></h2>
+      <div id="im-cp" style="display:none">
+        <div class="hint" style="line-height:1.7">⚠️ <b>IMAP 本身不能改密码</b>，收件代理也没有改密接口。改密必须走邮箱服务商自己的 API。下面填你服务商的改密接口即可（如 Firstmail 的 API）。用 <b>{email}</b> / <b>{password}</b> / <b>{newpass}</b> 作占位符，支持批量。</div>
+        <div class="grid" style="margin-top:12px">
+          <div class="field"><label>请求方式</label><select id="im-cpMethod"><option>GET</option><option>POST</option><option>PUT</option></select></div>
+          <div class="field" style="grid-column:span 2"><label>接口 URL（含占位符）</label><input type="text" id="im-cpUrl" placeholder="https://api.xxx.com/change?user={email}&old={password}&new={newpass}" spellcheck="false"></div>
+        </div>
+        <div class="grid" style="margin-top:12px">
+          <div class="field"><label>请求头（可选，每行 Key: Value）</label><textarea id="im-cpHeaders" style="min-height:66px" spellcheck="false" placeholder="X-API-KEY: 你的key"></textarea></div>
+          <div class="field"><label>Body 模板（POST/PUT 用，可选）</label><textarea id="im-cpBody" style="min-height:66px" spellcheck="false" placeholder='{"email":"{email}","old":"{password}","new":"{newpass}"}'></textarea></div>
+        </div>
+        <div class="field" style="margin-top:12px"><label>批量：每行 <b>邮箱----旧密码----新密码</b>（新密码留空则自动生成 16 位）</label>
+          <textarea id="im-cpIn" class="paste" style="min-height:100px" spellcheck="false" placeholder="user@firstmail.ltd----oldpass----newpass"></textarea></div>
+        <div class="actions"><button class="btn btn-primary btn-sm" id="im-cpRun">🔑 批量改密</button></div>
+        <div class="note" id="im-cpNote" style="display:none"></div>
+        <textarea id="im-cpOut" readonly spellcheck="false" style="min-height:140px;margin-top:12px" placeholder="改密结果（邮箱----新密码----状态）显示在这里，成功的可直接复制保存"></textarea>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= IP 检测 ================= -->
+  <section class="page" id="page-ipc">
+    <div class="card">
+      <h2>① 代理列表 <span class="badge" id="ipc-svc">本地服务：未检测</span></h2>
+      <div class="field"><label>每行一个代理：<b>主机:端口:用户名:密码</b>（也支持 用户名:密码@主机:端口、socks5://…）</label>
+        <textarea id="ipc-in" class="paste" spellcheck="false" placeholder="proxy.iproyal.net:9000:client-xxx_area-JP_session-AbCd123456_life-120_mode-1:密码&#10;proxy.iproyal.net:9000:client-xxx_area-GB_session-XyZ9876543_life-120_mode-1:密码"></textarea>
+        <div class="hint" id="ipc-inHint">尚未输入</div>
+      </div>
+      <div class="grid">
+        <div class="field"><label>本地检测服务地址</label><input type="text" id="ipc-svcUrl" value="http://127.0.0.1:17890" spellcheck="false" autocomplete="off"><div class="hint">首次使用：点下面「<b>⬇ 下载检测助手</b>」，解压后双击「<b>启动IP检测服务.bat</b>」，检测期间保持那个窗口开着</div></div>
+        <div class="field"><label>并发数</label><input type="number" id="ipc-conc" min="1" max="10" value="4"><div class="hint">iplark 有反爬，建议 3～5</div></div>
+        <div class="field"><label>默认有效期（分钟）</label><input type="number" id="ipc-life" min="1" max="1440" value="120"><div class="hint">用户名里有 <b>life-N</b> 时以它为准</div></div>
+      </div>
+      <div class="pw-sub">判定规则（改动后立即重算，不用重新检测）</div>
+      <div class="toggles" style="margin-top:0">
+        <label class="toggle"><input type="checkbox" id="ipc-rBiz" checked><span class="sw"></span>商宽 / 企业宽带算成功</label>
+        <label class="toggle"><input type="checkbox" id="ipc-rMobile"><span class="sw"></span>移动网络算成功</label>
+        <label class="toggle"><input type="checkbox" id="ipc-rArea" checked><span class="sw"></span>出口国家须与 area 一致</label>
+        <label class="toggle"><input type="checkbox" id="ipc-rAbuseTag" checked><span class="sw"></span>场景含「滥用 / 恶意」算失败</label>
+        <label class="toggle"><input type="checkbox" id="ipc-rActive"><span class="sw"></span>场景含「活跃代理」算失败</label>
+        <label class="toggle"><input type="checkbox" id="ipc-rFallback"><span class="sw"></span>iplark 查不到时参考备用数据源（只标「待复核」，不算成功）</label>
+      </div>
+      <div class="actions"><button class="btn btn-primary" id="ipc-run">🔍 开始检测</button><button class="btn btn-ghost" id="ipc-stop" disabled>⏹ 停止</button><button class="btn btn-ghost" id="ipc-retryBad">↻ 重测失败的</button><button class="btn btn-ghost" id="ipc-health">检查服务</button><button class="btn btn-ghost" id="ipc-dlHelper" title="本页内置的本地检测助手（Python 脚本 + 启动用 .bat）">⬇ 下载检测助手</button><button class="btn btn-ghost" id="ipc-clear">清空</button></div>
+      <div class="hint" style="margin-top:12px;line-height:1.75"><b>判定</b>：iplark「使用场景」为 <b>普通宽带 / 家宽 / 住宅</b>（商宽默认放行，移动网络默认不放行，可用上面的开关调整）<b>且</b> C段「恶意/滥用IP(B)」<b>= 0</b> 才算成功；<b>数据中心 / 机房 / IDC 一律失败</b>。iplark 没查到时最多标「⚠ 待复核」，不会算成功。<br><b>倒计时</b>：从这条代理<b>首次检测</b>时开始，按用户名里的 <b>life-N</b> 计算（N 默认是分钟，也认 30m / 2h / 1d）；过期后再检测会重新计时。同一会话的出口 IP 可能中途更换，使用前建议「↻」再测一次。<br>出口 IP 由本地服务经代理取得，iplark 由本机 Chrome/Edge 在后台查询（首次约 8 秒过防护盾，之后每条 2～4 秒）。<br><b>网页版（GitHub Pages）</b>：一样能用，同样要在这台电脑上运行检测助手（浏览器本身没法走代理，也没法直接调 iplark）；第一次连接时浏览器会问是否允许访问「此设备上的应用和服务 / 本地网络」，点<b>允许</b>。推荐 Chrome / Edge。</div>
+    </div>
+
+    <div class="card" id="ipc-resCard" style="display:none">
+      <div class="ipc-stats" id="ipc-stats"></div>
+      <div class="ipc-bar">
+        <select id="ipc-fStatus">
+          <option value="">全部结果</option>
+          <option value="okAlive">✅ 成功（有效期内）</option>
+          <option value="ok">✅ 成功（含已过期）</option>
+          <option value="bad">❌ 失败</option>
+          <option value="review">⚠ 待复核</option>
+          <option value="checking">⏳ 检测中</option>
+          <option value="soon">⌛ 10 分钟内过期</option>
+          <option value="expired">已过期</option>
+        </select>
+        <select id="ipc-fArea"><option value="">全部地区</option></select>
+        <input type="text" id="ipc-fSearch" placeholder="搜索 IP / 运营商 / 会话" spellcheck="false" autocomplete="off">
+        <span class="hint" id="ipc-fCount" style="margin:0"></span>
+      </div>
+      <div class="ipc-bar">
+        <button class="btn btn-primary btn-sm" id="ipc-copyOk">一键复制有效期内的成功代理</button>
+        <button class="btn btn-ghost btn-sm" id="ipc-copyLines">复制代理（勾选 / 当前筛选）</button>
+        <button class="btn btn-ghost btn-sm" id="ipc-copyIps">复制出口 IP</button>
+        <button class="btn btn-ghost btn-sm" id="ipc-csv">下载 CSV</button>
+        <button class="btn btn-ghost btn-sm" id="ipc-dropExpired">移除已过期</button>
+      </div>
+      <div class="ipc-wrap"><table class="ipc-table">
+        <thead><tr><th><input type="checkbox" id="ipc-all" title="全选当前筛选"></th><th>结果</th><th>地区 / 会话</th><th>出口 IP</th><th>运营商</th><th>使用场景（iplark）</th><th title="C段 恶意/滥用IP(B)">B</th><th title="C段 代理(P)">P</th><th>评分</th><th>剩余有效期</th><th>操作</th></tr></thead>
+        <tbody id="ipc-tbody"></tbody>
+      </table></div>
+    </div>
+  </section>
+
   <footer>
     全程在浏览器本地完成，文件不会离开电脑。大文件建议开启「写入文件夹」（Chrome / Edge），结果直接写盘、内存占用最低；界面仅预览前 5000 行。
   </footer>
@@ -1723,6 +1860,814 @@
 </div>
 <div class="toast" id="toast"></div>
 
+<!-- IPC_HELPER_BEGIN：IP 检测助手源码，原样嵌入自 ip_check_server.py / 启动IP检测服务.bat，供「⬇ 下载检测助手」打包。改了那两个文件后要重新嵌入。 -->
+<script type="text/plain" id="ipc-helper-py">
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+IP 检测本地服务 —— 配合「文本处理工具03.html」的「IP检测」标签使用。
+
+为什么需要本地服务：浏览器的 fetch 不能指定代理，也读不到 iplark 的跨域数据；
+iplark 还有 Cloudflare + 自建 JS 盾，只有真浏览器内核才能通过。本服务负责：
+  1. 经代理请求 ip-api.com，拿到出口 IP、国家、ISP、ASN（以及 hosting/mobile 辅助标记）
+  2. 用你本机的 Chrome/Edge（无头模式，Playwright 驱动）打开 iplark.com/<出口IP>，
+     截获 iplark 自己的数据接口：
+        /ipcategory → 使用场景（普通宽带 / 数据中心 …）
+        /ipsubnet   → C 段画像：恶意/滥用IP(B)、代理(P) 等计数
+        /ipscore    → IP 评分
+        /ipen       → is_datacenter / is_proxy / is_abuser 等辅助标记
+     接口没拿全时，再解析渲染后的页面文字兜底
+  3. iplark 失败时，可退回 proxycheck.io（住宅/商业/机房类型 + 风险分）作备用
+成功/失败的判定在网页里做，方便你随时调整规则。
+
+依赖：Python 3.8+；iplark 查询需要 playwright（pip install playwright）+ 本机 Chrome 或 Edge。
+启动：双击「启动IP检测服务.bat」，或 python ip_check_server.py（默认 127.0.0.1:17890，仅本机可访问）
+可选参数：
+  --port 17890            监听端口
+  --lark-concurrency 3    同时打开的 iplark 页面数（太大容易触发风控）
+  --show-browser          显示浏览器窗口（无头被拦截时用）
+  --no-iplark             不查 iplark（只用备用数据源）
+  --proxycheck-key KEY    proxycheck.io 免费 key（无 key 每日额度较少）
+  --allow-origin ORIGIN   额外允许的网页来源（默认只允许本地文件和 localhost；* 表示全部）
+  --probe 1.2.3.4         诊断：用浏览器查一次 iplark 并打印截获的接口数据，然后退出
+"""
+import argparse
+import asyncio
+import concurrent.futures
+import json
+import os
+import re
+import socket
+import sys
+import threading
+import time
+import urllib.request
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from urllib.parse import parse_qs, quote, unquote, urlparse
+
+VERSION = "2.1"
+UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+      "(KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36")
+
+CFG = {
+    "timeout": 20,
+    "proxycheck_key": "",
+    "allow_any_origin": False,
+    # 允许调用本服务的网页：file:// 打开的本地 HTML（Origin 是字面量 "null"）+ 部署在 GitHub Pages 上的网页版
+    "allow_origins": {"null", "https://dingman666.github.io"},
+    "any_host": False,
+    "allowed_hosts": {"127.0.0.1:17890", "localhost:17890", "[::1]:17890"},
+    "iplark": True,
+    "lark_concurrency": 3,
+    "headless": True,
+}
+
+try:  # Windows 控制台打印中文不报错
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except Exception:  # noqa: BLE001
+    pass
+
+
+def log(*a):
+    print("[%s]" % time.strftime("%H:%M:%S"), *a, flush=True)
+
+
+# ---------------------------------------------------------------- 缓存 / 小工具
+_cache = {}
+_cache_lock = threading.Lock()
+
+
+def cache_get(key, ttl):
+    with _cache_lock:
+        hit = _cache.get(key)
+        if hit and time.time() - hit[0] < ttl:
+            return hit[1]
+    return None
+
+
+def cache_set(key, val):
+    with _cache_lock:
+        _cache[key] = (time.time(), val)
+
+
+DIRECT = urllib.request.build_opener(urllib.request.ProxyHandler({}))  # 显式不走系统代理
+
+
+def http_get_direct(url):
+    req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "application/json"})
+    with DIRECT.open(req, timeout=CFG["timeout"]) as r:
+        return r.read().decode("utf-8", "replace")
+
+
+def friendly(err):
+    s = str(err)
+    low = s.lower()
+    if "407" in s:
+        return "代理认证失败(407)，检查用户名/密码"
+    # 中文 Windows 的报错是本地化文字，所以同时按 WinError / errno 编号判断
+    if "timed out" in low or "timeout" in low or "10060" in s or "超时" in s:
+        return "连接超时"
+    if "refused" in low or "10061" in s or "errno 111" in low or "积极拒绝" in s:
+        return "连接被拒绝（端口不对或代理不可用）"
+    if ("getaddrinfo" in low or "name or service" in low or "nodename" in low
+            or "11001" in s or "11004" in s or "11002" in s):
+        return "代理主机名无法解析"
+    if ("reset" in low or "remote end closed" in low or "eof occurred" in low or "10054" in s
+            or "10053" in s or "errno 104" in low or "强迫关闭" in s or "中止了一个已建立的连接" in s):
+        return "代理断开了连接（该会话可能不可用，可稍后重测）"
+    if "tunnel connection failed" in low:
+        return "代理隧道建立失败：" + s.split(":", 1)[-1].strip()
+    return s[:160]
+
+
+def join_errors(*errs):
+    """多个备用通道的报错去重后再拼接，避免同一句话出现两遍。"""
+    out = []
+    for e in errs:
+        f = friendly(e) if e else ""
+        if f and f not in out:
+            out.append(f)
+    return " / ".join(out)
+
+
+def mask(s):
+    s = s or ""
+    return s if len(s) <= 8 else s[:4] + "…" + s[-3:]
+
+
+# ---------------------------------------------------------------- 代理解析
+COLON_FORM = re.compile(r"^[^:@/\s]+:\d{1,5}(?::|$)")
+
+
+def life_minutes(user):
+    """life-120 / lifetime-30m / lifetime-2h / ttl-1d → 分钟；没写单位按分钟。"""
+    m = re.search(r"(?:^|[_-])(?:life|lifetime|sesstime|ttl)-(\d+)\s*([smhd])?(?=[_-]|$)", user or "", re.I)
+    if not m:
+        return 0
+    n, unit = int(m.group(1)), (m.group(2) or "m").lower()
+    return max(1, round(n * {"s": 1 / 60, "m": 1, "h": 60, "d": 1440}[unit])) if n else 0
+
+
+def user_fields(user):
+    g = lambda rx: (re.search(rx, user or "", re.I) or [None, ""])[1]  # noqa: E731
+    return {"area": g(r"(?:^|[_-])(?:area|country|region|cc)-([A-Za-z]{2})(?=[_-]|$)").upper(),
+            "session": g(r"(?:^|[_-])(?:session|sessid|sid)-([A-Za-z0-9]+)"),
+            "life": life_minutes(user)}
+
+
+def parse_proxy(line):
+    """支持 host:port:user:pass / user:pass@host:port / scheme://… / host:port。
+    先按「主机:端口:…」解析（这样密码里有 : 或 @ 也没问题），不是这种格式时再按 user:pass@host:port。"""
+    s = (line or "").strip()
+    if not s:
+        raise ValueError("空行")
+    scheme = "http"
+    m = re.match(r"^(https?|socks5h?)://(.+)$", s, re.I)
+    if m:
+        scheme, s = m.group(1).lower(), m.group(2)
+    user = pw = ""
+    if COLON_FORM.match(s):
+        parts = s.split(":", 3)
+        host, port = parts[0], parts[1]
+        user = parts[2] if len(parts) > 2 else ""
+        pw = parts[3] if len(parts) > 3 else ""
+    elif "@" in s:
+        cred, hostport = s.rsplit("@", 1)
+        user, _, pw = cred.partition(":")
+        host, _, port = hostport.rstrip("/").rpartition(":")
+    else:
+        raise ValueError("格式应为 主机:端口:用户名:密码")
+    if not host or not port.isdigit() or not 1 <= int(port) <= 65535:
+        raise ValueError("主机或端口无效")
+    info = {"scheme": "socks5" if scheme.startswith("socks5") else "http", "host": host,
+            "port": int(port), "user": user, "pass": pw}
+    info.update(user_fields(user))
+    return info
+
+
+# ---------------------------------------------------------------- 经代理取出口 IP
+def fetch_via_http_proxy(info, url):
+    auth = ""
+    if info["user"]:
+        auth = quote(info["user"], safe="") + ":" + quote(info["pass"], safe="") + "@"
+    purl = "http://%s%s:%d" % (auth, info["host"], info["port"])
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({"http": purl, "https": purl}))
+    req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "application/json"})
+    with opener.open(req, timeout=CFG["timeout"]) as r:
+        return r.read().decode("utf-8", "replace")
+
+
+def _recv_exact(sock, n):
+    buf = b""
+    while len(buf) < n:
+        chunk = sock.recv(n - len(buf))
+        if not chunk:
+            raise OSError("SOCKS5 连接被关闭")
+        buf += chunk
+    return buf
+
+
+def _dechunk(body):
+    out, i = b"", 0
+    while True:
+        j = body.find(b"\r\n", i)
+        if j < 0:
+            break
+        size = int(body[i:j].split(b";")[0] or b"0", 16)
+        if size == 0:
+            break
+        out += body[j + 2:j + 2 + size]
+        i = j + 2 + size + 2
+    return out
+
+
+def socks5_http_get(info, host, port, path):
+    """最小 SOCKS5（RFC1928/1929 用户名密码认证）+ 明文 HTTP GET，只用于取出口 IP。"""
+    s = socket.create_connection((info["host"], info["port"]), timeout=CFG["timeout"])
+    try:
+        s.sendall(b"\x05\x01" + (b"\x02" if info["user"] else b"\x00"))
+        resp = _recv_exact(s, 2)
+        if resp[1] == 0x02:
+            u, p = info["user"].encode(), info["pass"].encode()
+            s.sendall(b"\x01" + bytes([len(u)]) + u + bytes([len(p)]) + p)
+            if _recv_exact(s, 2)[1] != 0:
+                raise OSError("407 SOCKS5 认证失败")
+        elif resp[1] != 0x00:
+            raise OSError("SOCKS5 不支持的认证方式")
+        hb = host.encode()
+        s.sendall(b"\x05\x01\x00\x03" + bytes([len(hb)]) + hb + port.to_bytes(2, "big"))
+        rep = _recv_exact(s, 4)
+        if rep[1] != 0:
+            raise OSError("SOCKS5 连接目标失败 (rep=%d)" % rep[1])
+        if rep[3] == 1:
+            _recv_exact(s, 4)
+        elif rep[3] == 4:
+            _recv_exact(s, 16)
+        else:
+            _recv_exact(s, _recv_exact(s, 1)[0])
+        _recv_exact(s, 2)
+        s.sendall(("GET %s HTTP/1.1\r\nHost: %s\r\nUser-Agent: %s\r\nAccept: application/json\r\n"
+                   "Connection: close\r\n\r\n" % (path, host, UA)).encode())
+        data = b""
+        while True:
+            chunk = s.recv(65536)
+            if not chunk:
+                break
+            data += chunk
+        head, _, body = data.partition(b"\r\n\r\n")
+        if b"transfer-encoding: chunked" in head.lower():
+            body = _dechunk(body)
+        return body.decode("utf-8", "replace")
+    finally:
+        s.close()
+
+
+IPAPI_FIELDS = "status,message,country,countryCode,regionName,city,isp,org,as,mobile,proxy,hosting,query"
+
+
+def ipapi_record(j):
+    return {"ip": j.get("query"), "country": j.get("country"), "countryCode": j.get("countryCode"),
+            "region": j.get("regionName"), "city": j.get("city"), "isp": j.get("isp"), "org": j.get("org"),
+            "as": j.get("as"), "hosting": bool(j.get("hosting")), "proxy": bool(j.get("proxy")),
+            "mobile": bool(j.get("mobile"))}
+
+
+def get_exit(info):
+    t0 = time.time()
+    path = "/json?fields=" + IPAPI_FIELDS
+    err = err2 = ""
+    try:
+        if info["scheme"] == "socks5":
+            txt = socks5_http_get(info, "ip-api.com", 80, path)
+        else:
+            txt = fetch_via_http_proxy(info, "http://ip-api.com" + path)
+        j = json.loads(txt)
+        if j.get("status") == "success":
+            rec = ipapi_record(j)
+            rec.update(ok=True, via="ip-api", latency_ms=int((time.time() - t0) * 1000))
+            return rec
+        err = j.get("message") or "ip-api 返回失败"
+    except Exception as e:  # noqa: BLE001
+        err = str(e)
+    if info["scheme"] != "socks5":  # 备用：经代理访问 ipify，再直连 ip-api 查归属
+        try:
+            ip = json.loads(fetch_via_http_proxy(info, "https://api.ipify.org?format=json")).get("ip")
+            if ip:
+                rec = {"ok": True, "ip": ip, "via": "ipify", "latency_ms": int((time.time() - t0) * 1000)}
+                try:
+                    j = json.loads(http_get_direct("http://ip-api.com/json/%s?fields=%s" % (ip, IPAPI_FIELDS)))
+                    if j.get("status") == "success":
+                        rec.update(ipapi_record(j))
+                except Exception:  # noqa: BLE001
+                    pass
+                return rec
+        except Exception as e2:  # noqa: BLE001
+            err2 = str(e2)
+    return {"ok": False, "error": join_errors(err, err2) or "取出口 IP 失败",
+            "latency_ms": int((time.time() - t0) * 1000)}
+
+
+# ---------------------------------------------------------------- proxycheck.io（备用）
+def proxycheck(ip):
+    hit = cache_get("pc:" + ip, 1800)
+    if hit:
+        return hit
+    url = "https://proxycheck.io/v2/%s?vpn=1&asn=1&risk=1" % ip
+    if CFG["proxycheck_key"]:
+        url += "&key=" + quote(CFG["proxycheck_key"])
+    try:
+        j = json.loads(http_get_direct(url))
+        d = j.get(ip)
+        if j.get("status") in ("ok", "warning") and isinstance(d, dict):
+            res = {"ok": True, "type": d.get("type"), "proxy": d.get("proxy"), "risk": d.get("risk"),
+                   "provider": d.get("provider"), "asn": d.get("asn")}
+            cache_set("pc:" + ip, res)
+            return res
+        return {"ok": False, "error": j.get("message") or ("proxycheck 状态：%s" % j.get("status"))}
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": friendly(e)}
+
+
+# ---------------------------------------------------------------- iplark 页面文字兜底解析
+SCENE_WORDS = ["普通宽带", "家庭宽带", "住宅宽带", "家宽", "商业宽带", "企业宽带", "商宽", "企业专线", "专线",
+               "住宅", "移动网络", "移动数据", "蜂窝网络", "基站", "数据中心", "IDC机房", "机房",
+               "云服务", "云厂商", "托管", "服务器", "CDN", "教育网", "校园网", "政府机构", "代理服务器"]
+SCENE_RX = "|".join(re.escape(w) for w in sorted(SCENE_WORDS, key=len, reverse=True))
+COUNT_LABELS = (("vpn_v", r"VPN\s*[\(（]\s*V\s*[\)）]"),
+                ("public_o", r"公共代理\s*[\(（]\s*O\s*[\)）]"),
+                ("tor_t", r"Tor\s*[\(（]\s*T\s*[\)）]"),
+                ("proxy_p", r"(?<!公共)代理\s*[\(（]\s*P\s*[\)）]"),
+                ("abuse_b", r"恶意\s*[/／]\s*滥用\s*IP\s*[\(（]\s*B\s*[\)）]"))
+
+
+def parse_iplark_text(t):
+    t = re.sub(r"\s+", " ", t or "")
+    out = {}
+    # 优先取「使用场景 … 备注」之间的完整值，保留「活跃代理 | 滥用IP | 普通宽带」这类复合标签
+    m = re.search(r"使用场景\s*(?:更多数据\s*[（(][^）)]*[）)])?\s*(.{2,120}?)\s*备注", t)
+    full = m.group(1).strip() if m else ""
+    if full and (re.search(SCENE_RX, full) or re.search(r"代理|滥用|恶意", full)):
+        out["scene"] = full
+    else:
+        m = re.search(r"使用场景[\s\S]{0,160}?(" + SCENE_RX + ")", t)
+        if m:
+            out["scene"] = m.group(1)
+    for key, lab in COUNT_LABELS:
+        mm = re.search(lab + r"\s*[:：]\s*(\d+)", t, re.I)
+        if mm:
+            out[key] = int(mm.group(1))
+    m = re.search(r"IP\s*评分[\s\S]{0,60}?(\d{1,3})\s*/\s*100", t)
+    if m and 0 <= int(m.group(1)) <= 100:
+        out["score"] = int(m.group(1))
+    return out
+
+
+SUBNET_KEYS = {"proxy": "proxy_p", "vpn": "vpn_v", "tor": "tor_t", "public": "public_o",
+               "public_proxy": "public_o", "open_proxy": "public_o", "openproxy": "public_o"}
+
+
+def compose_iplark(got, text):
+    """把截获的 iplark 接口 JSON（+ 页面文字兜底）整理成统一结构。"""
+    out = {}
+    c = got.get("ipcategory") or {}
+    if isinstance(c, dict) and c.get("type"):
+        out["scene"] = str(c["type"]).strip()
+    s = got.get("ipscore") or {}
+    if isinstance(s, dict) and isinstance(s.get("quality_score"), (int, float)):
+        out["score"] = int(s["quality_score"])
+    sub = got.get("ipsubnet") or {}
+    if isinstance(sub, dict) and sub:
+        ab = sub.get("abuse")
+        if isinstance(ab, dict) and isinstance(ab.get("count"), int):
+            out["abuse_b"] = ab["count"]
+        for k, v in sub.items():
+            if isinstance(v, dict) and isinstance(v.get("subnet_matches"), list):
+                key = SUBNET_KEYS.get(k.lower())
+                if key:
+                    out[key] = len(v["subnet_matches"])
+    en = got.get("ipen") or {}
+    if isinstance(en, dict) and en:
+        out["flags"] = {k: en.get(k) for k in ("is_datacenter", "is_proxy", "is_vpn", "is_tor",
+                                                "is_abuser", "is_mobile") if k in en}
+        comp = en.get("company") or {}
+        if isinstance(comp, dict):
+            out["company"] = comp.get("name")
+            out["company_type"] = comp.get("type")
+    tg = got.get("iptag") or {}
+    if isinstance(tg, dict) and isinstance(tg.get("labels"), list):
+        out["labels"] = tg["labels"]
+    if text:
+        for k, v in parse_iplark_text(text).items():
+            out.setdefault(k, v)
+    out["apis"] = sorted(got.keys())
+    return out
+
+
+# ---------------------------------------------------------------- iplark 浏览器引擎（Playwright）
+LARK_APIS = ("ipcategory", "ipsubnet", "ipscore", "ipen", "iptag")
+LARK_WANT = {"ipcategory", "ipsubnet", "ipscore"}
+LARK_API_RX = re.compile(r"iplark\.com/(%s)\?ip=([^&]+)" % "|".join(LARK_APIS))
+
+
+class LarkEngine:
+    def __init__(self):
+        self.status = "未启动"
+        self.error = ""
+        self.engine = ""
+        self.ready = False
+        self._lock = None
+        self._sem = None
+        self._fail_until = 0
+        self._pw = self._browser = self._ctx = None
+        self.loop = asyncio.new_event_loop()
+        threading.Thread(target=self.loop.run_forever, daemon=True, name="lark-loop").start()
+
+    def run(self, coro, timeout):
+        return asyncio.run_coroutine_threadsafe(coro, self.loop).result(timeout)
+
+    async def _teardown(self):
+        ctx, browser, pw = self._ctx, self._browser, self._pw
+        self._ctx = self._browser = self._pw = None
+        for closer in (getattr(ctx, "close", None), getattr(browser, "close", None), getattr(pw, "stop", None)):
+            if closer:
+                try:
+                    await closer()
+                except Exception:  # noqa: BLE001
+                    pass
+
+    def _on_disconnect(self):
+        # 浏览器崩溃/被关掉：清空状态，下次查询自动重新启动并重新过防护盾
+        self._ctx = self._browser = None
+        self.ready = False
+        self.status, self.error = "浏览器已断开，下次检测时自动重启", ""
+        pw, self._pw = self._pw, None
+        if pw:
+            self.loop.create_task(pw.stop())
+
+    async def _ensure(self):
+        if self._ctx and self._browser and self._browser.is_connected():
+            return
+        if self._lock is None:
+            self._lock = asyncio.Lock()
+        async with self._lock:
+            if self._ctx and self._browser and self._browser.is_connected():
+                return
+            if time.time() < self._fail_until:  # 刚失败过：直接返回原因，不反复拉起进程
+                raise RuntimeError(self.error)
+            await self._teardown()
+            self.status = "启动浏览器中…"
+            try:
+                try:
+                    from playwright.async_api import async_playwright
+                except ImportError:
+                    raise RuntimeError("未安装 playwright：请运行  pip install playwright")
+                self._pw = await async_playwright().start()
+                last = None
+                for channel in ("chrome", "msedge", None):
+                    try:
+                        kw = {"headless": CFG["headless"], "args": ["--disable-blink-features=AutomationControlled"]}
+                        if channel:
+                            kw["channel"] = channel
+                        self._browser = await self._pw.chromium.launch(**kw)
+                        self.engine = "%s %s" % ({"chrome": "Chrome", "msedge": "Edge"}.get(channel, "Chromium"),
+                                                 self._browser.version)
+                        break
+                    except Exception as e:  # noqa: BLE001
+                        last = e
+                if not self._browser:
+                    raise RuntimeError("找不到可用的 Chrome / Edge：%s" % str(last)[:120])
+                self._browser.on("disconnected", lambda _b: self._on_disconnect())
+                major = self._browser.version.split(".")[0]
+                # 关键：UA 里不能带 HeadlessChrome，否则 iplark 直接回 404
+                ua = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
+                      "Chrome/%s.0.0.0 Safari/537.36" % major)
+                # 注意：不要拦截图片/字体/BGP 图等资源——iplark 反爬会检测，拦了之后 /ipsubnet（C段）直接回 404
+                self._ctx = await self._browser.new_context(locale="zh-CN", user_agent=ua,
+                                                            viewport={"width": 1280, "height": 900})
+            except Exception as e:  # noqa: BLE001
+                await self._teardown()  # 不留下孤儿 node.exe / chrome.exe
+                self.status, self.error = "不可用", str(e)[:200]
+                self._fail_until = time.time() + 60
+                raise RuntimeError(self.error)
+            if self._sem is None:
+                self._sem = asyncio.Semaphore(max(1, CFG["lark_concurrency"]))
+            self.status, self.error = "已就绪", ""
+
+    async def _visit(self, ip, timeout):
+        page = await self._ctx.new_page()
+        got, codes = {}, {}
+        core = asyncio.Event()   # 场景 + C段 两个接口都有回应（不论状态码）
+
+        async def grab(resp):
+            m = LARK_API_RX.search(resp.url)
+            if not m or unquote(m.group(2)) != ip:
+                return
+            name = m.group(1)
+            codes[name] = resp.status
+            try:
+                if resp.status == 200:
+                    got[name] = await resp.json()
+            except Exception:  # noqa: BLE001  响应体读不到时交给页面文字兜底
+                pass
+            if {"ipcategory", "ipsubnet"} <= codes.keys():
+                core.set()
+
+        page.on("response", lambda r: self.loop.create_task(grab(r)))
+        try:
+            r = await page.goto("https://iplark.com/" + ip, wait_until="domcontentloaded", timeout=timeout * 1000)
+            status = r.status if r else None
+            try:  # 首次访问要过防护盾（约 5 秒后自动刷新），之后一般 2~4 秒
+                await asyncio.wait_for(core.wait(), timeout)
+            except asyncio.TimeoutError:
+                pass
+            for _ in range(8):  # 评分等接口通常同时到，最多再等 2 秒
+                if LARK_WANT <= got.keys():
+                    break
+                await asyncio.sleep(0.25)
+            text = ""
+            if not LARK_WANT <= got.keys():
+                await asyncio.sleep(1.0)
+                try:
+                    text = await page.inner_text("body", timeout=3000)
+                except Exception:  # noqa: BLE001
+                    text = ""
+            return got, codes, text, status
+        finally:
+            await page.close()
+
+    async def _lookup(self, ip, timeout):
+        await self._ensure()
+        async with self._sem:
+            for attempt in (1, 2):  # C段接口偶发失败时，重新打开一次页面
+                got, codes, text, status = await self._visit(ip, timeout)
+                data = compose_iplark(got, text)
+                if data.get("abuse_b") is not None or attempt == 2 or not (data.get("scene") or got):
+                    break
+                await asyncio.sleep(1.5)
+            if codes.get("ipsubnet") not in (None, 200) and data.get("abuse_b") is None:
+                data["subnet_error"] = "C段接口返回 %s" % codes["ipsubnet"]
+            if data.get("scene") or data.get("abuse_b") is not None:
+                self.ready = True
+                return dict(ok=True, src="iplark", **data)
+            if status == 404 or text.strip()[:20].lower().startswith("not found"):
+                return {"ok": False, "error": "iplark 拦截了浏览器（404），可加 --show-browser 用可见窗口重试"}
+            return {"ok": False, "error": "iplark 页面 %s 秒内未返回数据" % timeout}
+
+    def lookup(self, ip, timeout=30, nocache=False):
+        hit = None if nocache else cache_get("il:" + ip, 1800)
+        if hit:
+            return hit
+        try:  # 外层时限放宽：同时最多 lark_concurrency 个页面，其余排队
+            res = self.run(self._lookup(ip, timeout), 2 * timeout + 240)
+        except concurrent.futures.TimeoutError:
+            res = {"ok": False, "error": "iplark 排队超时（同时检测太多，调小网页并发数后重测）"}
+        except Exception as e:  # noqa: BLE001
+            res = {"ok": False, "error": self.error or ("iplark 查询失败：%s" % (str(e) or type(e).__name__)[:140])}
+        if res.get("ok") and res.get("scene") and res.get("abuse_b") is not None:
+            cache_set("il:" + ip, res)  # 只缓存完整结果；缺 B 值的结果下次会重新查
+        return res
+
+    def warmup(self):
+        def go():
+            try:
+                self.run(self._ensure(), 60)
+                log("iplark 引擎：%s 已启动，正在预热（通过网站防护盾）…" % self.engine)
+                r = self.lookup("1.1.1.1", 40)
+                log("iplark 预热%s" % ("完成，可以开始检测" if r.get("ok") else "未成功：%s（检测时会自动重试）"
+                                       % r.get("error")))
+            except Exception as e:  # noqa: BLE001
+                log("iplark 引擎不可用：%s" % (self.error or e))
+        threading.Thread(target=go, daemon=True).start()
+
+    def info(self):
+        return {"enabled": CFG["iplark"], "status": self.status, "engine": self.engine,
+                "ready": self.ready, "error": self.error}
+
+
+LARK = None
+
+
+# ---------------------------------------------------------------- 主检测
+def check(line, skip_iplark=False, fallback=True, nocache=False):
+    try:
+        info = parse_proxy(line)
+    except ValueError as e:
+        return {"ok": False, "error": "格式错误：%s" % e}
+    out = {"proxy": {k: info[k] for k in ("scheme", "host", "port", "area", "session", "life")},
+           "user_masked": mask(info["user"])}
+    ex = get_exit(info)
+    out["exit"] = ex
+    out["ok"] = bool(ex.get("ok"))
+    if not out["ok"]:
+        out["error"] = ex.get("error")
+        return out
+    ip = ex["ip"]
+    if CFG["iplark"] and not skip_iplark and LARK:
+        out["iplark"] = LARK.lookup(ip, nocache=nocache)
+    else:
+        out["iplark"] = {"ok": False, "error": "未启用 iplark"}
+    if fallback and not out["iplark"].get("ok"):
+        out["proxycheck"] = proxycheck(ip)
+    return out
+
+
+def log_result(r):
+    area = (r.get("proxy") or {}).get("area") or "--"
+    if not r.get("ok"):
+        log("%-2s 失败  %s" % (area, r.get("error")))
+        return
+    ex, il = r.get("exit") or {}, r.get("iplark") or {}
+    if il.get("ok"):
+        log("%-2s %-15s %-2s %-22s 场景=%s B=%s P=%s 评分=%s" % (
+            area, ex.get("ip"), ex.get("countryCode") or "", (ex.get("isp") or "")[:22], il.get("scene", "?"),
+            il.get("abuse_b", "?"), il.get("proxy_p", "-"), il.get("score", "-")))
+    else:
+        pc = r.get("proxycheck") or {}
+        log("%-2s %-15s %-2s iplark 失败(%s) 备用=%s risk=%s" % (
+            area, ex.get("ip"), ex.get("countryCode") or "", il.get("error"), pc.get("type"), pc.get("risk")))
+
+
+# ---------------------------------------------------------------- HTTP 服务
+LOCAL_ORIGIN = re.compile(r"^https?://(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$", re.I)
+CHECK_SLOTS = threading.BoundedSemaphore(16)  # 同时处理的 /check 上限，防止被刷
+
+
+class Handler(BaseHTTPRequestHandler):
+    server_version = "IPCheck/" + VERSION
+    protocol_version = "HTTP/1.1"
+
+    def log_message(self, fmt, *args):  # 安静；检测结果单独打印
+        pass
+
+    def _origin_ok(self):
+        o = self.headers.get("Origin")
+        return CFG["allow_any_origin"] or o is None or o in CFG["allow_origins"] or bool(LOCAL_ORIGIN.match(o))
+
+    def _host_ok(self):
+        """防 DNS 重绑定：只接受直接访问本机地址的请求。"""
+        if CFG["any_host"]:
+            return True
+        return (self.headers.get("Host") or "").strip().lower() in CFG["allowed_hosts"]
+
+    def _cors(self):
+        o = self.headers.get("Origin")
+        if CFG["allow_any_origin"]:
+            self.send_header("Access-Control-Allow-Origin", "*")
+        elif o is not None and self._origin_ok():
+            self.send_header("Access-Control-Allow-Origin", o)
+        self.send_header("Access-Control-Allow-Methods", "GET, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Access-Control-Allow-Private-Network", "true")
+        self.send_header("Vary", "Origin")
+
+    def _json(self, code, obj):
+        body = json.dumps(obj, ensure_ascii=False).encode("utf-8")
+        self.send_response(code)
+        self._cors()
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(body)
+
+    def do_OPTIONS(self):  # noqa: N802
+        self.send_response(204)
+        self._cors()
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
+    def do_GET(self):  # noqa: N802
+        if not self._host_ok():
+            return self._json(403, {"ok": False, "error": "Host 不被允许（只接受 127.0.0.1 / localhost 直接访问）"})
+        if not self._origin_ok():
+            return self._json(403, {"ok": False, "error": "该网页来源不被允许；启动时加 --allow-origin %s"
+                                    % self.headers.get("Origin")})
+        u = urlparse(self.path)
+        q = parse_qs(u.query)
+        if u.path in ("/", "/health"):
+            return self._json(200, {"ok": True, "service": "ip-check", "version": VERSION,
+                                    "iplark": LARK.info() if LARK else {"enabled": False, "status": "已关闭"},
+                                    "proxycheck_key": bool(CFG["proxycheck_key"])})
+        if u.path == "/check":
+            # 网页（含 file:// 打开的本工具）发起的跨域 fetch 一定带 Origin；没有 Origin 的多半是
+            # 其它网站用 img / script 标签盲发的请求，直接拒绝，避免本机被当成跳板去连任意地址
+            if not CFG["allow_any_origin"] and self.headers.get("Origin") is None:
+                return self._json(403, {"ok": False, "error": "缺少 Origin，请从网页工具里发起检测"})
+            if not CHECK_SLOTS.acquire(timeout=300):
+                return self._json(503, {"ok": False, "error": "检测请求太多，请稍后再试"})
+            try:
+                line = (q.get("proxy") or [""])[0]
+                r = check(line, skip_iplark=(q.get("skip_iplark") or ["0"])[0] == "1",
+                          fallback=(q.get("fallback") or ["1"])[0] != "0",
+                          nocache=(q.get("nocache") or ["0"])[0] == "1")
+            finally:
+                CHECK_SLOTS.release()
+            log_result(r)
+            return self._json(200, r)
+        return self._json(404, {"ok": False, "error": "not found"})
+
+
+class Server(ThreadingHTTPServer):
+    daemon_threads = True
+    # Windows 上 SO_REUSEADDR 会让第二个实例也能绑定同一端口（重复双击 .bat 会悄悄起两个服务）
+    allow_reuse_address = os.name != "nt"
+
+    def server_bind(self):
+        if os.name == "nt" and hasattr(socket, "SO_EXCLUSIVEADDRUSE"):
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+        super().server_bind()
+
+
+def main():
+    global LARK
+    ap = argparse.ArgumentParser(description="IP 检测本地服务")
+    ap.add_argument("--host", default="127.0.0.1")
+    ap.add_argument("--port", type=int, default=17890)
+    ap.add_argument("--timeout", type=int, default=20)
+    ap.add_argument("--lark-concurrency", type=int, default=3)
+    ap.add_argument("--show-browser", action="store_true")
+    ap.add_argument("--no-iplark", action="store_true")
+    ap.add_argument("--proxycheck-key", default="")
+    ap.add_argument("--allow-origin", action="append", default=[],
+                    help="额外允许的网页来源，如 https://xxx.github.io（可重复；* 表示全部）")
+    ap.add_argument("--probe", metavar="IP")
+    a = ap.parse_args()
+    CFG.update(timeout=a.timeout, proxycheck_key=a.proxycheck_key, iplark=not a.no_iplark,
+               lark_concurrency=a.lark_concurrency, headless=not a.show_browser)
+    for o in a.allow_origin:
+        if o == "*":
+            CFG["allow_any_origin"] = True
+        else:
+            CFG["allow_origins"].add(o.rstrip("/"))
+    if a.host in ("0.0.0.0", "::", ""):
+        CFG["any_host"] = True  # 主动开放给局域网时不做 Host 校验
+    CFG["allowed_hosts"] = {("%s:%d" % (h, a.port)).lower()
+                            for h in ("127.0.0.1", "localhost", "[::1]", a.host)}
+    if CFG["iplark"]:
+        LARK = LarkEngine()
+    if a.probe:
+        if not LARK:
+            print("已用 --no-iplark 关闭 iplark")
+            return
+        print(json.dumps(LARK.lookup(a.probe.strip(), 40), ensure_ascii=False, indent=2))
+        return
+    try:
+        srv = Server((a.host, a.port), Handler)
+    except OSError as e:
+        print("端口 %d 启动失败：%s" % (a.port, e))
+        print("多半是服务已经在运行了（看看有没有另一个「IP Check Service」窗口），或者换个 --port。")
+        sys.exit(1)
+    print("=" * 64)
+    print(" IP 检测服务 v%s 已启动：http://%s:%d" % (VERSION, a.host, a.port))
+    print(" 回到网页「IP检测」标签即可使用（本地 HTML 或 GitHub 网页版都行）；关闭本窗口即停止服务。")
+    print(" 网页版第一次连接时，浏览器会问是否允许访问本机/本地网络，点「允许」。")
+    print(" iplark：%s   proxycheck key：%s" % ("开启（用本机浏览器）" if CFG["iplark"] else "关闭",
+                                             "已设置" if CFG["proxycheck_key"] else "未设置"))
+    print("=" * 64, flush=True)
+    if LARK:
+        LARK.warmup()
+    try:
+        srv.serve_forever()
+    except KeyboardInterrupt:
+        pass
+
+
+if __name__ == "__main__":
+    main()
+</script>
+<script type="text/plain" id="ipc-helper-bat">
+@echo off
+setlocal
+cd /d "%~dp0"
+title IP Check Service - 127.0.0.1:17890
+
+set "PY="
+where python >nul 2>nul && set "PY=python"
+if not defined PY (
+  where py >nul 2>nul && set "PY=py"
+)
+if not defined PY goto nopython
+
+%PY% -c "import playwright" >nul 2>nul
+if errorlevel 1 (
+  echo [setup] Installing playwright - first run only, please wait...
+  %PY% -m pip install playwright
+)
+
+%PY% ip_check_server.py %*
+echo.
+echo Service stopped.
+pause
+exit /b 0
+
+:nopython
+echo Python 3 was not found.
+echo Install it from https://www.python.org/downloads/ and tick "Add python.exe to PATH".
+pause
+exit /b 1
+</script>
+<!-- IPC_HELPER_END -->
 <script>
 /* ===================== 共享库 ===================== */
 const $ = s => document.querySelector(s);
@@ -4172,6 +5117,385 @@ const makeQR=(function(){
     const body={apiKey:k,orderId:isNaN(+o)?o:+o}; if(it)body.serviceItemId=+it;
     try{ const resp=await fetch(BASE+"/active",{method:"PUT",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify(body)}); const j=await resp.json(); showAdv(j);
       if(j.code===200&&j.data){ const line=(j.data.email||"")+"----"+BASE+"/latest/code?orderId="+(j.data.orderId||o); const cur=$("#ac-in").value.trim(); $("#ac-in").value=(cur?cur+"\n":"")+line; updHint(); toast("已激活，新一轮接码链接已填入接码框"); } else toast("激活失败："+(STAT[j.code]||j.msg||("code "+j.code))); }catch(e){ showAdv("请求失败："+(e.message||e)); } };
+})();
+
+/* ================= IMAP 接码（多域名）================= */
+(function(){
+  const $=s=>document.querySelector(s); if(!$("#page-imap"))return;
+  const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+  /* 域名 → IMAP 服务器:端口（内置常见邮局）*/
+  const IMAP_MAP={};
+  const add=(host,port,doms)=>doms.split(" ").forEach(d=>IMAP_MAP[d]={host,port:+port});
+  add("imap.gmail.com",993,"gmail.com googlemail.com");
+  add("outlook.office365.com",993,"outlook.com hotmail.com live.com msn.com hotmail.co.uk outlook.jp hotmail.fr live.cn passport.com");
+  add("imap.mail.yahoo.com",993,"yahoo.com ymail.com rocketmail.com yahoo.co.jp yahoo.co.uk yahoo.fr yahoo.de");
+  add("imap.aol.com",993,"aol.com aim.com");
+  add("imap.mail.me.com",993,"icloud.com me.com mac.com");
+  add("imap.gmx.com",993,"gmx.com gmx.net gmx.de gmx.us gmx.co.uk gmx.fr");
+  add("imap.mail.com",993,"mail.com email.com usa.com consultant.com");
+  add("imap.zoho.com",993,"zoho.com zohomail.com");
+  add("imap.yandex.com",993,"yandex.ru yandex.com ya.ru yandex.by yandex.kz yandex.ua yandex.com.tr");
+  add("imap.mail.ru",993,"mail.ru bk.ru inbox.ru list.ru internet.ru mail.ua xmail.ru");
+  add("imap.rambler.ru",993,"rambler.ru lenta.ru autorambler.ru myrambler.ru ro.ru rambler.ua");
+  add("imap.firstmail.ltd",993,"firstmail.ltd firstmail.net firstmail.com firstmail.space firstmail.online firstmail.store firstmail.tech");
+  add("imap.163.com",993,"163.com");
+  add("imap.126.com",993,"126.com");
+  add("imap.yeah.net",993,"yeah.net");
+  add("imap.qq.com",993,"qq.com foxmail.com vip.qq.com");
+  add("imap.naver.com",993,"naver.com");
+  add("imap.daum.net",993,"daum.net hanmail.net");
+  add("secureimap.t-online.de",993,"t-online.de");
+  add("imap.web.de",993,"web.de");
+  add("imap.seznam.cz",993,"seznam.cz email.cz");
+  add("imap.wp.pl",993,"wp.pl");
+  add("imap.poczta.onet.pl",993,"onet.pl op.pl poczta.onet.pl");
+  add("poczta.o2.pl",993,"o2.pl tlen.pl");
+  add("poczta.interia.pl",993,"interia.pl interia.eu");
+  add("imapmail.libero.it",993,"libero.it");
+  add("imap.orange.fr",993,"orange.fr wanadoo.fr");
+  add("imap.free.fr",993,"free.fr");
+  add("imap.ukr.net",993,"ukr.net");
+  add("imap.i.ua",993,"i.ua");
+  add("imap.fastmail.com",993,"fastmail.com fastmail.fm");
+  add("imap.mail.ovh.net",993,"ovh.net");
+  const UNSUPPORTED={ "protonmail.com":"Proton 需 Bridge，不支持标准 IMAP","proton.me":"Proton 需 Bridge","pm.me":"Proton 需 Bridge","tutanota.com":"Tuta 不支持 IMAP","tuta.io":"Tuta 不支持 IMAP","tutamail.com":"Tuta 不支持 IMAP" };
+  function domainOf(email){ const m=String(email||"").split("@"); return (m[1]||"").toLowerCase().trim(); }
+  function serverFor(email){ const dom=domainOf(email); if(IMAP_MAP[dom])return {...IMAP_MAP[dom],dom};
+    const man=($("#im-host").value||"").trim(); if(man){ const p=man.match(/^([^:]+)(?::(\d+))?$/); if(p)return {host:p[1],port:+(p[2]||993),dom,manual:true}; }
+    return {host:"",port:0,dom}; }
+  $("#im-domains").onclick=()=>{ const el=$("#im-domainList"); if(el.style.display!=="none"){el.style.display="none";return;}
+    const byHost={}; for(const d in IMAP_MAP){ const h=IMAP_MAP[d].host; (byHost[h]=byHost[h]||[]).push(d); }
+    el.innerHTML="<b>内置支持的域名（自动识别）：</b><br>"+Object.entries(byHost).map(([h,ds])=>`<b style="color:var(--accent)">${escHTML(h)}</b>：${escHTML(ds.join(", "))}`).join("<br>")+"<br><br><b>不支持：</b>"+Object.entries(UNSUPPORTED).map(([d,r])=>escHTML(d)).join(", ")+"（需专用网关）"; el.style.display="block"; };
+
+  function parseInput(text){ const out=[]; for(const raw of String(text||"").split(/\r\n|\r|\n/)){ const l=raw.trim(); if(!l)continue; const p=l.split("----"); const email=(p[0]||"").trim(), pass=p.slice(1).join("----").trim(); if(!email||!pass)continue; out.push({email,pass,status:"pending",statusText:"待开始",code:"",content:"",subject:""}); } return out; }
+  function updHint(){ const n=parseInput($("#im-in").value).length; $("#im-inHint").textContent=n?`已识别 ${n} 个账号`:"尚未输入（格式：邮箱----密码）"; }
+  $("#im-in").addEventListener("input",updHint);
+  function extractCode(txt){ if(!txt)return ""; const t=String(txt).replace(/<[^>]+>/g," ").replace(/&nbsp;/g," ").replace(/&#?\w+;/g," ");
+    let m=t.match(/(?:code|код|verification|verify|otp|pin|security|验证码|코드|인증)[^0-9A-Za-z]{0,16}([0-9]{4,8})/i); if(m)return m[1];
+    m=t.match(/(?:code|код|verify|otp|验证码)[^0-9A-Za-z]{0,16}([A-Z0-9]{5,8})/i); if(m)return m[1];
+    m=t.match(/\b(\d{4,8})\b/); if(m)return m[1]; m=t.match(/\b([A-Z0-9]{6})\b/); return m?m[1]:""; }
+  async function fetchCode(e){ const sv=serverFor(e.email); if(!sv.host){ if(UNSUPPORTED[sv.dom]){e.status="error";e.statusText=UNSUPPORTED[sv.dom];} else {e.status="error";e.statusText="未知域名，请在上方填 IMAP 服务器";} return "done"; }
+    e.server=sv.host+":"+sv.port;
+    const base=($("#im-proxy").value||"").trim().replace(/\/+$/,""); if(!base){e.status="error";e.statusText="未填收件代理地址";return "done";}
+    const limit=Math.max(1,Math.min(10,+$("#im-limit").value||3));
+    let url=base+"/api/"+encodeURIComponent(e.email)+"----"+encodeURIComponent(e.pass)+"?limit="+limit+"&host="+encodeURIComponent(sv.host)+"&port="+sv.port+"&ssl=1";
+    if($("#im-mailbox").checked)url+="&mailbox=Junk";
+    try{ const resp=await fetch(url,{cache:"no-store",headers:{Accept:"application/json"}}); const txt=await resp.text(); let j; try{j=JSON.parse(txt);}catch{ e.status="error"; e.statusText="返回非JSON"; return "done"; }
+      if(j.success===false||j.status==="error"){ e.status="error"; e.statusText=(j.error||j.message||"失败").replace(/（.*?）/,""); return "done"; }
+      const list=Array.isArray(j.emails)?j.emails:Array.isArray(j.messages)?j.messages:Array.isArray(j.data)?j.data:(j.email&&typeof j.email==="object"?[j.email]:[]);
+      if(j.code&&typeof j.code==="string"&&/^[0-9A-Za-z]{4,8}$/.test(j.code)){ e.code=j.code; e.status="success"; return "done"; }
+      if(!list.length){ e.status="wait"; e.statusText="收件箱暂无邮件"; return "wait"; }
+      const m0=list[0]; e.subject=m0.subject||""; const body=m0.text||m0.body||m0.content||m0.html||(typeof m0==="string"?m0:"")||m0.snippet||"";
+      e.content=m0.html||m0.body||m0.content||""; const c=extractCode((m0.subject||"")+" "+body);
+      if(c){ e.code=c; e.status="success"; } else { e.status="content"; e.statusText="收到邮件(未解析出码)"; } return "done";
+    }catch(err){ e.status="error"; e.statusText="请求失败（代理不通/CORS/混合内容）"; return "done"; } }
+
+  let entries=[], running=false, stopFlag=false;
+  function badge(e){ if(e.status==="success")return '<span class="st ok">✅ 已来码</span>'; if(e.status==="content")return '<span class="st content">📩 收到邮件</span>';
+    if(e.status==="error")return '<span class="st err">✕ '+escHTML(e.statusText||"失败")+'</span>'; if(e.status==="wait")return '<span class="st wait"><span class="ac-spin"></span>'+escHTML(e.statusText||"等待中")+'</span>'; return '<span class="st">'+escHTML(e.statusText||"待开始")+'</span>'; }
+  function codeCell(e,i){ return e.code?`<span class="cd" data-i="${i}" title="点击复制">${escHTML(e.code)}</span>`:`<span class="cd none">—</span>`; }
+  function actsCell(e,i){ const a=[`<button class="btn btn-ghost btn-sm" data-act="retry" data-i="${i}">重试</button>`]; if(e.content)a.push(`<button class="btn btn-ghost btn-sm" data-act="view" data-i="${i}">查看邮件</button>`); return a.join(""); }
+  function rowHTML(e,i){ return `<div class="ac-row" id="im-row-${i}"><span class="em" data-i="${i}" title="点击复制邮箱：${escHTML(e.email)}">${escHTML(e.email)}</span><span style="font-size:12px;color:var(--text-3)">${escHTML(e.server||serverFor(e.email).dom||"")}</span><span id="im-st-${i}">${badge(e)}</span><span id="im-cd-${i}">${codeCell(e,i)}</span><span class="acts" id="im-acts-${i}">${actsCell(e,i)}</span></div>`; }
+  function renderAll(){ $("#im-list").innerHTML=entries.map(rowHTML).join(""); }
+  function renderRow(i){ const e=entries[i],st=$("#im-st-"+i); if(!st){const el=$("#im-row-"+i);if(el)el.outerHTML=rowHTML(e,i);return;} st.innerHTML=badge(e); const cd=$("#im-cd-"+i);if(cd)cd.innerHTML=codeCell(e,i); const ac=$("#im-acts-"+i);if(ac)ac.innerHTML=actsCell(e,i); }
+  function updCounts(){ $("#im-rc").textContent=entries.length; $("#im-okc").textContent=entries.filter(e=>e.status==="success").length; }
+  async function processEntry(i){ const e=entries[i]; const poll=$("#im-poll").checked,t0=Date.now(),maxwait=120000,interval=5000;
+    while(!stopFlag){ const r=await fetchCode(e); updCounts(); if(r==="done"){renderRow(i);return;} const secs=Math.round((Date.now()-t0)/1000); e.statusText="等待中 · "+secs+"s"; if(!poll){renderRow(i);return;} if(Date.now()-t0>=maxwait){e.status="error";e.statusText="等待超时";renderRow(i);return;} renderRow(i); await sleep(interval); } renderRow(i); }
+  async function run(){ if(running)return; const list=parseInput($("#im-in").value); if(!list.length){toast("没识别到账号（格式：邮箱----密码）");return;}
+    entries=list; running=true; stopFlag=false; $("#im-run").disabled=true; $("#im-stop").disabled=false; $("#im-resCard").style.display="block"; renderAll(); updCounts();
+    const conc=Math.max(1,Math.min(15,+$("#im-conc").value||5)); let idx=0;
+    const worker=async()=>{ while(idx<entries.length&&!stopFlag){ const i=idx++; entries[i].status="wait"; entries[i].statusText="查询中…"; renderRow(i); await processEntry(i); } };
+    await Promise.all(Array.from({length:Math.min(conc,entries.length)},worker));
+    running=false; $("#im-run").disabled=false; $("#im-stop").disabled=true; const ok=entries.filter(e=>e.status==="success").length; toast(stopFlag?`已停止 · 来码 ${ok}/${entries.length}`:`完成 · 来码 ${ok}/${entries.length}`); }
+  $("#im-run").onclick=run; $("#im-stop").onclick=()=>{stopFlag=true;$("#im-stop").disabled=true;toast("正在停止…");};
+  $("#im-clear").onclick=()=>{ $("#im-in").value=""; entries=[]; $("#im-list").innerHTML=""; $("#im-resCard").style.display="none"; updHint(); };
+  $("#im-list").addEventListener("click",async e=>{ const cd=e.target.closest(".cd"); if(cd&&!cd.classList.contains("none")){const c=entries[+cd.dataset.i].code; if(await copyTextSafe(c))toast("已复制验证码 "+c); return;}
+    const em=e.target.closest(".em"); if(em){const m=entries[+em.dataset.i]; if(m&&await copyTextSafe(m.email))toast("已复制邮箱"); return;}
+    const b=e.target.closest("[data-act]"); if(!b)return; const i=+b.dataset.i,en=entries[i];
+    if(b.dataset.act==="view"){ if(!en.content){toast("没有邮件内容");return;} const safe=String(en.content).replace(/<script[\s\S]*?<\/script>/gi,""); const w=window.open("","_blank"); if(w){w.document.open();w.document.write(safe);w.document.close();}else toast("弹窗被拦截"); }
+    else if(b.dataset.act==="retry"){ if(running){toast("运行中");return;} en.code="";en.content="";en.status="wait";en.statusText="重试中…";renderRow(i); running=true;$("#im-run").disabled=true;stopFlag=false; processEntry(i).then(()=>{running=false;$("#im-run").disabled=false;updCounts();}); } });
+  $("#im-copyCodes").onclick=async ()=>{ const c=entries.filter(e=>e.code).map(e=>e.code); if(!c.length){toast("还没有验证码");return;} if(await copyTextSafe(c.join("\n")))toast(`已复制 ${c.length} 个`); };
+  $("#im-copyPair").onclick=async ()=>{ const r=entries.filter(e=>e.code).map(e=>e.email+"----"+e.code); if(!r.length){toast("还没有验证码");return;} if(await copyTextSafe(r.join("\n")))toast(`已复制 ${r.length} 条`); };
+  $("#im-csv").onclick=()=>{ if(!entries.length){toast("没有数据");return;} const cc=v=>{v=String(v==null?"":v);return /[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+    const lines=["邮箱,密码,IMAP服务器,验证码,主题,状态"]; for(const e of entries)lines.push([e.email,e.pass,e.server||"",e.code||"",e.subject||"",e.status==="success"?"已来码":(e.statusText||e.status)].map(cc).join(",")); download(new Blob(["﻿"+lines.join("\r\n")],{type:"text/csv;charset=utf-8"}),"IMAP接码结果.csv"); };
+
+  /* 改密码：通用 API 调用器 */
+  $("#im-cpToggle").onclick=()=>{ const a=$("#im-cp"),open=a.style.display==="none"; a.style.display=open?"block":"none"; $("#im-cpArrow").textContent=open?"▴":"▾"; };
+  const genPass=()=>{ const P="ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789"; let s=""; const a=new Uint32Array(16); (crypto.getRandomValues?crypto.getRandomValues(a):a.fill(Math.random()*1e9)); for(let i=0;i<16;i++)s+=P[a[i]%P.length]; return s; };
+  function parseHeaders(t){ const h={}; for(const l of String(t||"").split(/\r?\n/)){ const i=l.indexOf(":"); if(i>0)h[l.slice(0,i).trim()]=l.slice(i+1).trim(); } return h; }
+  const fill=(s,e,p,n)=>String(s||"").replace(/\{email\}/g,encodeURIComponent(e)).replace(/\{password\}/g,encodeURIComponent(p)).replace(/\{newpass\}/g,encodeURIComponent(n));
+  const fillBody=(s,e,p,n)=>String(s||"").replace(/\{email\}/g,e).replace(/\{password\}/g,p).replace(/\{newpass\}/g,n);
+  $("#im-cpRun").onclick=async ()=>{ const url=$("#im-cpUrl").value.trim(); if(!url){toast("请先填改密接口 URL");return;}
+    const method=$("#im-cpMethod").value, headers=parseHeaders($("#im-cpHeaders").value), bodyTpl=$("#im-cpBody").value;
+    const rows=String($("#im-cpIn").value||"").split(/\r?\n/).map(l=>l.trim()).filter(Boolean); if(!rows.length){toast("请在下方填 邮箱----旧密码----新密码");return;}
+    $("#im-cpRun").disabled=true; const out=[],note=$("#im-cpNote"); note.style.display="block"; let done=0;
+    for(const l of rows){ const p=l.split("----"); const email=(p[0]||"").trim(),oldp=(p[1]||"").trim(),newp=(p[2]||"").trim()||genPass();
+      note.textContent=`改密中… ${++done}/${rows.length}`;
+      try{ const opt={method,headers:{...headers}}; if(method!=="GET"&&bodyTpl){ opt.body=fillBody(bodyTpl,email,oldp,newp); if(!opt.headers["Content-Type"])opt.headers["Content-Type"]="application/json"; }
+        const resp=await fetch(fill(url,email,oldp,newp),opt); const txt=await resp.text(); const okHttp=resp.ok;
+        const ok=okHttp&&!/error|fail|invalid|"success"\s*:\s*false/i.test(txt);
+        out.push(email+"----"+newp+"----"+(ok?"✅成功":"❌ "+txt.replace(/\s+/g," ").slice(0,80)));
+      }catch(err){ out.push(email+"----"+newp+"----❌ "+(err.message||err)); }
+      $("#im-cpOut").value=out.join("\n"); }
+    note.textContent=`完成 ${rows.length} 条`; $("#im-cpRun").disabled=false; };
+})();
+
+/* ================= IP 检测（配合本地 ip_check_server.py）================= */
+(function(){
+  const $=s=>document.querySelector(s); if(!$("#page-ipc"))return;
+  const SKEY="tt.ipc.v1", CKEY="tt.ipc.cfg";
+  const RULES={biz:"ipc-rBiz",mobile:"ipc-rMobile",area:"ipc-rArea",abuseTag:"ipc-rAbuseTag",active:"ipc-rActive",fallback:"ipc-rFallback"};
+  let rows=[], running=false, stopFlag=false;
+
+  /* ---------- 解析代理行：地区 / 会话 / 有效期 ---------- */
+  // 和 ip_check_server.py 的 parse_proxy 同一套规则：先认「主机:端口:用户名:密码」（密码里有 : 或 @ 也不怕），再认 user:pass@host:port
+  function lineInfo(line){
+    const s=String(line||"").trim().replace(/^(?:https?|socks5h?):\/\//i,"");
+    let user="";
+    if(/^[^:@\/\s]+:\d{1,5}(?::|$)/.test(s))user=s.split(":")[2]||"";
+    else if(s.includes("@"))user=s.slice(0,s.lastIndexOf("@")).split(":")[0];
+    const g=rx=>((user.match(rx)||[])[1]||"");
+    const lm=user.match(/(?:^|[_-])(?:life|lifetime|sesstime|ttl)-(\d+)\s*([smhd])?(?=[_-]|$)/i);
+    const n=lm?+lm[1]:0, life=n?Math.max(1,Math.round(n*({s:1/60,m:1,h:60,d:1440})[(lm[2]||"m").toLowerCase()])):0;
+    return { area:g(/(?:^|[_-])(?:area|country|region|cc)-([A-Za-z]{2})(?=[_-]|$)/i).toUpperCase(),
+             session:g(/(?:^|[_-])(?:session|sessid|sid)-([A-Za-z0-9]+)/i), life };
+  }
+  const normCC=c=>{ c=String(c||"").toUpperCase(); return c==="UK"?"GB":c; };
+  const newRow=line=>({line,start:0,data:null,state:"pending",sel:false,info:lineInfo(line)});
+  const lifeMin=r=>r.info.life||(+$("#ipc-life").value||120);
+  const remainMs=r=>r.start?r.start+lifeMin(r)*60000-Date.now():null;
+  function fmtRemain(ms){ if(ms==null)return "未开始"; if(ms<=0)return "已过期"; const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;
+    return (h?h+":"+String(m).padStart(2,"0"):m)+":"+String(x).padStart(2,"0"); }
+  const cdClass=ms=>ms==null?"":ms<=0?"dead":ms<600000?"bad":ms<1800000?"warn":"ok";
+
+  /* ---------- 持久化（刷新后结果和倒计时都还在）---------- */
+  function loadState(){ try{ const s=JSON.parse(localStorage.getItem(SKEY)||"null");
+      if(s&&Array.isArray(s.rows))rows=s.rows.filter(r=>r&&r.line).map(r=>Object.assign(newRow(r.line),{start:r.start||0,data:r.data||null,state:r.data?"done":"pending"})); }catch(e){} }
+  let saveT=0; function saveState(){ clearTimeout(saveT); saveT=setTimeout(()=>{ try{ localStorage.setItem(SKEY,JSON.stringify({rows:rows.map(r=>({line:r.line,start:r.start,data:r.data}))})); }catch(e){} },400); }
+  function loadCfg(){ try{ const c=JSON.parse(localStorage.getItem(CKEY)||"{}"); if(c.svc)$("#ipc-svcUrl").value=c.svc; if(c.conc)$("#ipc-conc").value=c.conc; if(c.life)$("#ipc-life").value=c.life;
+      for(const k in RULES)if(typeof c[k]==="boolean")$("#"+RULES[k]).checked=c[k]; }catch(e){} }
+  function saveCfg(){ try{ const c={svc:$("#ipc-svcUrl").value.trim(),conc:+$("#ipc-conc").value||4,life:+$("#ipc-life").value||120}; for(const k in RULES)c[k]=$("#"+RULES[k]).checked; localStorage.setItem(CKEY,JSON.stringify(c)); }catch(e){} }
+  function rules(){ const R={}; for(const k in RULES)R[k]=$("#"+RULES[k]).checked; return R; }
+
+  /* ---------- 判定 ---------- */
+  const partsOf=s=>String(s||"").split(/\s*[|｜]\s*/).map(x=>x.trim()).filter(Boolean);
+  function partClass(p){
+    if(/数据中心|机房|IDC|托管|服务器|云服务|云厂商|CDN|hosting|data ?center/i.test(p))return "dc";
+    if(/滥用|恶意|暴力破解|攻击|垃圾|扫描|spam|abuse/i.test(p))return "abuse";
+    if(/活跃代理|代理服务|公共代理|VPN|Tor\b|proxy/i.test(p))return "proxy";
+    if(/移动|蜂窝|基站|4G|5G|mobile/i.test(p))return "mobile";
+    if(/商业|商宽|企业|专线|business/i.test(p))return "biz";
+    if(/宽带|家宽|家庭|住宅|residential/i.test(p))return "res";
+    return "other";
+  }
+  function verdictOf(r,R){
+    if(r.state==="checking"||r.state==="queued")return {s:"wait",why:[],warn:[]};
+    const d=r.data; if(!d)return {s:"pending",why:[],warn:[]};
+    if(!d.ok)return {s:"bad",why:[d.error||"代理不可用"],warn:[]};
+    const ex=d.exit||{}, il=d.iplark||{}, pc=d.proxycheck||{}, why=[], warn=[];
+    const area=normCC(r.info.area), cc=normCC(ex.countryCode);
+    if(area&&cc&&area!==cc){ if(R.area)why.push(`出口国家 ${cc} ≠ ${area}`); else warn.push(`出口国家 ${cc} ≠ ${area}`); }
+    else if(area&&!cc&&R.area)warn.push("未取到出口国家，没法核对 area");
+    let cls=null, review=false;
+    if(il.ok){
+      // B 值和使用场景都是硬条件：缺任何一个都不能算成功
+      if(il.scene){
+        const ps=partsOf(il.scene).map(partClass);
+        cls=ps.includes("dc")?"dc":ps.includes("res")?"res":ps.includes("biz")?"biz":ps.includes("mobile")?"mobile":"other";
+        if(ps.includes("abuse")){ if(R.abuseTag)why.push("场景标记为滥用"); else warn.push("场景标记为滥用"); }
+        if(ps.includes("proxy")){ if(R.active)why.push("场景标记为活跃代理"); else warn.push("活跃代理"); }
+      }else why.push("未取到使用场景");
+      if(il.abuse_b==null)why.push("未取到 C段 B 值"+(il.subnet_error?"（"+il.subnet_error+"）":""));
+      else if(il.abuse_b>0)why.push(`C段恶意/滥用 B=${il.abuse_b}`);
+    }else if(R.fallback&&pc.ok){
+      // 备用源没有 C段 B 值，而且会把机房 IP 标成 Business，所以最多给「待复核」，永远不算成功
+      const t=String(pc.type||"").toLowerCase();
+      cls=/hosting|data|server|vpn/.test(t)?"dc":/wireless|mobile|cell/.test(t)?"mobile":/business/.test(t)?"biz":/residential|isp/.test(t)?"res":"other";
+      if(String(pc.proxy).toLowerCase()==="yes")why.push("备用源：标记为代理");
+      if(+pc.risk>0)why.push("备用源风险分 "+pc.risk);
+      review=true; warn.push("iplark 没查到"+(il.error?"（"+il.error+"）":"")+"，备用源仅供参考，C段 B 值未核对");
+    }else{
+      why.push("iplark 未取到数据"+(il.error?"："+il.error:""));
+    }
+    if(cls==="dc")why.push("数据中心 / 机房");
+    else if(cls==="biz"&&!R.biz)why.push("商宽（规则未放行）");
+    else if(cls==="mobile"&&!R.mobile)why.push("移动网络（规则未放行）");
+    else if(cls==="other")why.push("使用场景不是家宽 / 商宽 / 住宅");
+    return {s:why.length?"bad":review?"review":"ok",why,warn,cls};
+  }
+
+  /* ---------- 渲染 ---------- */
+  function passFilter(r,v){
+    const st=$("#ipc-fStatus").value, ar=$("#ipc-fArea").value, q=$("#ipc-fSearch").value.trim().toLowerCase(), ms=remainMs(r);
+    if(st==="okAlive"&&!(v.s==="ok"&&(ms==null||ms>0)))return false;
+    if(st==="ok"&&v.s!=="ok")return false;
+    if(st==="bad"&&v.s!=="bad")return false;
+    if(st==="review"&&v.s!=="review")return false;
+    if(st==="checking"&&v.s!=="wait")return false;
+    if(st==="soon"&&!(ms!=null&&ms>0&&ms<600000))return false;
+    if(st==="expired"&&!(ms!=null&&ms<=0))return false;
+    if(ar&&r.info.area!==ar)return false;
+    if(q){ const d=r.data||{},ex=d.exit||{},il=d.iplark||{}; if(![r.line,ex.ip,ex.isp,ex.as,il.scene,r.info.session].join(" ").toLowerCase().includes(q))return false; }
+    return true;
+  }
+  const stat=(l,n,c)=>`<div class="stat ${c}"><div class="n">${n}</div><div class="l">${l}</div></div>`;
+  const numCell=(n,hot)=>n==null?'<span class="ipc-sub">—</span>':`<span class="ipc-num ${hot?(n>0?"hot":"zero"):""}">${n}</span>`;
+  function rowHTML(r,i,v,ms){
+    const d=r.data||{}, ex=d.exit||{}, il=d.iplark||{}, pc=d.proxycheck||{};
+    const res=v.s==="wait"?`<span class="ipc-res wait"><span class="ac-spin"></span>${r.state==="queued"?"排队中":"检测中"}</span>`
+      :v.s==="ok"?'<span class="ipc-res ok">✅ 成功</span>':v.s==="bad"?'<span class="ipc-res bad">❌ 失败</span>'
+      :v.s==="review"?'<span class="ipc-res review">⚠ 待复核</span>':'<span class="ipc-sub">待检测</span>';
+    const notes=v.why.concat(v.warn.map(w=>"⚠ "+w));
+    const cc=String(ex.countryCode||"").toUpperCase(), mism=r.info.area&&cc&&normCC(r.info.area)!==normCC(cc);
+    let scene="—";
+    if(il.ok&&il.scene)scene=partsOf(il.scene).map(p=>`<span class="ipc-pill ${partClass(p)}">${escHTML(p)}</span>`).join("");
+    else if(pc.ok&&pc.type)scene=`<span class="ipc-pill">${escHTML(pc.type)}</span><span class="ipc-sub">备用源</span>`;
+    else if(d.ok&&il.error)scene=`<span class="ipc-sub" title="${escHTML(il.error)}">iplark 未取到</span>`;
+    const S=il.ok?il.score:null;
+    const score=S==null?'<span class="ipc-sub">—</span>':`<span class="ipc-num" style="color:${S>=80?"var(--green)":S>=50?"var(--orange)":"var(--red)"}">${S}</span>`;
+    return `<tr class="${v.s==="ok"||v.s==="bad"||v.s==="review"?v.s:""}">`
+      +`<td><input type="checkbox" class="ipc-sel" data-i="${i}"${r.sel?" checked":""}></td>`
+      +`<td>${res}${notes.length?`<div class="ipc-why">${notes.map(escHTML).join("；")}</div>`:""}</td>`
+      +`<td><span class="ipc-pill">${escHTML(r.info.area||"--")}</span><div class="ipc-sub ipc-mono" title="${escHTML(r.line)}">${escHTML(r.info.session||r.line.slice(0,24))}</div></td>`
+      +`<td>${ex.ip?`<span class="ipc-ip ipc-mono" data-ip="${escHTML(ex.ip)}" title="点击复制">${escHTML(ex.ip)}</span><div class="ipc-sub">${escHTML(cc)}${mism?` <b style="color:var(--red)">≠ ${escHTML(r.info.area)}</b>`:""}${ex.latency_ms?" · "+ex.latency_ms+"ms":""}</div>`:'<span class="ipc-sub">—</span>'}</td>`
+      +`<td><div title="${escHTML(ex.as||"")}">${escHTML(String(ex.isp||"—").slice(0,26))}</div><div class="ipc-sub">${escHTML(String(ex.as||"").split(" ")[0])}</div></td>`
+      +`<td>${scene}</td><td>${numCell(il.ok?il.abuse_b:null,true)}</td><td>${numCell(il.ok?il.proxy_p:null,false)}</td><td>${score}</td>`
+      +`<td><span class="ipc-cd ${cdClass(ms)}" data-i="${i}">${fmtRemain(ms)}</span><div class="ipc-sub">共 ${lifeMin(r)} 分钟</div></td>`
+      +`<td><div class="ipc-act"><button data-act="copy" data-i="${i}" title="复制这条代理">复制</button><button data-act="recheck" data-i="${i}" title="重新检测">↻</button>${ex.ip?`<button data-act="lark" data-i="${i}" title="在 iplark 查看">↗</button>`:""}</div></td></tr>`;
+  }
+  function doRender(){
+    const card=$("#ipc-resCard"); if(!rows.length){ card.style.display="none"; updHint(); return; } card.style.display="block";
+    const R=rules(), fa=$("#ipc-fArea"), cur=fa.value, areas=[...new Set(rows.map(r=>r.info.area).filter(Boolean))].sort();
+    fa.innerHTML='<option value="">全部地区</option>'+areas.map(a=>`<option value="${a}">${a}（${rows.filter(r=>r.info.area===a).length}）</option>`).join(""); if(areas.includes(cur))fa.value=cur;
+    let ok=0,okAlive=0,bad=0,wait=0,rev=0; const html=[];
+    rows.forEach((r,i)=>{ const v=r.v=verdictOf(r,R), ms=remainMs(r);
+      if(v.s==="ok"){ ok++; if(ms==null||ms>0)okAlive++; } else if(v.s==="bad")bad++; else if(v.s==="review")rev++; else if(v.s==="wait")wait++;
+      r.vis=passFilter(r,v); if(r.vis)html.push(rowHTML(r,i,v,ms)); });
+    $("#ipc-tbody").innerHTML=html.join("")||'<tr><td colspan="11" style="text-align:center;color:var(--text-3);padding:26px">没有符合筛选条件的结果</td></tr>';
+    $("#ipc-stats").innerHTML=stat("总数",rows.length,"")+stat("成功",ok,"ok")+stat("有效期内成功",okAlive,"arc")+stat("失败",bad,"dup")
+      +(rev?stat("待复核",rev,"warn"):"")+stat("检测中",wait,"ipc-wait");
+    const visN=rows.filter(r=>r.vis).length; $("#ipc-all").checked=visN>0&&rows.filter(r=>r.vis).every(r=>r.sel);
+    updCount(); updHint();
+  }
+  let rq=0; function render(){ if(rq)return; rq=requestAnimationFrame(()=>{ rq=0; doRender(); }); }
+  function updCount(){ const sel=rows.filter(r=>r.sel).length, vis=rows.filter(r=>r.vis).length;
+    $("#ipc-fCount").textContent=sel?`已勾选 ${sel} 条（复制 / 导出按勾选）`:`当前筛选 ${vis} 条`; }
+  function updHint(){ const ls=String($("#ipc-in").value||"").split(/\r?\n/).map(s=>s.trim()).filter(Boolean), uniq=new Set(ls);
+    const ar={}; uniq.forEach(l=>{ const a=lineInfo(l).area||"未知"; ar[a]=(ar[a]||0)+1; });
+    $("#ipc-inHint").textContent=uniq.size?`${uniq.size} 条代理${ls.length>uniq.size?`（已去重 ${ls.length-uniq.size} 条）`:""} · `+Object.entries(ar).map(([a,n])=>a+" "+n).join("，"):"尚未输入"; }
+
+  /* ---------- 倒计时：每秒只刷新数字 ---------- */
+  let tick=0;
+  setInterval(()=>{ if(!rows.length||document.hidden||!$("#page-ipc").classList.contains("active"))return;
+    document.querySelectorAll("#ipc-tbody .ipc-cd").forEach(el=>{ const r=rows[+el.dataset.i]; if(!r)return; const ms=remainMs(r); el.textContent=fmtRemain(ms); el.className="ipc-cd "+cdClass(ms); });
+    if(++tick%15===0&&!running)render(); },1000);
+
+  /* ---------- 本地服务 ---------- */
+  const svc=()=>($("#ipc-svcUrl").value||"").trim().replace(/\/+$/,"");
+  const ON_WEB=location.protocol==="https:"||location.protocol==="http:";
+  const DOWN_HINT=ON_WEB
+    ?"连接不到本机的检测助手：① 先运行「启动IP检测服务.bat」（没有就点「⬇ 下载检测助手」）② 浏览器问是否允许访问本机 / 本地网络时点「允许」（点过阻止的话：地址栏左边的图标 → 网站设置 → 本地网络访问 → 允许）"
+    :"连接不到本地检测服务：请先双击「启动IP检测服务.bat」，保持窗口开着（没有这个文件就点「⬇ 下载检测助手」）";
+  async function health(silent){ const b=$("#ipc-svc"), ac=new AbortController(), t=setTimeout(()=>ac.abort(),3500); let bad="";
+    try{ const resp=await fetch(svc()+"/health",{signal:ac.signal,cache:"no-store"}), j=await resp.json().catch(()=>null);
+      if(!resp.ok||!j||!j.ok||j.service!=="ip-check"){ bad=(j&&j.error)||`这个地址上不是 IP 检测服务（HTTP ${resp.status}）`; throw new Error(bad); }
+      const il=j.iplark||{}, hv=helperVer(), old=hv&&j.version&&j.version!==hv;
+      b.className="badge on"; b.style.background=""; b.style.color="";
+      b.textContent="本地服务已连接 · iplark："+(il.enabled===false?"已关闭":((il.engine||"").replace(/^(\w+ \d+).*$/,"$1")+" "+(il.status||"")).trim())+(old?" · 助手可更新":"");
+      b.title=[il.error||"",old?`正在运行的检测助手是 v${j.version}，本页内置的是 v${hv}，建议点「⬇ 下载检测助手」换新版`:""].filter(Boolean).join("\n"); return true; }
+    catch(e){ b.className="badge"; b.style.background="rgba(255,59,48,.14)"; b.style.color="var(--red)";
+      b.textContent=bad?"本地服务异常":"本地服务未启动"; b.title=bad||DOWN_HINT;
+      if(!silent)toast(bad?"本地检测服务异常："+bad:DOWN_HINT); return false; }
+    finally{ clearTimeout(t); } }
+
+  /* ---------- 检测助手：ip_check_server.py + .bat 原样内嵌在本页（#ipc-helper-*），网页版也能直接下载 ---------- */
+  const helperText=id=>{ const el=document.getElementById(id); return el?el.textContent.replace(/^\n/,""):""; };
+  const helperVer=()=>(helperText("ipc-helper-py").match(/^VERSION = "([^"]+)"/m)||[])[1]||"";
+  $("#ipc-dlHelper").onclick=()=>{ const py=helperText("ipc-helper-py"), bat=helperText("ipc-helper-bat");
+    if(!py||!bat){ toast("本页没有内嵌检测助手"); return; }
+    const enc=new TextEncoder(), crlf=s=>s.replace(/\r?\n/g,"\r\n"), v=helperVer();
+    const readme="IP 检测助手 v"+v+"（给「文本处理工具 · IP 检测」标签用）\n\n"
+      +"1. 需要：Windows + Python 3.9 以上 + Chrome 或 Edge 浏览器。\n"
+      +"   没装 Python：https://www.python.org/downloads/ ，安装时勾选「Add python.exe to PATH」。\n"
+      +"2. 双击「启动IP检测服务.bat」。第一次会自动安装 playwright（1 分钟左右）。\n"
+      +"3. 窗口里出现「已启动：http://127.0.0.1:17890」后，回到网页的 IP 检测标签点「开始检测」。检测期间别关这个窗口。\n"
+      +"4. 用 GitHub 网页版时，浏览器第一次会问是否允许访问本机 / 本地网络，点「允许」。\n"
+      +"   点错了：地址栏左边的图标 → 网站设置 → 本地网络访问 → 允许。\n\n"
+      +"为什么要这个助手：浏览器里的网页没法通过代理发请求，也没法直接调用 iplark（有跨域限制和防护盾），\n"
+      +"所以「经代理取出口 IP」和「查 iplark」由这个本机小程序完成。它只监听 127.0.0.1，只接受本工具网页的请求。\n";
+    download(buildZip([
+      {name:"IP检测助手/启动IP检测服务.bat",bytes:enc.encode(crlf(bat))},
+      {name:"IP检测助手/ip_check_server.py",bytes:enc.encode(py)},
+      {name:"IP检测助手/使用说明.txt",bytes:enc.encode("﻿"+crlf(readme))}]),"IP检测助手.zip"); };
+  async function checkOne(r,fresh){
+    // 首次检测开始计时；上一轮已过期（会话已失效、会换新 IP）就重新计时
+    const left=remainMs(r); if(!r.start||(left!=null&&left<=0))r.start=Date.now();
+    r.state="checking"; render();
+    const ac=new AbortController(), t=setTimeout(()=>ac.abort(),300000);
+    try{ r.data=await (await fetch(svc()+"/check?proxy="+encodeURIComponent(r.line)+(fresh?"&nocache=1":""),{signal:ac.signal,cache:"no-store"})).json(); }
+    catch(e){ r.data={ok:false,error:e.name==="AbortError"?"检测超时（5 分钟）":"连接本地服务失败："+(e.message||e)}; }
+    finally{ clearTimeout(t); r.state="done"; saveState(); render(); } }
+  const BUSY=["ipc-run","ipc-retryBad","ipc-clear","ipc-dropExpired"];
+  const setBusy=b=>{ BUSY.forEach(id=>$("#"+id).disabled=b); $("#ipc-stop").disabled=!b; };
+  async function runRows(list,fresh){
+    if(running){ toast("正在检测中，请稍候"); return; }
+    if(!list.length){ toast("没有要检测的代理"); return; }
+    running=true; stopFlag=false; setBusy(true);  // 先占住，避免检查服务那几秒里重复点击跑出两批
+    if(!await health(false)){ running=false; setBusy(false); return; }
+    list.forEach(r=>{ r.state="queued"; }); render();
+    const conc=Math.max(1,Math.min(10,+$("#ipc-conc").value||4)); let p=0;
+    await Promise.all(Array.from({length:Math.min(conc,list.length)},async()=>{ while(p<list.length&&!stopFlag){ await checkOne(list[p++],fresh); } }));
+    rows.forEach(r=>{ if(r.state==="queued")r.state=r.data?"done":"pending"; });
+    running=false; setBusy(false); saveState(); doRender();
+    const R=rules(), ok=list.filter(r=>verdictOf(r,R).s==="ok").length; toast((stopFlag?"已停止":"检测完成")+` · 本次 ${list.length} 条，成功 ${ok} 条`);
+  }
+
+  /* ---------- 按钮 ---------- */
+  $("#ipc-run").onclick=()=>{ if(running){ toast("正在检测中，请稍候"); return; }
+    const lines=[...new Set(String($("#ipc-in").value||"").split(/\r?\n/).map(s=>s.trim()).filter(Boolean))];
+    if(!lines.length){ toast("请先粘贴代理（每行一个）"); return; }
+    const old=new Map(rows.map(r=>[r.line,r])); rows=lines.map(l=>old.get(l)||newRow(l)); rows.forEach(r=>{ r.sel=false; });
+    saveState(); doRender(); runRows(rows.slice()); };
+  $("#ipc-retryBad").onclick=()=>{ const R=rules(); runRows(rows.filter(r=>{ const s=verdictOf(r,R).s; return s==="bad"||s==="review"||s==="pending"; }),true); };
+  $("#ipc-stop").onclick=()=>{ stopFlag=true; $("#ipc-stop").disabled=true; toast("正在停止（进行中的会检测完）…"); };
+  $("#ipc-health").onclick=async()=>{ if(await health(false))toast("本地检测服务正常"); };
+  $("#ipc-clear").onclick=()=>{ if(rows.length&&!confirm("清空全部代理和检测结果（含倒计时）？"))return; rows=[]; $("#ipc-in").value=""; saveState(); doRender(); };
+  $("#ipc-in").addEventListener("input",updHint);
+  for(const k in RULES)$("#"+RULES[k]).addEventListener("change",()=>{ saveCfg(); render(); });
+  ["ipc-svcUrl","ipc-conc","ipc-life"].forEach(id=>$("#"+id).addEventListener("change",()=>{ saveCfg(); render(); }));
+  ["ipc-fStatus","ipc-fArea"].forEach(id=>$("#"+id).addEventListener("change",()=>{ rows.forEach(r=>{ r.sel=false; }); render(); }));
+  let fq=0; $("#ipc-fSearch").addEventListener("input",()=>{ clearTimeout(fq); fq=setTimeout(render,200); });
+
+  /* ---------- 勾选 / 复制 / 导出 ---------- */
+  const targets=()=>{ const s=rows.filter(r=>r.sel); return s.length?s:rows.filter(r=>r.vis); };
+  async function copyList(arr,what){ if(!arr.length){ toast("没有可复制的"+what); return; } if(await copyTextSafe(arr.join("\n")))toast(`已复制 ${arr.length} 条${what}`); }
+  $("#ipc-all").addEventListener("change",e=>{ rows.forEach(r=>{ if(r.vis)r.sel=e.target.checked; }); render(); });
+  $("#ipc-copyLines").onclick=()=>copyList(targets().map(r=>r.line),"代理");
+  $("#ipc-copyIps").onclick=()=>copyList([...new Set(targets().map(r=>r.data&&r.data.exit&&r.data.exit.ip).filter(Boolean))],"出口 IP");
+  $("#ipc-copyOk").onclick=()=>{ const R=rules(); copyList(rows.filter(r=>{ const ms=remainMs(r); return verdictOf(r,R).s==="ok"&&(ms==null||ms>0); }).map(r=>r.line),"有效期内的成功代理"); };
+  $("#ipc-dropExpired").onclick=()=>{ const n=rows.filter(r=>{ const ms=remainMs(r); return ms!=null&&ms<=0; }).length; if(!n){ toast("没有已过期的"); return; }
+    rows=rows.filter(r=>{ const ms=remainMs(r); return !(ms!=null&&ms<=0); }); $("#ipc-in").value=rows.map(r=>r.line).join("\n"); saveState(); doRender(); toast(`已移除 ${n} 条已过期`); };
+  $("#ipc-csv").onclick=()=>{ const list=targets(); if(!list.length){ toast("没有数据"); return; } const R=rules();
+    const q=v=>{ v=String(v==null?"":v); return /[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
+    const head=["代理","地区","会话","出口IP","国家","运营商","ASN","使用场景","C段B","C段P","评分","结果","原因","首次检测","剩余分钟"];
+    const lines=[head.join(",")].concat(list.map(r=>{ const d=r.data||{},ex=d.exit||{},il=d.iplark||{},v=verdictOf(r,R),ms=remainMs(r);
+      return [r.line,r.info.area,r.info.session,ex.ip,ex.countryCode,ex.isp,ex.as,il.scene,il.abuse_b,il.proxy_p,il.score,
+        v.s==="ok"?"成功":v.s==="bad"?"失败":v.s==="review"?"待复核":"未完成",v.why.concat(v.warn).join("；"),r.start?new Date(r.start).toLocaleString():"",ms==null?"":Math.max(0,Math.round(ms/60000))].map(q).join(","); }));
+    download(new Blob(["﻿"+lines.join("\r\n")],{type:"text/csv;charset=utf-8"}),"IP检测结果.csv"); };
+  $("#ipc-tbody").addEventListener("change",e=>{ const c=e.target.closest(".ipc-sel"); if(!c)return; const r=rows[+c.dataset.i]; if(r){ r.sel=c.checked; updCount(); } });
+  $("#ipc-tbody").addEventListener("click",async e=>{
+    const ipEl=e.target.closest(".ipc-ip"); if(ipEl){ if(await copyTextSafe(ipEl.dataset.ip))toast("已复制 IP "+ipEl.dataset.ip); return; }
+    const b=e.target.closest("[data-act]"); if(!b)return; const r=rows[+b.dataset.i]; if(!r)return;
+    if(b.dataset.act==="copy"){ if(await copyTextSafe(r.line))toast("已复制代理"); }
+    else if(b.dataset.act==="recheck")runRows([r],true);
+    else if(b.dataset.act==="lark"){ const ip=r.data&&r.data.exit&&r.data.exit.ip; if(ip)window.open("https://iplark.com/"+encodeURIComponent(ip),"_blank","noopener"); } });
+
+  /* ---------- 初始化 ---------- */
+  loadCfg(); loadState();
+  if(rows.length&&!$("#ipc-in").value.trim())$("#ipc-in").value=rows.map(r=>r.line).join("\n");
+  doRender();
+  const tab=document.querySelector('.maintab[data-page="ipc"]'); if(tab)tab.addEventListener("click",()=>health(true));
+  if($("#page-ipc").classList.contains("active"))health(true);
 })();
 </script>
 </body>
