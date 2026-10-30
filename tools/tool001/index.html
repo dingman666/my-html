@@ -269,6 +269,21 @@
   .ipc-res{font-weight:700;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
   .ipc-res.ok{color:var(--green)} .ipc-res.bad{color:var(--red)} .ipc-res.wait{color:var(--accent)} .ipc-res.review{color:var(--orange)}
   .stat.ipc-wait .n{color:var(--accent)}
+  .ipc-stats .stat{cursor:pointer;user-select:none;transition:transform .15s,box-shadow .15s,border-color .15s}
+  .ipc-stats .stat:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
+  .ipc-stats .stat.on{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .ipc-stats .stat:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .ipc-scenes{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:-2px 0 14px}
+  .ipc-scenes:empty{display:none}
+  .ipc-scenes .lbl{font-size:12px;font-weight:600;color:var(--text-3);margin-right:2px}
+  .ipc-chip{display:inline-flex;align-items:center;gap:6px;font:inherit;font-size:13px;color:var(--text);background:var(--card-solid);border:1px solid var(--line);border-radius:999px;padding:5px 12px;cursor:pointer;transition:background .15s,border-color .15s}
+  .ipc-chip:hover{border-color:var(--line-strong)}
+  .ipc-chip b{font-weight:700;color:var(--text-2)}
+  .ipc-chip .dot{width:8px;height:8px;border-radius:50%;background:var(--text-3)}
+  .ipc-chip .dot.res{background:var(--green)} .ipc-chip .dot.biz{background:var(--accent)} .ipc-chip .dot.mobile{background:var(--purple)}
+  .ipc-chip .dot.dc,.ipc-chip .dot.abuse{background:var(--red)} .ipc-chip .dot.proxy{background:var(--orange)}
+  .ipc-chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .ipc-chip.on b{color:#fff}
   .ipc-why{font-size:11px;color:var(--text-3);margin-top:3px;max-width:250px;line-height:1.45}
   .ipc-mono{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace}
   .ipc-ip{cursor:pointer;font-weight:600} .ipc-ip:hover{color:var(--accent)}
@@ -1798,7 +1813,7 @@
         <div class="hint" id="ipc-inHint">尚未输入</div>
       </div>
       <div class="grid">
-        <div class="field"><label>本地检测服务地址</label><input type="text" id="ipc-svcUrl" value="http://127.0.0.1:17890" spellcheck="false" autocomplete="off"><div class="hint">首次使用：点下面「<b>⬇ 下载检测助手</b>」，解压后双击「<b>启动IP检测服务.bat</b>」，检测期间保持那个窗口开着</div></div>
+        <div class="field"><label>本地检测服务地址</label><input type="text" id="ipc-svcUrl" value="http://127.0.0.1:17890" spellcheck="false" autocomplete="off"><div class="hint">首次使用：点下面「<b>⬇ 助手 Windows 版</b>」或「<b>⬇ 助手 Mac 版</b>」，解压后双击里面的启动脚本，检测期间保持那个窗口开着</div></div>
         <div class="field"><label>并发数</label><input type="number" id="ipc-conc" min="1" max="10" value="4"><div class="hint">iplark 有反爬，建议 3～5</div></div>
         <div class="field"><label>默认有效期（分钟）</label><input type="number" id="ipc-life" min="1" max="1440" value="120"><div class="hint">用户名里有 <b>life-N</b> 时以它为准</div></div>
       </div>
@@ -1810,18 +1825,20 @@
         <label class="toggle"><input type="checkbox" id="ipc-rAbuseTag" checked><span class="sw"></span>场景含「滥用 / 恶意」算失败</label>
         <label class="toggle"><input type="checkbox" id="ipc-rActive"><span class="sw"></span>场景含「活跃代理」算失败</label>
         <label class="toggle"><input type="checkbox" id="ipc-rFallback"><span class="sw"></span>iplark 查不到时参考备用数据源（只标「待复核」，不算成功）</label>
+        <label class="toggle"><input type="checkbox" id="ipc-rAutoDel" checked><span class="sw"></span>检测完自动删除失败的</label>
       </div>
-      <div class="actions"><button class="btn btn-primary" id="ipc-run">🔍 开始检测</button><button class="btn btn-ghost" id="ipc-stop" disabled>⏹ 停止</button><button class="btn btn-ghost" id="ipc-retryBad">↻ 重测失败的</button><button class="btn btn-ghost" id="ipc-health">检查服务</button><button class="btn btn-ghost" id="ipc-dlHelper" title="本页内置的本地检测助手（Python 脚本 + 启动用 .bat）">⬇ 下载检测助手</button><button class="btn btn-ghost" id="ipc-clear">清空</button></div>
-      <div class="hint" style="margin-top:12px;line-height:1.75"><b>判定</b>：iplark「使用场景」为 <b>普通宽带 / 家宽 / 住宅</b>（商宽默认放行，移动网络默认不放行，可用上面的开关调整）<b>且</b> C段「恶意/滥用IP(B)」<b>= 0</b> 才算成功；<b>数据中心 / 机房 / IDC 一律失败</b>。iplark 没查到时最多标「⚠ 待复核」，不会算成功。<br><b>倒计时</b>：从这条代理<b>首次检测</b>时开始，按用户名里的 <b>life-N</b> 计算（N 默认是分钟，也认 30m / 2h / 1d）；过期后再检测会重新计时。同一会话的出口 IP 可能中途更换，使用前建议「↻」再测一次。<br>出口 IP 由本地服务经代理取得，iplark 由本机 Chrome/Edge 在后台查询（首次约 8 秒过防护盾，之后每条 2～4 秒）。<br><b>网页版（GitHub Pages）</b>：一样能用，同样要在这台电脑上运行检测助手（浏览器本身没法走代理，也没法直接调 iplark）；第一次连接时浏览器会问是否允许访问「此设备上的应用和服务 / 本地网络」，点<b>允许</b>。推荐 Chrome / Edge。</div>
+      <div class="actions"><button class="btn btn-primary" id="ipc-run">🔍 开始检测</button><button class="btn btn-ghost" id="ipc-stop" disabled>⏹ 停止</button><button class="btn btn-ghost" id="ipc-retryBad">↻ 重测失败的</button><button class="btn btn-ghost" id="ipc-health">检查服务</button><button class="btn btn-ghost" id="ipc-dlWin" title="Windows：解压后双击「启动IP检测服务.bat」">⬇ 助手 Windows 版</button><button class="btn btn-ghost" id="ipc-dlMac" title="Mac：解压后双击「启动IP检测服务-Mac.command」">⬇ 助手 Mac 版</button><button class="btn btn-ghost" id="ipc-clear">清空</button></div>
+      <div class="hint" style="margin-top:12px;line-height:1.75"><b>判定</b>：iplark「使用场景」为 <b>普通宽带 / 家宽 / 住宅</b>（商宽默认放行，移动网络默认不放行，可用上面的开关调整）<b>且</b> C段「恶意/滥用IP(B)」<b>= 0</b> 才算成功；<b>数据中心 / 机房 / IDC 一律失败</b>。iplark 没查到时最多标「⚠ 待复核」，不会算成功。<br><b>显示</b>：检测后默认只显示成功的；确定失败的（机房、B≠0、国家不符、代理不通等）自动删除，误删可点「↩ 恢复刚删除的失败」；没查完整的（服务没开、iplark 没响应）不会删，留着重测。点上面的数字卡片或「使用场景」标签可直接筛选。<br><b>倒计时</b>：从这条代理<b>首次检测</b>时开始，按用户名里的 <b>life-N</b> 计算（N 默认是分钟，也认 30m / 2h / 1d）；过期后再检测会重新计时。同一会话的出口 IP 可能中途更换，使用前建议「↻」再测一次。<br>出口 IP 由本地服务经代理取得，iplark 由本机 Chrome/Edge 在后台查询（首次约 8 秒过防护盾，之后每条 2～4 秒）。<br><b>网页版（GitHub Pages）</b>：一样能用，同样要在这台电脑上运行检测助手（浏览器本身没法走代理，也没法直接调 iplark）；第一次连接时浏览器会问是否允许访问「此设备上的应用和服务 / 本地网络」，点<b>允许</b>。推荐 Chrome / Edge。</div>
     </div>
 
     <div class="card" id="ipc-resCard" style="display:none">
       <div class="ipc-stats" id="ipc-stats"></div>
+      <div class="ipc-scenes" id="ipc-scenes"></div>
       <div class="ipc-bar">
         <select id="ipc-fStatus">
           <option value="">全部结果</option>
           <option value="okAlive">✅ 成功（有效期内）</option>
-          <option value="ok">✅ 成功（含已过期）</option>
+          <option value="ok" selected>✅ 成功（含已过期）</option>
           <option value="bad">❌ 失败</option>
           <option value="review">⚠ 待复核</option>
           <option value="checking">⏳ 检测中</option>
@@ -1838,6 +1855,7 @@
         <button class="btn btn-ghost btn-sm" id="ipc-copyIps">复制出口 IP</button>
         <button class="btn btn-ghost btn-sm" id="ipc-csv">下载 CSV</button>
         <button class="btn btn-ghost btn-sm" id="ipc-dropExpired">移除已过期</button>
+        <button class="btn btn-ghost btn-sm" id="ipc-undoDel" style="display:none">↩ 恢复刚删除的失败</button>
       </div>
       <div class="ipc-wrap"><table class="ipc-table">
         <thead><tr><th><input type="checkbox" id="ipc-all" title="全选当前筛选"></th><th>结果</th><th>地区 / 会话</th><th>出口 IP</th><th>运营商</th><th>使用场景（iplark）</th><th title="C段 恶意/滥用IP(B)">B</th><th title="C段 代理(P)">P</th><th>评分</th><th>剩余有效期</th><th>操作</th></tr></thead>
@@ -1860,7 +1878,7 @@
 </div>
 <div class="toast" id="toast"></div>
 
-<!-- IPC_HELPER_BEGIN：IP 检测助手源码，原样嵌入自 ip_check_server.py / 启动IP检测服务.bat，供「⬇ 下载检测助手」打包。改了那两个文件后要重新嵌入。 -->
+<!-- IPC_HELPER_BEGIN：IP 检测助手源码，原样嵌入自 ip_check_server.py / 启动IP检测服务.bat / 启动IP检测服务-Mac.command，供「⬇ 助手 Windows 版 / Mac 版」打包。改了这几个文件后要重新嵌入。 -->
 <script type="text/plain" id="ipc-helper-py">
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
@@ -1880,8 +1898,9 @@ iplark 还有 Cloudflare + 自建 JS 盾，只有真浏览器内核才能通过�
   3. iplark 失败时，可退回 proxycheck.io（住宅/商业/机房类型 + 风险分）作备用
 成功/失败的判定在网页里做，方便你随时调整规则。
 
-依赖：Python 3.8+；iplark 查询需要 playwright（pip install playwright）+ 本机 Chrome 或 Edge。
-启动：双击「启动IP检测服务.bat」，或 python ip_check_server.py（默认 127.0.0.1:17890，仅本机可访问）
+依赖：Python 3.9+；iplark 查询需要 playwright（pip install playwright）+ 本机 Chrome 或 Edge。
+启动：Windows 双击「启动IP检测服务.bat」，Mac 双击「启动IP检测服务-Mac.command」，
+      或直接 python ip_check_server.py（默认 127.0.0.1:17890，仅本机可访问）
 可选参数：
   --port 17890            监听端口
   --lark-concurrency 3    同时打开的 iplark 页面数（太大容易触发风控）
@@ -1905,8 +1924,12 @@ import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, quote, unquote, urlparse
 
-VERSION = "2.1"
-UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+VERSION = "2.3"
+# Chrome 在各系统上报的固定平台串（Mac 不论 Intel / Apple 芯片都是 10_15_7）
+UA_PLATFORM = ("Macintosh; Intel Mac OS X 10_15_7" if sys.platform == "darwin"
+               else "X11; Linux x86_64" if sys.platform.startswith("linux")
+               else "Windows NT 10.0; Win64; x64")
+UA = ("Mozilla/5.0 (" + UA_PLATFORM + ") AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36")
 
 CFG = {
@@ -2279,6 +2302,8 @@ class LarkEngine:
         self._lock = None
         self._sem = None
         self._fail_until = 0
+        self._cool_until = 0   # iplark 回 429 后暂停到这个时间点，期间不再发请求（继续发只会延长封禁）
+        self._cool_n = 0       # 连续被限流的次数：暂停 5 → 10 → 20 → 30 分钟
         self._pw = self._browser = self._ctx = None
         self.loop = asyncio.new_event_loop()
         threading.Thread(target=self.loop.run_forever, daemon=True, name="lark-loop").start()
@@ -2321,7 +2346,7 @@ class LarkEngine:
                 try:
                     from playwright.async_api import async_playwright
                 except ImportError:
-                    raise RuntimeError("未安装 playwright：请运行  pip install playwright")
+                    raise RuntimeError("未安装 playwright：重新运行启动脚本会自动安装，或手动 pip install playwright")
                 self._pw = await async_playwright().start()
                 last = None
                 for channel in ("chrome", "msedge", None):
@@ -2340,8 +2365,9 @@ class LarkEngine:
                 self._browser.on("disconnected", lambda _b: self._on_disconnect())
                 major = self._browser.version.split(".")[0]
                 # 关键：UA 里不能带 HeadlessChrome，否则 iplark 直接回 404
-                ua = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
-                      "Chrome/%s.0.0.0 Safari/537.36" % major)
+                # UA 里的系统要和真实系统一致（navigator.platform 等对不上会被反爬识别）
+                ua = ("Mozilla/5.0 (%s) AppleWebKit/537.36 (KHTML, like Gecko) "
+                      "Chrome/%s.0.0.0 Safari/537.36" % (UA_PLATFORM, major))
                 # 注意：不要拦截图片/字体/BGP 图等资源——iplark 反爬会检测，拦了之后 /ipsubnet（C段）直接回 404
                 self._ctx = await self._browser.new_context(locale="zh-CN", user_agent=ua,
                                                             viewport={"width": 1280, "height": 900})
@@ -2377,6 +2403,8 @@ class LarkEngine:
         try:
             r = await page.goto("https://iplark.com/" + ip, wait_until="domcontentloaded", timeout=timeout * 1000)
             status = r.status if r else None
+            if status == 429:  # 本机 IP 查得太频繁，被 iplark 限流
+                return got, codes, "", status
             try:  # 首次访问要过防护盾（约 5 秒后自动刷新），之后一般 2~4 秒
                 await asyncio.wait_for(core.wait(), timeout)
             except asyncio.TimeoutError:
@@ -2400,7 +2428,11 @@ class LarkEngine:
         await self._ensure()
         async with self._sem:
             for attempt in (1, 2):  # C段接口偶发失败时，重新打开一次页面
+                if time.time() < self._cool_until:  # 排队期间别的查询触发了限流
+                    return self._cool_result()
                 got, codes, text, status = await self._visit(ip, timeout)
+                if status == 429 or codes.get("ipcategory") == 429 or codes.get("ipsubnet") == 429:
+                    return self._rate_limited()
                 data = compose_iplark(got, text)
                 if data.get("abuse_b") is not None or attempt == 2 or not (data.get("scene") or got):
                     break
@@ -2409,15 +2441,34 @@ class LarkEngine:
                 data["subnet_error"] = "C段接口返回 %s" % codes["ipsubnet"]
             if data.get("scene") or data.get("abuse_b") is not None:
                 self.ready = True
+                self._cool_n = 0
+                if self.status.startswith("限流"):
+                    self.status = "已就绪"
                 return dict(ok=True, src="iplark", **data)
             if status == 404 or text.strip()[:20].lower().startswith("not found"):
                 return {"ok": False, "error": "iplark 拦截了浏览器（404），可加 --show-browser 用可见窗口重试"}
             return {"ok": False, "error": "iplark 页面 %s 秒内未返回数据" % timeout}
 
+    def _rate_limited(self):
+        self._cool_n += 1
+        mins = min(30, 5 * 2 ** (self._cool_n - 1))
+        self._cool_until = time.time() + mins * 60
+        self.status = "限流中（429），%s 恢复" % time.strftime("%H:%M", time.localtime(self._cool_until))
+        log("iplark 返回 429（本机 IP 查询太频繁），暂停 %d 分钟" % mins)
+        return self._cool_result()
+
+    def _cool_result(self):
+        left = max(1, round((self._cool_until - time.time()) / 60))
+        return {"ok": False, "rate_limited": True,
+                "error": "iplark 限流（429）：本机 IP 查得太频繁，已暂停查询，约 %d 分钟后再点「重测失败的」" % left}
+
     def lookup(self, ip, timeout=30, nocache=False):
-        hit = None if nocache else cache_get("il:" + ip, 1800)
+        # 同一出口 IP 的分类几小时内不会变，结果缓存 6 小时，少给 iplark 发请求（「↻」单条重测会跳过缓存）
+        hit = None if nocache else cache_get("il:" + ip, 6 * 3600)
         if hit:
             return hit
+        if time.time() < self._cool_until:  # 限流冷却中：直接返回，不发请求
+            return self._cool_result()
         try:  # 外层时限放宽：同时最多 lark_concurrency 个页面，其余排队
             res = self.run(self._lookup(ip, timeout), 2 * timeout + 240)
         except concurrent.futures.TimeoutError:
@@ -2441,8 +2492,11 @@ class LarkEngine:
         threading.Thread(target=go, daemon=True).start()
 
     def info(self):
+        cool = max(0, int(self._cool_until - time.time()))
+        if not cool and self.status.startswith("限流"):
+            self.status = "已就绪"
         return {"enabled": CFG["iplark"], "status": self.status, "engine": self.engine,
-                "ready": self.ready, "error": self.error}
+                "ready": self.ready, "error": self.error, "cooldown_s": cool}
 
 
 LARK = None
@@ -2570,7 +2624,8 @@ class Handler(BaseHTTPRequestHandler):
 
 class Server(ThreadingHTTPServer):
     daemon_threads = True
-    # Windows 上 SO_REUSEADDR 会让第二个实例也能绑定同一端口（重复双击 .bat 会悄悄起两个服务）
+    # Windows 上 SO_REUSEADDR 会让第二个实例也能绑定同一端口（重复双击 .bat 会悄悄起两个服务）；
+    # Mac / Linux 上 SO_REUSEADDR 不允许两个进程同时监听，保留它方便重启
     allow_reuse_address = os.name != "nt"
 
     def server_bind(self):
@@ -2616,7 +2671,7 @@ def main():
         srv = Server((a.host, a.port), Handler)
     except OSError as e:
         print("端口 %d 启动失败：%s" % (a.port, e))
-        print("多半是服务已经在运行了（看看有没有另一个「IP Check Service」窗口），或者换个 --port。")
+        print("多半是服务已经在运行了（看看有没有另一个开着的检测助手窗口），或者换个 --port。")
         sys.exit(1)
     print("=" * 64)
     print(" IP 检测服务 v%s 已启动：http://%s:%d" % (VERSION, a.host, a.port))
@@ -2653,6 +2708,7 @@ if not defined PY goto nopython
 if errorlevel 1 (
   echo [setup] Installing playwright - first run only, please wait...
   %PY% -m pip install playwright
+  if errorlevel 1 %PY% -m pip install -i https://pypi.tuna.tsinghua.edu.cn/simple playwright
 )
 
 %PY% ip_check_server.py %*
@@ -2666,6 +2722,57 @@ echo Python 3 was not found.
 echo Install it from https://www.python.org/downloads/ and tick "Add python.exe to PATH".
 pause
 exit /b 1
+</script>
+<script type="text/plain" id="ipc-helper-mac">
+#!/bin/bash
+# IP 检测助手 · macOS 启动脚本：在「访达」里双击即可（会在「终端」里打开）
+cd "$(dirname "$0")" || exit 1
+printf '\033]0;IP Check Service - 127.0.0.1:17890\007'
+
+pause() { echo; read -r -p "按回车键关闭窗口…" _; }
+
+# 找 Python 3.9+（python.org / Homebrew / Xcode 命令行工具装的都行）；先找带版本号的，避免触发系统 python3 占位程序的安装弹窗
+PY=""
+for c in python3.14 python3.13 python3.12 python3.11 python3.10 /opt/homebrew/bin/python3 /usr/local/bin/python3 python3; do
+  if command -v "$c" >/dev/null 2>&1 && "$c" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 9) else 1)' >/dev/null 2>&1; then
+    PY="$c"
+    break
+  fi
+done
+if [ -z "$PY" ]; then
+  echo "没找到 Python 3.9 或更新版本。"
+  echo "请到 https://www.python.org/downloads/macos/ 下载安装（一路「继续」即可），装好后再双击本脚本。"
+  open "https://www.python.org/downloads/macos/" >/dev/null 2>&1
+  pause
+  exit 1
+fi
+
+# playwright 装在独立的虚拟环境里，不动系统 / Homebrew 的 Python（Homebrew 的 Python 不允许直接 pip install）
+HOME_DIR="$HOME/.ip-check-helper"
+VENV="$HOME_DIR/venv"
+VPY="$VENV/bin/python3"
+if [ ! -x "$VPY" ]; then
+  echo "[准备] 第一次运行：创建独立的 Python 环境（$VENV）…"
+  mkdir -p "$HOME_DIR"
+  "$PY" -m venv --clear "$VENV" || { echo "创建 Python 环境失败。"; pause; exit 1; }
+fi
+if ! "$VPY" -c "import playwright" >/dev/null 2>&1; then
+  echo "[准备] 安装 playwright（只需一次，1～2 分钟）…"
+  "$VPY" -m pip install --disable-pip-version-check playwright \
+    || "$VPY" -m pip install --disable-pip-version-check -i https://pypi.tuna.tsinghua.edu.cn/simple playwright \
+    || { echo "安装 playwright 失败，请检查网络后重新双击本脚本。"; pause; exit 1; }
+fi
+
+# 本机没装 Chrome / Edge 时，改用 Playwright 自带的 Chromium（已下载过会直接跳过）
+if [ ! -d "/Applications/Google Chrome.app" ] && [ ! -d "/Applications/Microsoft Edge.app" ]; then
+  echo "[准备] 没找到 Chrome / Edge，准备 Playwright 自带的 Chromium（第一次要下载，约 150 MB）…"
+  "$VPY" -m playwright install chromium || echo "Chromium 下载失败，iplark 查询可能不可用（建议安装 Chrome）。"
+fi
+
+"$VPY" ip_check_server.py "$@"
+echo
+echo "服务已停止。"
+pause
 </script>
 <!-- IPC_HELPER_END -->
 <script>
@@ -2697,10 +2804,11 @@ function buildZip(entries){
     lv.setUint16(26,nameB.length,true);lv.setUint16(28,0,true);
     chunks.push(lh,nameB,e.bytes);
     const cd=new Uint8Array(46),cv=new DataView(cd.buffer);
-    cv.setUint32(0,0x02014b50,true);cv.setUint16(4,20,true);cv.setUint16(6,20,true);cv.setUint16(8,0x0800,true);cv.setUint16(10,0,true);
+    // e.mode（如 0o100755）：标成 Unix 创建并写入权限位，Mac 解压后脚本才保留可执行权限
+    cv.setUint32(0,0x02014b50,true);cv.setUint16(4,e.mode?0x0314:20,true);cv.setUint16(6,20,true);cv.setUint16(8,0x0800,true);cv.setUint16(10,0,true);
     cv.setUint16(12,0,true);cv.setUint16(14,0x21,true);cv.setUint32(16,crc,true);cv.setUint32(20,sz,true);cv.setUint32(24,sz,true);
     cv.setUint16(28,nameB.length,true);cv.setUint16(30,0,true);cv.setUint16(32,0,true);cv.setUint16(34,0,true);cv.setUint16(36,0,true);
-    cv.setUint32(38,0,true);cv.setUint32(42,offset,true);
+    cv.setUint32(38,e.mode?(e.mode*65536)>>>0:0,true);cv.setUint32(42,offset,true);
     central.push(cd,nameB); offset+=30+nameB.length+sz;
   }
   const cdStart=offset; let cdSize=0; for(const c of central){chunks.push(c);cdSize+=c.length;}
@@ -5244,8 +5352,8 @@ const makeQR=(function(){
 (function(){
   const $=s=>document.querySelector(s); if(!$("#page-ipc"))return;
   const SKEY="tt.ipc.v1", CKEY="tt.ipc.cfg";
-  const RULES={biz:"ipc-rBiz",mobile:"ipc-rMobile",area:"ipc-rArea",abuseTag:"ipc-rAbuseTag",active:"ipc-rActive",fallback:"ipc-rFallback"};
-  let rows=[], running=false, stopFlag=false;
+  const RULES={biz:"ipc-rBiz",mobile:"ipc-rMobile",area:"ipc-rArea",abuseTag:"ipc-rAbuseTag",active:"ipc-rActive",fallback:"ipc-rFallback",autoDel:"ipc-rAutoDel"};
+  let rows=[], running=false, stopFlag=false, sceneF="", lastDeleted=[];
 
   /* ---------- 解析代理行：地区 / 会话 / 有效期 ---------- */
   // 和 ip_check_server.py 的 parse_proxy 同一套规则：先认「主机:端口:用户名:密码」（密码里有 : 或 @ 也不怕），再认 user:pass@host:port
@@ -5291,8 +5399,10 @@ const makeQR=(function(){
   function verdictOf(r,R){
     if(r.state==="checking"||r.state==="queued")return {s:"wait",why:[],warn:[]};
     const d=r.data; if(!d)return {s:"pending",why:[],warn:[]};
-    if(!d.ok)return {s:"bad",why:[d.error||"代理不可用"],warn:[]};
+    // soft = 只是「没查完整」（本地服务没开 / iplark 没响应），不是代理本身的问题：不自动删除，留着重测
+    if(!d.ok)return {s:"bad",why:[d.error||"代理不可用"],warn:[],soft:!!d.local};
     const ex=d.exit||{}, il=d.iplark||{}, pc=d.proxycheck||{}, why=[], warn=[];
+    let inc=0; const miss=m=>{ why.push(m); inc++; };
     const area=normCC(r.info.area), cc=normCC(ex.countryCode);
     if(area&&cc&&area!==cc){ if(R.area)why.push(`出口国家 ${cc} ≠ ${area}`); else warn.push(`出口国家 ${cc} ≠ ${area}`); }
     else if(area&&!cc&&R.area)warn.push("未取到出口国家，没法核对 area");
@@ -5304,8 +5414,8 @@ const makeQR=(function(){
         cls=ps.includes("dc")?"dc":ps.includes("res")?"res":ps.includes("biz")?"biz":ps.includes("mobile")?"mobile":"other";
         if(ps.includes("abuse")){ if(R.abuseTag)why.push("场景标记为滥用"); else warn.push("场景标记为滥用"); }
         if(ps.includes("proxy")){ if(R.active)why.push("场景标记为活跃代理"); else warn.push("活跃代理"); }
-      }else why.push("未取到使用场景");
-      if(il.abuse_b==null)why.push("未取到 C段 B 值"+(il.subnet_error?"（"+il.subnet_error+"）":""));
+      }else miss("未取到使用场景");
+      if(il.abuse_b==null)miss("未取到 C段 B 值"+(il.subnet_error?"（"+il.subnet_error+"）":""));
       else if(il.abuse_b>0)why.push(`C段恶意/滥用 B=${il.abuse_b}`);
     }else if(R.fallback&&pc.ok){
       // 备用源没有 C段 B 值，而且会把机房 IP 标成 Business，所以最多给「待复核」，永远不算成功
@@ -5315,18 +5425,26 @@ const makeQR=(function(){
       if(+pc.risk>0)why.push("备用源风险分 "+pc.risk);
       review=true; warn.push("iplark 没查到"+(il.error?"（"+il.error+"）":"")+"，备用源仅供参考，C段 B 值未核对");
     }else{
-      why.push("iplark 未取到数据"+(il.error?"："+il.error:""));
+      miss("iplark 未取到数据"+(il.error?"："+il.error:""));
     }
     if(cls==="dc")why.push("数据中心 / 机房");
     else if(cls==="biz"&&!R.biz)why.push("商宽（规则未放行）");
     else if(cls==="mobile"&&!R.mobile)why.push("移动网络（规则未放行）");
     else if(cls==="other")why.push("使用场景不是家宽 / 商宽 / 住宅");
-    return {s:why.length?"bad":review?"review":"ok",why,warn,cls};
+    return {s:why.length?"bad":review?"review":"ok",why,warn,cls,soft:why.length>0&&why.length===inc};
+  }
+  // 使用场景分类：取 iplark 场景里的「基础类型」（普通宽带 / 移动网络 / 数据中心…），活跃代理、滥用这类标记不单独成类
+  function sceneOf(r){
+    const d=r.data; if(!d||r.state==="checking"||r.state==="queued")return "";
+    if(!d.ok)return d.local?"未查完":"代理不可用";
+    const il=d.iplark||{}; if(!il.ok||!il.scene)return "未查到场景";
+    const ps=partsOf(il.scene); return ps.find(p=>partClass(p)!=="abuse"&&partClass(p)!=="proxy")||ps[0];
   }
 
   /* ---------- 渲染 ---------- */
-  function passFilter(r,v){
+  function passFilter(r,v,noScene){
     const st=$("#ipc-fStatus").value, ar=$("#ipc-fArea").value, q=$("#ipc-fSearch").value.trim().toLowerCase(), ms=remainMs(r);
+    if(!noScene&&sceneF&&sceneOf(r)!==sceneF)return false;
     if(st==="okAlive"&&!(v.s==="ok"&&(ms==null||ms>0)))return false;
     if(st==="ok"&&v.s!=="ok")return false;
     if(st==="bad"&&v.s!=="bad")return false;
@@ -5338,7 +5456,10 @@ const makeQR=(function(){
     if(q){ const d=r.data||{},ex=d.exit||{},il=d.iplark||{}; if(![r.line,ex.ip,ex.isp,ex.as,il.scene,r.info.session].join(" ").toLowerCase().includes(q))return false; }
     return true;
   }
-  const stat=(l,n,c)=>`<div class="stat ${c}"><div class="n">${n}</div><div class="l">${l}</div></div>`;
+  // 顶部数字卡片可点：点一下只看这一类，再点一次回到全部
+  const stat=(l,n,c,f)=>{ const on=$("#ipc-fStatus").value===f;
+    return `<div class="stat ${c}${on?" on":""}" data-f="${f}" role="button" tabindex="0" title="${on&&f?"再点一次显示全部":"点击只看「"+l+"」"}"><div class="n">${n}</div><div class="l">${l}</div></div>`; };
+  const chip=(k,n,label)=>`<button type="button" class="ipc-chip${sceneF===k?" on":""}" data-scene="${escHTML(k)}">${k?`<i class="dot ${partClass(k)}"></i>`:""}${escHTML(label)} <b>${n}</b></button>`;
   const numCell=(n,hot)=>n==null?'<span class="ipc-sub">—</span>':`<span class="ipc-num ${hot?(n>0?"hot":"zero"):""}">${n}</span>`;
   function rowHTML(r,i,v,ms){
     const d=r.data||{}, ex=d.exit||{}, il=d.iplark||{}, pc=d.proxycheck||{};
@@ -5364,16 +5485,23 @@ const makeQR=(function(){
       +`<td><div class="ipc-act"><button data-act="copy" data-i="${i}" title="复制这条代理">复制</button><button data-act="recheck" data-i="${i}" title="重新检测">↻</button>${ex.ip?`<button data-act="lark" data-i="${i}" title="在 iplark 查看">↗</button>`:""}</div></td></tr>`;
   }
   function doRender(){
-    const card=$("#ipc-resCard"); if(!rows.length){ card.style.display="none"; updHint(); return; } card.style.display="block";
+    const card=$("#ipc-resCard"); if(!rows.length&&!lastDeleted.length){ card.style.display="none"; updHint(); return; } card.style.display="block";
     const R=rules(), fa=$("#ipc-fArea"), cur=fa.value, areas=[...new Set(rows.map(r=>r.info.area).filter(Boolean))].sort();
     fa.innerHTML='<option value="">全部地区</option>'+areas.map(a=>`<option value="${a}">${a}（${rows.filter(r=>r.info.area===a).length}）</option>`).join(""); if(areas.includes(cur))fa.value=cur;
-    let ok=0,okAlive=0,bad=0,wait=0,rev=0; const html=[];
+    let ok=0,okAlive=0,bad=0,wait=0,rev=0,base=0; const html=[], sc={};
     rows.forEach((r,i)=>{ const v=r.v=verdictOf(r,R), ms=remainMs(r);
       if(v.s==="ok"){ ok++; if(ms==null||ms>0)okAlive++; } else if(v.s==="bad")bad++; else if(v.s==="review")rev++; else if(v.s==="wait")wait++;
+      if(passFilter(r,v,true)){ base++; const k=sceneOf(r); if(k)sc[k]=(sc[k]||0)+1; }   // 场景标签的数字 = 在当前结果 / 地区 / 搜索条件下的条数
       r.vis=passFilter(r,v); if(r.vis)html.push(rowHTML(r,i,v,ms)); });
-    $("#ipc-tbody").innerHTML=html.join("")||'<tr><td colspan="11" style="text-align:center;color:var(--text-3);padding:26px">没有符合筛选条件的结果</td></tr>';
-    $("#ipc-stats").innerHTML=stat("总数",rows.length,"")+stat("成功",ok,"ok")+stat("有效期内成功",okAlive,"arc")+stat("失败",bad,"dup")
-      +(rev?stat("待复核",rev,"warn"):"")+stat("检测中",wait,"ipc-wait");
+    const busyN=rows.filter(r=>r.state==="checking"||r.state==="queued").length;
+    const empty=!rows.length?`这批全部失败，已自动删除（点「↩ 恢复刚删除的失败」可以找回）`
+      :busyN?`检测中（还剩 ${busyN} 条）… 符合条件的结果会陆续显示在这里`:"没有符合筛选条件的结果（点上面的「总数」看全部）";
+    $("#ipc-tbody").innerHTML=html.join("")||`<tr><td colspan="11" style="text-align:center;color:var(--text-3);padding:26px">${empty}</td></tr>`;
+    $("#ipc-stats").innerHTML=stat("总数",rows.length,"","")+stat("成功",ok,"ok","ok")+stat("有效期内成功",okAlive,"arc","okAlive")+stat("失败",bad,"dup","bad")
+      +(rev?stat("待复核",rev,"warn","review"):"")+stat("检测中",wait,"ipc-wait","checking");
+    const keys=Object.keys(sc).sort((a,b)=>sc[b]-sc[a]||a.localeCompare(b)); if(sceneF&&!keys.includes(sceneF))keys.push(sceneF);
+    $("#ipc-scenes").innerHTML=keys.length?'<span class="lbl">使用场景</span>'+chip("",base,"全部")+keys.map(k=>chip(k,sc[k]||0,k)).join(""):"";
+    const u=$("#ipc-undoDel"); u.style.display=lastDeleted.length?"":"none"; u.textContent=`↩ 恢复刚删除的失败（${lastDeleted.length}）`;
     const visN=rows.filter(r=>r.vis).length; $("#ipc-all").checked=visN>0&&rows.filter(r=>r.vis).every(r=>r.sel);
     updCount(); updHint();
   }
@@ -5393,49 +5521,84 @@ const makeQR=(function(){
   /* ---------- 本地服务 ---------- */
   const svc=()=>($("#ipc-svcUrl").value||"").trim().replace(/\/+$/,"");
   const ON_WEB=location.protocol==="https:"||location.protocol==="http:";
+  const RUN_HINT="运行检测助手（Windows 双击「启动IP检测服务.bat」，Mac 双击「启动IP检测服务-Mac.command」；还没有就点「⬇ 助手 Windows 版 / Mac 版」下载）";
   const DOWN_HINT=ON_WEB
-    ?"连接不到本机的检测助手：① 先运行「启动IP检测服务.bat」（没有就点「⬇ 下载检测助手」）② 浏览器问是否允许访问本机 / 本地网络时点「允许」（点过阻止的话：地址栏左边的图标 → 网站设置 → 本地网络访问 → 允许）"
-    :"连接不到本地检测服务：请先双击「启动IP检测服务.bat」，保持窗口开着（没有这个文件就点「⬇ 下载检测助手」）";
+    ?"连接不到本机的检测助手：① 先"+RUN_HINT+" ② 浏览器问是否允许访问本机 / 本地网络时点「允许」（点过阻止的话：地址栏左边的图标 → 网站设置 → 本地网络访问 → 允许）"
+    :"连接不到本地检测服务：请先"+RUN_HINT+"，并保持窗口开着";
   async function health(silent){ const b=$("#ipc-svc"), ac=new AbortController(), t=setTimeout(()=>ac.abort(),3500); let bad="";
     try{ const resp=await fetch(svc()+"/health",{signal:ac.signal,cache:"no-store"}), j=await resp.json().catch(()=>null);
       if(!resp.ok||!j||!j.ok||j.service!=="ip-check"){ bad=(j&&j.error)||`这个地址上不是 IP 检测服务（HTTP ${resp.status}）`; throw new Error(bad); }
       const il=j.iplark||{}, hv=helperVer(), old=hv&&j.version&&j.version!==hv;
-      b.className="badge on"; b.style.background=""; b.style.color="";
+      b.className="badge on"; b.style.background=il.cooldown_s>0?"rgba(255,149,0,.16)":""; b.style.color=il.cooldown_s>0?"var(--orange)":"";
       b.textContent="本地服务已连接 · iplark："+(il.enabled===false?"已关闭":((il.engine||"").replace(/^(\w+ \d+).*$/,"$1")+" "+(il.status||"")).trim())+(old?" · 助手可更新":"");
-      b.title=[il.error||"",old?`正在运行的检测助手是 v${j.version}，本页内置的是 v${hv}，建议点「⬇ 下载检测助手」换新版`:""].filter(Boolean).join("\n"); return true; }
+      b.title=[il.error||"",old?`正在运行的检测助手是 v${j.version}，本页内置的是 v${hv}，建议点「⬇ 助手 Windows 版 / Mac 版」重新下载`:""].filter(Boolean).join("\n"); return true; }
     catch(e){ b.className="badge"; b.style.background="rgba(255,59,48,.14)"; b.style.color="var(--red)";
       b.textContent=bad?"本地服务异常":"本地服务未启动"; b.title=bad||DOWN_HINT;
       if(!silent)toast(bad?"本地检测服务异常："+bad:DOWN_HINT); return false; }
     finally{ clearTimeout(t); } }
 
-  /* ---------- 检测助手：ip_check_server.py + .bat 原样内嵌在本页（#ipc-helper-*），网页版也能直接下载 ---------- */
+  /* ---------- 检测助手：ip_check_server.py + 启动脚本原样内嵌在本页（#ipc-helper-*），网页版也能直接下载 ---------- */
   const helperText=id=>{ const el=document.getElementById(id); return el?el.textContent.replace(/^\n/,""):""; };
   const helperVer=()=>(helperText("ipc-helper-py").match(/^VERSION = "([^"]+)"/m)||[])[1]||"";
-  $("#ipc-dlHelper").onclick=()=>{ const py=helperText("ipc-helper-py"), bat=helperText("ipc-helper-bat");
-    if(!py||!bat){ toast("本页没有内嵌检测助手"); return; }
-    const enc=new TextEncoder(), crlf=s=>s.replace(/\r?\n/g,"\r\n"), v=helperVer();
-    const readme="IP 检测助手 v"+v+"（给「文本处理工具 · IP 检测」标签用）\n\n"
-      +"1. 需要：Windows + Python 3.9 以上 + Chrome 或 Edge 浏览器。\n"
-      +"   没装 Python：https://www.python.org/downloads/ ，安装时勾选「Add python.exe to PATH」。\n"
-      +"2. 双击「启动IP检测服务.bat」。第一次会自动安装 playwright（1 分钟左右）。\n"
-      +"3. 窗口里出现「已启动：http://127.0.0.1:17890」后，回到网页的 IP 检测标签点「开始检测」。检测期间别关这个窗口。\n"
-      +"4. 用 GitHub 网页版时，浏览器第一次会问是否允许访问本机 / 本地网络，点「允许」。\n"
-      +"   点错了：地址栏左边的图标 → 网站设置 → 本地网络访问 → 允许。\n\n"
-      +"为什么要这个助手：浏览器里的网页没法通过代理发请求，也没法直接调用 iplark（有跨域限制和防护盾），\n"
-      +"所以「经代理取出口 IP」和「查 iplark」由这个本机小程序完成。它只监听 127.0.0.1，只接受本工具网页的请求。\n";
-    download(buildZip([
-      {name:"IP检测助手/启动IP检测服务.bat",bytes:enc.encode(crlf(bat))},
-      {name:"IP检测助手/ip_check_server.py",bytes:enc.encode(py)},
-      {name:"IP检测助手/使用说明.txt",bytes:enc.encode("﻿"+crlf(readme))}]),"IP检测助手.zip"); };
+  const WHY="\n为什么要这个助手：浏览器里的网页没法通过代理发请求，也没法直接调用 iplark（有跨域限制和防护盾），\n"
+    +"所以「经代理取出口 IP」和「查 iplark」由这个本机小程序完成。它只监听 127.0.0.1，只接受本工具网页的请求。\n";
+  const ALLOW="浏览器（推荐 Chrome / Edge）第一次连接时会问是否允许访问本机 / 本地网络，点「允许」。\n"
+    +"   点错了：地址栏左边的图标 → 网站设置 → 本地网络访问 → 允许。\n";
+  function dlHelper(os){
+    const py=helperText("ipc-helper-py"), launcher=helperText(os==="mac"?"ipc-helper-mac":"ipc-helper-bat");
+    if(!py||!launcher){ toast("本页没有内嵌检测助手"); return; }
+    const enc=new TextEncoder(), crlf=s=>s.replace(/\r?\n/g,"\r\n"), v=helperVer(), dir="IP检测助手/";
+    if(os==="mac"){
+      const readme="IP 检测助手 v"+v+" · Mac 版（给「文本处理工具 · IP 检测」标签用）\n\n"
+        +"1. 需要：macOS + Python 3.9 以上 + Chrome 或 Edge（都没有也行，会自动下载 Chromium）。\n"
+        +"   没装 Python：https://www.python.org/downloads/macos/ 下载安装即可。\n"
+        +"2. 双击「启动IP检测服务-Mac.command」，会在「终端」里打开。第一次会自动准备环境、安装 playwright（1～2 分钟）。\n"
+        +"   如果提示「无法打开」或「无法验证开发者」：\n"
+        +"   · 右键（或按住 Control 点按）这个文件 → 打开 → 再点「打开」；\n"
+        +"   · macOS 15 及以后：先双击一次，再到「系统设置 → 隐私与安全性」，拉到最下面点「仍要打开」；\n"
+        +"   · 或者打开「终端」，输入 bash 加一个空格，把这个 .command 文件拖进终端窗口，按回车。\n"
+        +"3. 终端里出现「已启动：http://127.0.0.1:17890」后，回到网页的 IP 检测标签点「开始检测」。\n"
+        +"   检测期间别关终端窗口；要停止就在终端里按 Control + C。\n"
+        +"4. "+ALLOW
+        +"\n运行环境装在 ~/.ip-check-helper 里，不影响系统自带的 Python；不用了直接删掉这个文件夹即可。\n"+WHY;
+      download(buildZip([
+        {name:dir+"启动IP检测服务-Mac.command",bytes:enc.encode(launcher),mode:0o100755},  // 带可执行权限，访达里才能双击运行
+        {name:dir+"ip_check_server.py",bytes:enc.encode(py),mode:0o100644},
+        {name:dir+"使用说明.txt",bytes:enc.encode("﻿"+readme),mode:0o100644}]),"IP检测助手-Mac.zip");
+    }else{
+      const readme="IP 检测助手 v"+v+" · Windows 版（给「文本处理工具 · IP 检测」标签用）\n\n"
+        +"1. 需要：Windows + Python 3.9 以上 + Chrome 或 Edge 浏览器。\n"
+        +"   没装 Python：https://www.python.org/downloads/ ，安装时勾选「Add python.exe to PATH」。\n"
+        +"2. 双击「启动IP检测服务.bat」。第一次会自动安装 playwright（1 分钟左右）。\n"
+        +"3. 窗口里出现「已启动：http://127.0.0.1:17890」后，回到网页的 IP 检测标签点「开始检测」。检测期间别关这个窗口。\n"
+        +"4. "+ALLOW+WHY;
+      download(buildZip([
+        {name:dir+"启动IP检测服务.bat",bytes:enc.encode(crlf(launcher))},
+        {name:dir+"ip_check_server.py",bytes:enc.encode(py)},
+        {name:dir+"使用说明.txt",bytes:enc.encode("﻿"+crlf(readme))}]),"IP检测助手-Windows.zip");
+    }
+  }
+  $("#ipc-dlWin").onclick=()=>dlHelper("win");
+  $("#ipc-dlMac").onclick=()=>dlHelper("mac");
   async function checkOne(r,fresh){
     // 首次检测开始计时；上一轮已过期（会话已失效、会换新 IP）就重新计时
     const left=remainMs(r); if(!r.start||(left!=null&&left<=0))r.start=Date.now();
     r.state="checking"; render();
     const ac=new AbortController(), t=setTimeout(()=>ac.abort(),300000);
-    try{ r.data=await (await fetch(svc()+"/check?proxy="+encodeURIComponent(r.line)+(fresh?"&nocache=1":""),{signal:ac.signal,cache:"no-store"})).json(); }
-    catch(e){ r.data={ok:false,error:e.name==="AbortError"?"检测超时（5 分钟）":"连接本地服务失败："+(e.message||e)}; }
+    try{ const resp=await fetch(svc()+"/check?proxy="+encodeURIComponent(r.line)+(fresh?"&nocache=1":""),{signal:ac.signal,cache:"no-store"}), j=await resp.json().catch(()=>null);
+      // 只有 200 才是这条代理的检测结果；403 / 503 等是本地服务自己拒绝了，标 local（不算代理失败、不会被自动删除）
+      r.data=resp.ok&&j?j:{ok:false,error:(j&&j.error)||`本地服务返回 HTTP ${resp.status}`,local:true}; }
+    catch(e){ r.data={ok:false,error:e.name==="AbortError"?"检测超时（5 分钟）":"连接本地服务失败："+(e.message||e),local:true}; }
     finally{ clearTimeout(t); r.state="done"; saveState(); render(); } }
-  const BUSY=["ipc-run","ipc-retryBad","ipc-clear","ipc-dropExpired"];
+  const BUSY=["ipc-run","ipc-retryBad","ipc-clear","ipc-dropExpired","ipc-undoDel"];
+  // 删掉本次检测里「确定失败」的（soft 的不删），同时从输入框里去掉，下次「开始检测」不会再加回来
+  function autoDelete(list){ const R=rules(); if(!R.autoDel)return 0;
+    const dead=list.filter(r=>{ if(!rows.includes(r))return false; const v=verdictOf(r,R); return v.s==="bad"&&!v.soft; });
+    if(!dead.length)return 0;
+    const gone=new Set(dead), lines=new Set(dead.map(r=>r.line));
+    rows=rows.filter(r=>!gone.has(r)); lastDeleted=dead;
+    const ta=$("#ipc-in"); ta.value=String(ta.value||"").split(/\r?\n/).filter(l=>!lines.has(l.trim())).join("\n");
+    saveState(); return dead.length; }
   const setBusy=b=>{ BUSY.forEach(id=>$("#"+id).disabled=b); $("#ipc-stop").disabled=!b; };
   async function runRows(list,fresh){
     if(running){ toast("正在检测中，请稍候"); return; }
@@ -5446,8 +5609,11 @@ const makeQR=(function(){
     const conc=Math.max(1,Math.min(10,+$("#ipc-conc").value||4)); let p=0;
     await Promise.all(Array.from({length:Math.min(conc,list.length)},async()=>{ while(p<list.length&&!stopFlag){ await checkOne(list[p++],fresh); } }));
     rows.forEach(r=>{ if(r.state==="queued")r.state=r.data?"done":"pending"; });
-    running=false; setBusy(false); saveState(); doRender();
-    const R=rules(), ok=list.filter(r=>verdictOf(r,R).s==="ok").length; toast((stopFlag?"已停止":"检测完成")+` · 本次 ${list.length} 条，成功 ${ok} 条`);
+    const R=rules(), ok=list.filter(r=>verdictOf(r,R).s==="ok").length, del=autoDelete(list);
+    const limited=list.some(r=>r.data&&r.data.iplark&&r.data.iplark.rate_limited);
+    running=false; setBusy(false); saveState(); doRender(); if(limited)health(true);
+    toast((stopFlag?"已停止":"检测完成")+` · 本次 ${list.length} 条，成功 ${ok} 条`+(del?`，已删除失败的 ${del} 条`:"")
+      +(limited?"。⚠ iplark 限流了（本机 IP 查得太频繁），没查完的已保留，等几分钟再点「↻ 重测失败的」":""));
   }
 
   /* ---------- 按钮 ---------- */
@@ -5455,11 +5621,24 @@ const makeQR=(function(){
     const lines=[...new Set(String($("#ipc-in").value||"").split(/\r?\n/).map(s=>s.trim()).filter(Boolean))];
     if(!lines.length){ toast("请先粘贴代理（每行一个）"); return; }
     const old=new Map(rows.map(r=>[r.line,r])); rows=lines.map(l=>old.get(l)||newRow(l)); rows.forEach(r=>{ r.sel=false; });
+    $("#ipc-fStatus").value="ok"; sceneF=""; lastDeleted=[];   // 新一批默认只看成功的
     saveState(); doRender(); runRows(rows.slice()); };
   $("#ipc-retryBad").onclick=()=>{ const R=rules(); runRows(rows.filter(r=>{ const s=verdictOf(r,R).s; return s==="bad"||s==="review"||s==="pending"; }),true); };
   $("#ipc-stop").onclick=()=>{ stopFlag=true; $("#ipc-stop").disabled=true; toast("正在停止（进行中的会检测完）…"); };
   $("#ipc-health").onclick=async()=>{ if(await health(false))toast("本地检测服务正常"); };
-  $("#ipc-clear").onclick=()=>{ if(rows.length&&!confirm("清空全部代理和检测结果（含倒计时）？"))return; rows=[]; $("#ipc-in").value=""; saveState(); doRender(); };
+  $("#ipc-clear").onclick=()=>{ if(rows.length&&!confirm("清空全部代理和检测结果（含倒计时）？"))return; rows=[]; lastDeleted=[]; sceneF=""; $("#ipc-in").value=""; saveState(); doRender(); };
+  $("#ipc-undoDel").onclick=()=>{ if(!lastDeleted.length)return;
+    const have=new Set(rows.map(r=>r.line)), back=lastDeleted.filter(r=>!have.has(r.line)), ta=$("#ipc-in");
+    const cur=new Set(String(ta.value||"").split(/\r?\n/).map(s=>s.trim())), add=back.map(r=>r.line).filter(l=>!cur.has(l));
+    if(add.length)ta.value=String(ta.value||"").replace(/\s+$/,"")+(ta.value.trim()?"\n":"")+add.join("\n");
+    rows=rows.concat(back); lastDeleted=[]; $("#ipc-fStatus").value="bad"; sceneF="";
+    saveState(); doRender(); toast(`已恢复 ${back.length} 条失败的代理（当前显示「失败」）`); };
+  // 点顶部数字卡片 / 使用场景标签直接筛选
+  const pickStat=c=>{ const s=$("#ipc-fStatus"), f=c.dataset.f; s.value=(s.value===f&&f)?"":f; rows.forEach(r=>{ r.sel=false; }); render(); };
+  $("#ipc-stats").addEventListener("click",e=>{ const c=e.target.closest("[data-f]"); if(c)pickStat(c); });
+  $("#ipc-stats").addEventListener("keydown",e=>{ const c=e.target.closest("[data-f]"); if(c&&(e.key==="Enter"||e.key===" ")){ e.preventDefault(); pickStat(c); } });
+  $("#ipc-scenes").addEventListener("click",e=>{ const c=e.target.closest("[data-scene]"); if(!c)return; const k=c.dataset.scene;
+    sceneF=(sceneF===k&&k)?"":k; rows.forEach(r=>{ r.sel=false; }); render(); });
   $("#ipc-in").addEventListener("input",updHint);
   for(const k in RULES)$("#"+RULES[k]).addEventListener("change",()=>{ saveCfg(); render(); });
   ["ipc-svcUrl","ipc-conc","ipc-life"].forEach(id=>$("#"+id).addEventListener("change",()=>{ saveCfg(); render(); }));
