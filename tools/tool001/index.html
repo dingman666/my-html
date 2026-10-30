@@ -1912,6 +1912,7 @@ iplark 还有 Cloudflare + 自建 JS 盾，只有真浏览器内核才能通过�
 """
 import argparse
 import asyncio
+import base64
 import concurrent.futures
 import json
 import os
@@ -1924,7 +1925,7 @@ import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, quote, unquote, urlparse
 
-VERSION = "2.3"
+VERSION = "2.5"
 # Chrome 在各系统上报的固定平台串（Mac 不论 Intel / Apple 芯片都是 10_15_7）
 UA_PLATFORM = ("Macintosh; Intel Mac OS X 10_15_7" if sys.platform == "darwin"
                else "X11; Linux x86_64" if sys.platform.startswith("linux")
@@ -1942,6 +1943,7 @@ CFG = {
     "allowed_hosts": {"127.0.0.1:17890", "localhost:17890", "[::1]:17890"},
     "iplark": True,
     "lark_concurrency": 3,
+    "upstream": "auto",  # 前置代理：auto / none / http://host:port
     "headless": True,
 }
 
@@ -1974,6 +1976,46 @@ def cache_set(key, val):
         _cache[key] = (time.time(), val)
 
 
+# iplark 结果另外存到磁盘：重启助手后，同一批出口 IP 6 小时内不用再去 iplark 查（少触发限流）
+LARK_TTL = 6 * 3600
+CACHE_FILE = os.path.join(os.path.expanduser("~"), ".ip-check-helper", "iplark_cache.json")
+_save_lock = threading.Lock()
+
+
+def load_disk_cache():
+    try:
+        with open(CACHE_FILE, encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, ValueError):
+        return 0
+    now, n = time.time(), 0
+    with _cache_lock:
+        for k, v in (data.items() if isinstance(data, dict) else ()):
+            try:
+                ts, val = v
+            except (TypeError, ValueError):
+                continue
+            if k.startswith("il:") and isinstance(val, dict) and now - float(ts) < LARK_TTL:
+                _cache[k] = (float(ts), val)
+                n += 1
+    return n
+
+
+def save_disk_cache():
+    now = time.time()
+    with _cache_lock:
+        data = {k: v for k, v in _cache.items() if k.startswith("il:") and now - v[0] < LARK_TTL}
+    with _save_lock:
+        try:
+            os.makedirs(os.path.dirname(CACHE_FILE), exist_ok=True)
+            tmp = CACHE_FILE + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False)
+            os.replace(tmp, CACHE_FILE)
+        except OSError:
+            pass
+
+
 DIRECT = urllib.request.build_opener(urllib.request.ProxyHandler({}))  # 显式不走系统代理
 
 
@@ -1998,7 +2040,7 @@ def friendly(err):
         return "代理主机名无法解析"
     if ("reset" in low or "remote end closed" in low or "eof occurred" in low or "10054" in s
             or "10053" in s or "errno 104" in low or "强迫关闭" in s or "中止了一个已建立的连接" in s):
-        return "代理断开了连接（该会话可能不可用，可稍后重测）"
+        return "代理连接被断开（个别如此：该会话可能不可用，稍后重测；全部如此：本机连不上代理服务器，国内网络请把 VPN 切到 TUN/增强模式或全局模式）"
     if "tunnel connection failed" in low:
         return "代理隧道建立失败：" + s.split(":", 1)[-1].strip()
     return s[:160]
@@ -2105,9 +2147,10 @@ def _dechunk(body):
     return out
 
 
-def socks5_http_get(info, host, port, path):
-    """最小 SOCKS5（RFC1928/1929 用户名密码认证）+ 明文 HTTP GET，只用于取出口 IP。"""
-    s = socket.create_connection((info["host"], info["port"]), timeout=CFG["timeout"])
+def socks5_http_get(info, host, port, path, sock=None):
+    """最小 SOCKS5（RFC1928/1929 用户名密码认证）+ 明文 HTTP GET，只用于取出口 IP。
+    sock：已经连到 SOCKS5 服务器的套接字（经前置代理打通的隧道）。"""
+    s = sock or socket.create_connection((info["host"], info["port"]), timeout=CFG["timeout"])
     try:
         s.sendall(b"\x05\x01" + (b"\x02" if info["user"] else b"\x00"))
         resp = _recv_exact(s, 2)
@@ -2146,6 +2189,100 @@ def socks5_http_get(info, host, port, path):
         s.close()
 
 
+# ---------------------------------------------------------------- 前置代理（Mac 上 Clash/Surge「系统代理」模式等）
+# 国内网络直连 proxy.iproyal.net 这类代理服务器常被重置；浏览器走系统代理所以 iplark 正常，
+# 但本程序的套接字不走系统代理。auto 模式：直连代理服务器失败（网络层错误）时，改经系统代理打隧道再连。
+_ROUTE = {}  # (host, port) → "up"：直连不通、经前置代理能通的代理服务器，之后直接走前置代理
+
+
+def upstream_url():
+    up = CFG["upstream"]
+    if up == "none":
+        return ""
+    if up != "auto":
+        return up
+    try:
+        px = urllib.request.getproxies()  # 环境变量 + Mac 系统代理设置 / Windows 注册表
+    except Exception:  # noqa: BLE001
+        return ""
+    for k in ("http", "https", "all"):
+        u = (px.get(k) or "").strip()
+        if u.lower().startswith("http://"):  # 只用明文 http 前置代理（Clash / Surge 本地端口都是）
+            return u
+    return ""
+
+
+def mask_url(u):
+    return re.sub(r"//[^@/]*@", "//***@", u or "")
+
+
+def _is_net_err(e):
+    """连不上 / 被重置 / 超时这类网络层错误（不是代理认证失败、不是格式错误）。"""
+    s = str(e).lower()
+    return bool(s) and "407" not in s and any(k in s for k in (
+        "reset", "remote end closed", "eof occurred", "timed out", "timeout", "refused", "unreachable",
+        "tunnel connection failed", "10054", "10053", "10060", "10061", "10065", "10051", "errno 104",
+        "errno 54", "errno 60", "errno 61", "强迫关闭", "中止了一个已建立的连接", "积极拒绝", "超时"))
+
+
+def _tunnel(up, host, port, timeout):
+    """经前置代理（http://，如 Clash 的 127.0.0.1:7890）用 CONNECT 打一条到 host:port 的 TCP 隧道。"""
+    u = urlparse(up)
+    s = socket.create_connection((u.hostname, u.port or 80), timeout=timeout)
+    try:
+        req = "CONNECT %s:%d HTTP/1.1\r\nHost: %s:%d\r\n" % (host, port, host, port)
+        if u.username:
+            tok = base64.b64encode(("%s:%s" % (unquote(u.username), unquote(u.password or ""))).encode()).decode()
+            req += "Proxy-Authorization: Basic %s\r\n" % tok
+        s.sendall((req + "\r\n").encode())
+        head = b""
+        while b"\r\n\r\n" not in head:
+            chunk = s.recv(4096)
+            if not chunk:
+                raise OSError("前置代理 remote end closed connection")
+            head += chunk
+            if len(head) > 65536:
+                raise OSError("前置代理响应异常")
+        status = head.split(b"\r\n", 1)[0].decode("latin-1").split(" ", 2)
+        if len(status) < 2 or status[1] != "200":
+            raise OSError("前置代理不让连 %s:%d（%s）" % (host, port, " ".join(status[1:]) or "无响应"))
+        return s
+    except Exception:
+        s.close()
+        raise
+
+
+def _read_http(sock):
+    data = b""
+    while True:
+        chunk = sock.recv(65536)
+        if not chunk:
+            break
+        data += chunk
+    head, _, body = data.partition(b"\r\n\r\n")
+    if not head:
+        raise OSError("remote end closed connection without response")
+    code = (head.split(b"\r\n", 1)[0].split(b" ") + [b"?", b"?"])[1].decode("latin-1")
+    if code == "407":
+        raise OSError("407 代理认证失败")
+    if code != "200":
+        raise OSError("代理返回 HTTP %s" % code)
+    if b"transfer-encoding: chunked" in head.lower():
+        body = _dechunk(body)
+    return body.decode("utf-8", "replace")
+
+
+def _http_proxy_get_over(sock, info, host, path):
+    """在已连到 HTTP 代理服务器的套接字上发一个经代理的明文 GET。"""
+    auth = ""
+    if info["user"]:
+        tok = base64.b64encode(("%s:%s" % (info["user"], info["pass"])).encode()).decode()
+        auth = "Proxy-Authorization: Basic %s\r\n" % tok
+    sock.sendall(("GET http://%s%s HTTP/1.1\r\nHost: %s\r\nUser-Agent: %s\r\nAccept: application/json\r\n%s"
+                  "Connection: close\r\n\r\n" % (host, path, host, UA, auth)).encode())
+    return _read_http(sock)
+
+
 IPAPI_FIELDS = "status,message,country,countryCode,regionName,city,isp,org,as,mobile,proxy,hosting,query"
 
 
@@ -2156,8 +2293,7 @@ def ipapi_record(j):
             "mobile": bool(j.get("mobile"))}
 
 
-def get_exit(info):
-    t0 = time.time()
+def _exit_direct(info, t0):
     path = "/json?fields=" + IPAPI_FIELDS
     err = err2 = ""
     try:
@@ -2188,7 +2324,50 @@ def get_exit(info):
         except Exception as e2:  # noqa: BLE001
             err2 = str(e2)
     return {"ok": False, "error": join_errors(err, err2) or "取出口 IP 失败",
-            "latency_ms": int((time.time() - t0) * 1000)}
+            "latency_ms": int((time.time() - t0) * 1000),
+            "net_error": _is_net_err(err) and (not err2 or _is_net_err(err2))}
+
+
+def _exit_via_upstream(info, up, t0):
+    path = "/json?fields=" + IPAPI_FIELDS
+    try:
+        s = _tunnel(up, info["host"], info["port"], CFG["timeout"])
+        try:
+            if info["scheme"] == "socks5":
+                txt = socks5_http_get(info, "ip-api.com", 80, path, sock=s)
+            else:
+                txt = _http_proxy_get_over(s, info, "ip-api.com", path)
+        finally:
+            s.close()
+        j = json.loads(txt)
+        if j.get("status") == "success":
+            rec = ipapi_record(j)
+            rec.update(ok=True, via="ip-api（经前置代理）", latency_ms=int((time.time() - t0) * 1000))
+            return rec
+        err = j.get("message") or "ip-api 返回失败"
+    except Exception as e:  # noqa: BLE001
+        err = friendly(e)
+    return {"ok": False, "error": err, "latency_ms": int((time.time() - t0) * 1000)}
+
+
+def get_exit(info):
+    t0 = time.time()
+    gw = (info["host"].lower(), info["port"])
+    up = upstream_url()
+    if up and (CFG["upstream"] != "auto" or _ROUTE.get(gw) == "up"):
+        return _exit_via_upstream(info, up, t0)
+    res = _exit_direct(info, t0)
+    net = res.pop("net_error", False)
+    if res.get("ok") or not up or not net:
+        return res
+    res2 = _exit_via_upstream(info, up, t0)
+    if res2.get("ok"):
+        if _ROUTE.get(gw) != "up":
+            _ROUTE[gw] = "up"
+            log("直连代理服务器 %s:%d 不通，已自动改走系统代理 %s" % (gw[0], gw[1], mask_url(up)))
+        return res2
+    res["error"] = "%s / 经系统代理 %s 也失败：%s" % (res["error"], mask_url(up), res2["error"])
+    return res
 
 
 # ---------------------------------------------------------------- proxycheck.io（备用）
@@ -2304,6 +2483,11 @@ class LarkEngine:
         self._fail_until = 0
         self._cool_until = 0   # iplark 回 429 后暂停到这个时间点，期间不再发请求（继续发只会延长封禁）
         self._cool_n = 0       # 连续被限流的次数：暂停 5 → 10 → 20 → 30 分钟
+        # 自适应限速：被 429 过之后，两次打开 iplark 页面之间至少隔 _gap 秒；再被限流就翻倍（4→8→16→20），
+        # 每查成功一次缩短 3%，降到 1 秒以下恢复全速。目的是自动把速度压到 iplark 允许的范围内
+        self._gap = self._gap_last = 0.0
+        self._next_at = 0.0
+        self._pace_lock = None
         self._pw = self._browser = self._ctx = None
         self.loop = asyncio.new_event_loop()
         threading.Thread(target=self.loop.run_forever, daemon=True, name="lark-loop").start()
@@ -2424,11 +2608,25 @@ class LarkEngine:
         finally:
             await page.close()
 
+    async def _pace(self):
+        if self._gap <= 0:
+            return
+        if self._pace_lock is None:
+            self._pace_lock = asyncio.Lock()
+        async with self._pace_lock:
+            wait = self._next_at - time.time()
+            if wait > 0:
+                await asyncio.sleep(wait)
+            self._next_at = time.time() + self._gap
+
     async def _lookup(self, ip, timeout):
         await self._ensure()
         async with self._sem:
             for attempt in (1, 2):  # C段接口偶发失败时，重新打开一次页面
                 if time.time() < self._cool_until:  # 排队期间别的查询触发了限流
+                    return self._cool_result()
+                await self._pace()
+                if time.time() < self._cool_until:
                     return self._cool_result()
                 got, codes, text, status = await self._visit(ip, timeout)
                 if status == 429 or codes.get("ipcategory") == 429 or codes.get("ipsubnet") == 429:
@@ -2442,6 +2640,8 @@ class LarkEngine:
             if data.get("scene") or data.get("abuse_b") is not None:
                 self.ready = True
                 self._cool_n = 0
+                if self._gap:
+                    self._gap = 0.0 if self._gap * 0.97 < 1 else self._gap * 0.97
                 if self.status.startswith("限流"):
                     self.status = "已就绪"
                 return dict(ok=True, src="iplark", **data)
@@ -2451,10 +2651,12 @@ class LarkEngine:
 
     def _rate_limited(self):
         self._cool_n += 1
+        self._gap_last = min(20.0, max(4.0, self._gap_last * 2))
+        self._gap = self._gap_last
         mins = min(30, 5 * 2 ** (self._cool_n - 1))
         self._cool_until = time.time() + mins * 60
         self.status = "限流中（429），%s 恢复" % time.strftime("%H:%M", time.localtime(self._cool_until))
-        log("iplark 返回 429（本机 IP 查询太频繁），暂停 %d 分钟" % mins)
+        log("iplark 返回 429（本机 IP 查询太频繁），暂停 %d 分钟；恢复后每 %d 秒最多查 1 条" % (mins, self._gap))
         return self._cool_result()
 
     def _cool_result(self):
@@ -2464,7 +2666,7 @@ class LarkEngine:
 
     def lookup(self, ip, timeout=30, nocache=False):
         # 同一出口 IP 的分类几小时内不会变，结果缓存 6 小时，少给 iplark 发请求（「↻」单条重测会跳过缓存）
-        hit = None if nocache else cache_get("il:" + ip, 6 * 3600)
+        hit = None if nocache else cache_get("il:" + ip, LARK_TTL)
         if hit:
             return hit
         if time.time() < self._cool_until:  # 限流冷却中：直接返回，不发请求
@@ -2477,6 +2679,7 @@ class LarkEngine:
             res = {"ok": False, "error": self.error or ("iplark 查询失败：%s" % (str(e) or type(e).__name__)[:140])}
         if res.get("ok") and res.get("scene") and res.get("abuse_b") is not None:
             cache_set("il:" + ip, res)  # 只缓存完整结果；缺 B 值的结果下次会重新查
+            save_disk_cache()
         return res
 
     def warmup(self):
@@ -2495,15 +2698,18 @@ class LarkEngine:
         cool = max(0, int(self._cool_until - time.time()))
         if not cool and self.status.startswith("限流"):
             self.status = "已就绪"
-        return {"enabled": CFG["iplark"], "status": self.status, "engine": self.engine,
-                "ready": self.ready, "error": self.error, "cooldown_s": cool}
+        status = self.status
+        if not cool and self._gap >= 1 and status == "已就绪":
+            status = "已就绪 · 防限流慢速（每 %d 秒 1 条）" % round(self._gap)
+        return {"enabled": CFG["iplark"], "status": status, "engine": self.engine,
+                "ready": self.ready, "error": self.error, "cooldown_s": cool, "gap_s": round(self._gap, 1)}
 
 
 LARK = None
 
 
 # ---------------------------------------------------------------- 主检测
-def check(line, skip_iplark=False, fallback=True, nocache=False):
+def check(line, skip_iplark=False, fallback=True, nocache=False, area_strict=False):
     try:
         info = parse_proxy(line)
     except ValueError as e:
@@ -2517,6 +2723,13 @@ def check(line, skip_iplark=False, fallback=True, nocache=False):
         out["error"] = ex.get("error")
         return out
     ip = ex["ip"]
+    want = {"UK": "GB"}.get(info["area"], info["area"])
+    got_cc = {"UK": "GB"}.get((ex.get("countryCode") or "").upper(), (ex.get("countryCode") or "").upper())
+    if area_strict and want and got_cc and want != got_cc:
+        # 出口国家不对，不管 iplark 怎么说都是失败：直接跳过 iplark，省一次查询（少触发限流）
+        out["iplark"] = {"ok": False, "skipped": "country",
+                         "error": "出口国家 %s ≠ %s，已跳过 iplark 查询" % (got_cc, want)}
+        return out
     if CFG["iplark"] and not skip_iplark and LARK:
         out["iplark"] = LARK.lookup(ip, nocache=nocache)
     else:
@@ -2614,7 +2827,8 @@ class Handler(BaseHTTPRequestHandler):
                 line = (q.get("proxy") or [""])[0]
                 r = check(line, skip_iplark=(q.get("skip_iplark") or ["0"])[0] == "1",
                           fallback=(q.get("fallback") or ["1"])[0] != "0",
-                          nocache=(q.get("nocache") or ["0"])[0] == "1")
+                          nocache=(q.get("nocache") or ["0"])[0] == "1",
+                          area_strict=(q.get("area_strict") or ["0"])[0] == "1")
             finally:
                 CHECK_SLOTS.release()
             log_result(r)
@@ -2644,10 +2858,17 @@ def main():
     ap.add_argument("--show-browser", action="store_true")
     ap.add_argument("--no-iplark", action="store_true")
     ap.add_argument("--proxycheck-key", default="")
+    ap.add_argument("--upstream", default="auto",
+                    help="前置代理：auto=直连代理服务器不通时自动改走系统代理（默认）；none=不用；"
+                         "或 http://127.0.0.1:7890 表示始终经它连代理服务器")
     ap.add_argument("--allow-origin", action="append", default=[],
                     help="额外允许的网页来源，如 https://xxx.github.io（可重复；* 表示全部）")
     ap.add_argument("--probe", metavar="IP")
     a = ap.parse_args()
+    CFG["upstream"] = (a.upstream or "auto").strip()
+    if CFG["upstream"] not in ("auto", "none") and not CFG["upstream"].lower().startswith("http://"):
+        print("--upstream 只支持 http:// 开头的前置代理（例如 http://127.0.0.1:7890）")
+        sys.exit(2)
     CFG.update(timeout=a.timeout, proxycheck_key=a.proxycheck_key, iplark=not a.no_iplark,
                lark_concurrency=a.lark_concurrency, headless=not a.show_browser)
     for o in a.allow_origin:
@@ -2661,6 +2882,9 @@ def main():
                             for h in ("127.0.0.1", "localhost", "[::1]", a.host)}
     if CFG["iplark"]:
         LARK = LarkEngine()
+        n = load_disk_cache()
+        if n and not a.probe:
+            log("读取到 %d 条 6 小时内的 iplark 缓存结果（这些出口 IP 不会重复查询）" % n)
     if a.probe:
         if not LARK:
             print("已用 --no-iplark 关闭 iplark")
@@ -2679,6 +2903,11 @@ def main():
     print(" 网页版第一次连接时，浏览器会问是否允许访问本机/本地网络，点「允许」。")
     print(" iplark：%s   proxycheck key：%s" % ("开启（用本机浏览器）" if CFG["iplark"] else "关闭",
                                              "已设置" if CFG["proxycheck_key"] else "未设置"))
+    up = upstream_url()
+    print(" 前置代理：%s" % ("不使用" if CFG["upstream"] == "none" else
+                         "始终经 %s" % mask_url(up) if CFG["upstream"] != "auto" else
+                         "自动（连不上代理服务器时改走系统代理 %s）" % mask_url(up) if up else
+                         "自动（当前没检测到系统代理，直连代理服务器）"))
     print("=" * 64, flush=True)
     if LARK:
         LARK.warmup()
@@ -5424,8 +5653,10 @@ const makeQR=(function(){
       if(String(pc.proxy).toLowerCase()==="yes")why.push("备用源：标记为代理");
       if(+pc.risk>0)why.push("备用源风险分 "+pc.risk);
       review=true; warn.push("iplark 没查到"+(il.error?"（"+il.error+"）":"")+"，备用源仅供参考，C段 B 值未核对");
+    }else if(il.skipped==="country"&&R.area&&area&&cc&&area!==cc){
+      // 出口国家不符：助手直接跳过了 iplark（省一次查询），失败原因上面已经记了
     }else{
-      miss("iplark 未取到数据"+(il.error?"："+il.error:""));
+      miss(il.skipped?"出口国家不符时跳过了 iplark，关掉国家规则后请点 ↻ 重测":"iplark 未取到数据"+(il.error?"："+il.error:""));
     }
     if(cls==="dc")why.push("数据中心 / 机房");
     else if(cls==="biz"&&!R.biz)why.push("商宽（规则未放行）");
@@ -5585,7 +5816,8 @@ const makeQR=(function(){
     const left=remainMs(r); if(!r.start||(left!=null&&left<=0))r.start=Date.now();
     r.state="checking"; render();
     const ac=new AbortController(), t=setTimeout(()=>ac.abort(),300000);
-    try{ const resp=await fetch(svc()+"/check?proxy="+encodeURIComponent(r.line)+(fresh?"&nocache=1":""),{signal:ac.signal,cache:"no-store"}), j=await resp.json().catch(()=>null);
+    const q="/check?proxy="+encodeURIComponent(r.line)+(fresh?"&nocache=1":"")+(rules().area?"&area_strict=1":"");  // 国家不符就不查 iplark
+    try{ const resp=await fetch(svc()+q,{signal:ac.signal,cache:"no-store"}), j=await resp.json().catch(()=>null);
       // 只有 200 才是这条代理的检测结果；403 / 503 等是本地服务自己拒绝了，标 local（不算代理失败、不会被自动删除）
       r.data=resp.ok&&j?j:{ok:false,error:(j&&j.error)||`本地服务返回 HTTP ${resp.status}`,local:true}; }
     catch(e){ r.data={ok:false,error:e.name==="AbortError"?"检测超时（5 分钟）":"连接本地服务失败："+(e.message||e),local:true}; }
